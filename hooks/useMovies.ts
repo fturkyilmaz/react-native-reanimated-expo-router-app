@@ -11,6 +11,21 @@ interface UseMoviesReturn {
     page: number;
 }
 
+// Örnek poster_path array (TMDB’den bilinen filmler)
+const posterPaths = [
+    "/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg", // Joker (2019)
+    "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", // Interstellar
+    "/rSPw7tgCH9c6NqICZef4kZjFOQ5.jpg", // The Godfather
+    "/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg", // Avatar: The Way of Water
+    "/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg", // John Wick: Chapter 4
+    "/yF1eOkaYvwiORauRCPWznV9xVvi.jpg", // Dune: Part Two
+    "/fCayJrkfRaCRCTh8GqN30f8oyQF.jpg", // Fight Club
+    "/6KErczPBROQty7QoIsaa6wJYXZi.jpg", // Parasite
+    "/q719jXXEzOoYaps6babgKnONONX.jpg", // Spirited Away (Studio Ghibli)
+    "/d5NXSklXo0qyIYkgV94XAgMIckC.jpg", // Pulp Fiction
+];
+
+
 export function useMovies(category: 'popular' | 'top_rated' | 'upcoming' = 'popular'): UseMoviesReturn {
     const [movies, setMovies] = useState<Movie[]>([]);
     const [loading, setLoading] = useState(true);
@@ -23,23 +38,21 @@ export function useMovies(category: 'popular' | 'top_rated' | 'upcoming' = 'popu
             setLoading(true);
             setError(null);
 
-            // Gerçek API yerine mock data kullanıyoruz (TMDB API key olmadan çalışsın diye)
-            // const response = await fetch(
-            //   `${API_CONFIG.BASE_URL}/movie/${category}?api_key=${API_CONFIG.API_KEY}&page=${pageNum}`
-            // );
-
             // Mock Data
             await new Promise(resolve => setTimeout(resolve, 800));
-            const mockMovies: Movie[] = Array(10).fill(null).map((_, i) => ({
-                id: pageNum * 10 + i,
-                title: `Film ${pageNum * 10 + i}`,
-                overview: 'Film açıklaması burada yer alacak...',
-                poster_path: `/poster${i}.jpg`,
-                backdrop_path: null,
-                vote_average: 7.5 + Math.random() * 2,
-                release_date: '2024-01-15',
-                genre_ids: [1, 2, 3],
-            }));
+            const mockMovies: Movie[] = Array(10).fill(null).map((_, i) => {
+
+                return {
+                    id: i + 1,
+                    title: `Film ${i + 1}`,
+                    overview: 'Film açıklaması burada yer alacak...',
+                    poster_path: posterPaths[i],
+                    backdrop_path: `https://picsum.photos/seed/backdrop${i}/500/280.jpg`,
+                    vote_average: 7.5 + Math.random() * 2,
+                    release_date: '2024-01-15',
+                    genre_ids: [1, 2, 3],
+                };
+            });
 
             if (shouldReset) {
                 setMovies(mockMovies);

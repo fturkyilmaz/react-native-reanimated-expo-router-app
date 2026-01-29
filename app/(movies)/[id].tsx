@@ -1,6 +1,8 @@
+import { Movie } from '@/config/api';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     Extrapolate,
@@ -10,16 +12,42 @@ import Animated, {
     useSharedValue
 } from 'react-native-reanimated';
 import { useAuth } from '../../hooks/useAuth';
+import { useFavorites } from '../../hooks/useFavorites';
 
 const { width, height } = Dimensions.get('window');
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
-export default function MovieDetail() {
+export default function MovieDetail({ item }: { item: Movie }) {
     const { id } = useLocalSearchParams();
+    const { toggleFavorite, isFavorite } = useFavorites();
     const router = useRouter();
     const scrollY = useSharedValue(0);
     const { user } = useAuth();
+
+    // ID'yi number'a çevir
+    const movieId = parseInt(id as string);
+
+    // Favori durumunu kontrol et
+    const [isLiked, setIsLiked] = useState(false);
+
+    useEffect(() => {
+        setIsLiked(isFavorite(movieId));
+    }, [movieId, isFavorite]);
+
+    // Favori butonu handler'ı - EKSİK OLAN BUYDU
+    const handleFavoritePress = () => {
+        // Mock movie objesi oluştur (gerçek veri yerine)
+        const movie = {
+            id: movieId,
+            title: 'Inception', // Gerçek uygulamada API'den gelen başlık
+            poster_path: null,
+            vote_average: 8.8,
+        };
+
+        toggleFavorite(movie);
+        setIsLiked(!isLiked);
+    };
 
     // Yazı sadece poster kaybolmaya başlayınca görünsün
     const headerAnimatedStyle = useAnimatedStyle(() => ({
@@ -50,8 +78,24 @@ export default function MovieDetail() {
         }]
     }));
 
+    const posterPaths = [
+        "/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg", // Joker (2019)
+        "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", // Interstellar
+        "/rSPw7tgCH9c6NqICZef4kZjFOQ5.jpg", // The Godfather
+        "/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg", // Avatar: The Way of Water
+        "/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg", // John Wick: Chapter 4
+        "/yF1eOkaYvwiORauRCPWznV9xVvi.jpg", // Dune: Part Two
+        "/fCayJrkfRaCRCTh8GqN30f8oyQF.jpg", // Fight Club
+        "/6KErczPBROQty7QoIsaa6wJYXZi.jpg", // Parasite
+        "/q719jXXEzOoYaps6babgKnONONX.jpg", // Spirited Away (Studio Ghibli)
+        "/d5NXSklXo0qyIYkgV94XAgMIckC.jpg", // Pulp Fiction
+    ];
+
+    const imageUrl = `https://image.tmdb.org/t/p/w500${posterPaths[movieId]}`;
+
     return (
         <View style={styles.container}>
+            <Stack.Screen options={{ headerShown: false }} />
             {/* Header (scroll edince görünür) */}
             <Animated.View style={[styles.header, headerAnimatedStyle]}>
                 <Text style={styles.headerTitle} numberOfLines={1}>Film Detayı</Text>
@@ -68,7 +112,7 @@ export default function MovieDetail() {
                 {/* Poster Container */}
                 <View style={styles.posterContainer}>
                     <AnimatedImage
-                        source={{ uri: `https://image.tmdb.org/t/p/original${id}.jpg` }}
+                        source={{ uri: imageUrl }}
                         style={[styles.poster, imageAnimatedStyle]}
                         defaultSource={require('../../assets/images/placeholder.png')}
                     />
@@ -89,10 +133,17 @@ export default function MovieDetail() {
                         </View>
                     </Pressable>
 
-                    {/* Floating Favorite Button */}
-                    <Pressable style={styles.favoriteButton}>
-                        <View style={styles.favoriteButtonCircle}>
-                            <Ionicons name="heart-outline" size={24} color="white" />
+                    {/* Floating Favorite Button - ÜSTTE */}
+                    <Pressable
+                        style={[styles.favoriteButton, { top: 50, right: 20 }]}
+                        onPress={handleFavoritePress}
+                    >
+                        <View style={[styles.favoriteButtonCircle, isLiked && styles.favoriteActive]}>
+                            <Ionicons
+                                name={isLiked ? "heart" : "heart-outline"}
+                                size={24}
+                                color={isLiked ? "#E50914" : "white"}
+                            />
                         </View>
                     </Pressable>
                 </View>
@@ -159,7 +210,7 @@ export default function MovieDetail() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#141414', // Netflix koyu gri
+        backgroundColor: '#141414',
     },
     scrollContent: {
         paddingBottom: 40,
@@ -214,12 +265,9 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        backdropFilter: 'blur(10px)',
     },
     favoriteButton: {
         position: 'absolute',
-        top: 50,
-        right: 20,
         zIndex: 10,
     },
     favoriteButtonCircle: {
@@ -230,9 +278,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    favoriteActive: {
+        backgroundColor: 'white',
+    },
     content: {
         paddingHorizontal: 20,
-        marginTop: -30, // Gradient üzerine bindirme
+        marginTop: -30,
     },
     title: {
         color: 'white',

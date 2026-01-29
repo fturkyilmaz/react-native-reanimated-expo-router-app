@@ -8,7 +8,8 @@ export default function MoviesLayout() {
         headerStyle: { backgroundColor: '#1a1a1a' },
         headerTintColor: '#fff',
         headerBackTitle: 'Geri',
-        animation: 'slide_from_right', // Geçiş animasyonu
+        animation: 'slide_from_right',
+        headerShown: false,
       }}
     />
   );

@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const mockUser = {
                     id: '1',
                     email,
-                    name: 'Ahmet',
+                    name: 'Furkan',
                     token: 'mock_jwt_token_' + Date.now(),
                 };
 

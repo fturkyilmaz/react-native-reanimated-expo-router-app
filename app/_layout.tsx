@@ -1,3 +1,4 @@
+import { FavoritesProvider } from '@/hooks/useFavorites';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
@@ -37,7 +38,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <AuthProvider>
-        <RootLayoutNav />
+        <FavoritesProvider>
+          <RootLayoutNav />
+        </FavoritesProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );
