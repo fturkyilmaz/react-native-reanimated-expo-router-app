@@ -1,4 +1,6 @@
 import { Movie } from '@/config/api';
+import { useAuth } from '@/hooks/useAuth';
+import { useFavorites } from '@/hooks/useFavorites';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,8 +13,6 @@ import Animated, {
     useAnimatedStyle,
     useSharedValue
 } from 'react-native-reanimated';
-import { useAuth } from '../../hooks/useAuth';
-import { useFavorites } from '../../hooks/useFavorites';
 
 const { width, height } = Dimensions.get('window');
 const AnimatedImage = Animated.createAnimatedComponent(Image);
@@ -114,7 +114,7 @@ export default function MovieDetail({ item }: { item: Movie }) {
                     <AnimatedImage
                         source={{ uri: imageUrl }}
                         style={[styles.poster, imageAnimatedStyle]}
-                        defaultSource={require('../../assets/images/placeholder.png')}
+                        defaultSource={require('@/assets/images/placeholder.png')}
                     />
 
                     {/* Gradient Overlay */}

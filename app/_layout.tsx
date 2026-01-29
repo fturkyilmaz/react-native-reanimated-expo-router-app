@@ -1,10 +1,10 @@
+import { AuthTransition } from '@/components/auth-transition';
+import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { FavoritesProvider } from '@/hooks/useFavorites';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { AuthTransition } from '../components/auth-transition';
-import { AuthProvider, useAuth } from '../hooks/useAuth';
 
 function RootLayoutNav() {
   const { user, isTransitioning, completeTransition } = useAuth();

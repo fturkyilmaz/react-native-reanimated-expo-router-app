@@ -1,5 +1,5 @@
+import { Movie } from '@/config/api';
 import { useCallback, useEffect, useState } from 'react';
-import { Movie } from '../config/api';
 
 interface UseMoviesReturn {
     movies: Movie[];

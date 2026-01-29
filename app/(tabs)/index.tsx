@@ -1,13 +1,19 @@
-import { Stack } from 'expo-router';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { MovieCard } from '../../components/movie-card';
-import { Skeleton } from '../../components/skeleton';
-import { useAuth } from '../../hooks/useAuth';
-import { useMovies } from '../../hooks/useMovies';
+import { Skeleton } from '@/components//skeleton';
+import { MovieCard } from '@/components/movie-card';
+import { useAuth } from '@/hooks/useAuth';
+import { useMovies } from '@/hooks/useMovies';
+import { Ionicons } from '@expo/vector-icons';
+import { Stack, useRouter } from 'expo-router';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen() {
   const { movies, loading, error, refresh, loadMore, hasMore } = useMovies('popular');
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    logout();
+  };
 
   const renderFooter = () => {
     if (!hasMore) return <Text style={styles.endText}>Tüm filmler yüklendi</Text>;
@@ -29,6 +35,11 @@ export default function HomeScreen() {
           headerShown: true,
           title: `Merhaba, ${user?.name || 'Film Sever'}`,
           headerLargeTitle: true,
+          headerRight: () => (
+            <Pressable onPress={handleLogout} style={styles.logoutButton}>
+              <Ionicons name="log-out-outline" size={24} color="#E50914" />
+            </Pressable>
+          ),
         }}
       />
 
@@ -67,4 +78,5 @@ const styles = StyleSheet.create({
   skeletonCard: { margin: 8, borderRadius: 12 },
   skeletonFooter: { alignSelf: 'center', marginVertical: 20 },
   endText: { textAlign: 'center', color: '#999', padding: 20 },
+  logoutButton: { marginRight: 16, padding: 4 }
 });

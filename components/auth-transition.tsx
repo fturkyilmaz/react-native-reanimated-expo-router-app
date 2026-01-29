@@ -59,7 +59,7 @@ export function AuthTransition({ isVisible, onAnimationComplete, userName }: Aut
         <View style={StyleSheet.absoluteFill} pointerEvents="auto">
             <Animated.View style={[styles.container, containerStyle]}>
                 <LottieView
-                    source={require('../assets/animations/success.json')}
+                    source={require('@/assets/animations/success.json')}
                     autoPlay
                     loop={false}
                     style={styles.lottie}

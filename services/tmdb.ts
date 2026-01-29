@@ -1,4 +1,4 @@
-import { API_CONFIG, Movie, MovieDetails } from '../config/api';
+import { API_CONFIG, Movie, MovieDetails } from '@/config/api';
 
 class TMDBService {
     private baseUrl = API_CONFIG.BASE_URL;
