@@ -1,14 +1,15 @@
 import { AuthTransition } from '@/components/auth-transition';
-import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { AuthProvider } from '@/hooks/useAuth';
 import { FavoritesProvider } from '@/hooks/useFavorites';
 import { QueryProvider } from '@/providers/query-provider';
+import { useAuthStore } from '@/store/authStore';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 function RootLayoutNav() {
-  const { user, isTransitioning, completeTransition } = useAuth();
+  const { user, isTransitioning, completeTransition } = useAuthStore();
 
   return (
     <View style={styles.container}>
@@ -22,14 +23,8 @@ function RootLayoutNav() {
       <Stack screenOptions={{ animation: 'slide_from_right' }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="movies/[id]"
-          options={{
-            presentation: 'modal',
-            animation: 'slide_from_bottom',
-            headerShown: false
-          }}
-        />
+        <Stack.Screen name="(movies)" options={{ headerShown: false }} />
+
       </Stack>
     </View>
   );

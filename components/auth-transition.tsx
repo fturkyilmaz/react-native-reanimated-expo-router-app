@@ -1,16 +1,15 @@
 import LottieView from 'lottie-react-native';
 import { useEffect } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
     runOnJS,
     useAnimatedStyle,
     useSharedValue,
+    withDelay,
     withSequence,
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-
-const { width, height } = Dimensions.get('window');
 
 interface AuthTransitionProps {
     isVisible: boolean;
@@ -18,39 +17,48 @@ interface AuthTransitionProps {
     userName: string;
 }
 
-export function AuthTransition({ isVisible, onAnimationComplete, userName }: AuthTransitionProps) {
+export function AuthTransition({
+    isVisible,
+    onAnimationComplete,
+    userName,
+}: AuthTransitionProps) {
+    const containerOpacity = useSharedValue(0);
     const scale = useSharedValue(0);
-    const opacity = useSharedValue(0);
     const textOpacity = useSharedValue(0);
 
     useEffect(() => {
-        if (isVisible) {
-            opacity.value = withTiming(1, { duration: 300 });
-            scale.value = withSequence(
-                withSpring(1.2, { damping: 10 }),
-                withSpring(1, { damping: 15 })
-            );
+        if (!isVisible) return;
 
-            textOpacity.value = withTiming(1, { duration: 600 });
+        // Background fade in
+        containerOpacity.value = withTiming(1, { duration: 300 });
 
-            const timer = setTimeout(() => {
-                scale.value = withTiming(20, { duration: 800 }, () => {
+        // Logo scale bounce
+        scale.value = withSequence(
+            withSpring(1.2, { damping: 12 }),
+            withSpring(1, { damping: 14 }),
+            withDelay(
+                1800,
+                withTiming(20, { duration: 700 }, () => {
                     runOnJS(onAnimationComplete)();
-                });
-            }, 2500);
+                })
+            )
+        );
 
-            return () => clearTimeout(timer);
-        }
+        // Text fade in
+        textOpacity.value = withDelay(300, withTiming(1, { duration: 600 }));
     }, [isVisible]);
 
     const containerStyle = useAnimatedStyle(() => ({
-        opacity: opacity.value,
+        opacity: containerOpacity.value,
+    }));
+
+    const scaleStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
     }));
 
     const textStyle = useAnimatedStyle(() => ({
         opacity: textOpacity.value,
-        transform: [{ translateY: (1 - textOpacity.value) * 20 }],
+        transform: [{ translateY: (1 - textOpacity.value) * 16 }],
     }));
 
     if (!isVisible) return null;
@@ -58,15 +66,19 @@ export function AuthTransition({ isVisible, onAnimationComplete, userName }: Aut
     return (
         <View style={StyleSheet.absoluteFill} pointerEvents="auto">
             <Animated.View style={[styles.container, containerStyle]}>
-                <LottieView
-                    source={require('@/assets/animations/success.json')}
-                    autoPlay
-                    loop={false}
-                    style={styles.lottie}
-                />
+                <Animated.View style={scaleStyle}>
+                    <LottieView
+                        source={require('@/assets/animations/success.json')}
+                        autoPlay
+                        loop={false}
+                        style={styles.lottie}
+                    />
+                </Animated.View>
+
                 <Animated.Text style={[styles.welcomeText, textStyle]}>
                     Hoşgeldin {userName}! 🎬
                 </Animated.Text>
+
                 <Animated.Text style={[styles.subText, textStyle]}>
                     Film dünyası seni bekliyor...
                 </Animated.Text>
@@ -74,6 +86,7 @@ export function AuthTransition({ isVisible, onAnimationComplete, userName }: Aut
         </View>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {

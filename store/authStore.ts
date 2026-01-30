@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -13,13 +14,16 @@ interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    isTransitioning: boolean;
     error: string | null;
-
+    pendingNavigation: boolean;
     // Actions
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
     register: (email: string, password: string, name: string) => Promise<void>;
     clearError: () => void;
+    completeTransition: () => void;
+    setPendingNavigation: (pendingNavigation: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -28,8 +32,12 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             isAuthenticated: false,
             isLoading: false,
+            pendingNavigation: false,
+            isTransitioning: false,
             error: null,
 
+            completeTransition: () => set({ isTransitioning: false, pendingNavigation: false }),
+            setPendingNavigation: (pendingNavigation: boolean) => set({ pendingNavigation }),
             login: async (email: string, password: string) => {
                 set({ isLoading: true, error: null });
 
@@ -42,10 +50,13 @@ export const useAuthStore = create<AuthState>()(
                         const user = {
                             id: '1',
                             email,
-                            name: 'Ahmet Yılmaz',
+                            name: 'Furkan',
                             token: 'jwt_token_' + Date.now(),
                         };
-                        set({ user, isAuthenticated: true, isLoading: false });
+                        await SecureStore.setItemAsync('userToken', user.token);
+                        await SecureStore.setItemAsync('userData', JSON.stringify(user));
+                        set({ user, isAuthenticated: true, isLoading: false, isTransitioning: true });
+
                     } else {
                         throw new Error('Geçersiz e-posta veya şifre');
                     }
@@ -56,6 +67,8 @@ export const useAuthStore = create<AuthState>()(
             },
 
             logout: () => {
+                SecureStore.deleteItemAsync('userToken');
+                SecureStore.deleteItemAsync('userData');
                 set({ user: null, isAuthenticated: false, error: null });
             },
 
@@ -71,8 +84,9 @@ export const useAuthStore = create<AuthState>()(
                         name,
                         token: 'jwt_token_' + Date.now(),
                     };
-
-                    set({ user, isAuthenticated: true, isLoading: false });
+                    await SecureStore.setItemAsync('userToken', user.token);
+                    await SecureStore.setItemAsync('userData', JSON.stringify(user));
+                    set({ user, isAuthenticated: true, isLoading: false, isTransitioning: true });
                 } catch (error: any) {
                     set({ error: error.message, isLoading: false });
                     throw error;

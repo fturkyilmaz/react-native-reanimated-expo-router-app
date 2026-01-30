@@ -28,7 +28,10 @@ export function MovieCard({ movie, index }: MovieCardProps) {
     const scale = useSharedValue(1);
 
     const handlePress = useCallback(() => {
-        router.push(`/(movies)/${movie.id}`);
+        router.push({
+            pathname: '/(movies)/[id]',
+            params: { id: movie.id },
+        });
     }, [router, movie.id]);
 
     const handlePressIn = useCallback(() => {

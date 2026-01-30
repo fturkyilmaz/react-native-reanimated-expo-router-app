@@ -6,7 +6,6 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 
 type TabIconProps = {
   name: keyof typeof Ionicons.glyphMap;
-  color: string;
   focused: boolean;
 };
 

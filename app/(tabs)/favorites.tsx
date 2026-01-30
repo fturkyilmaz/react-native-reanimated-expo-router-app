@@ -31,7 +31,10 @@ export default function FavoritesScreen() {
     }, [removeFavorite]);
 
     const navigateToDetail = (movieId: number) => {
-        router.push(`/movies/${movieId}`);
+        router.push({
+            pathname: '/(movies)/[id]',
+            params: { id: movieId },
+        });
     };
 
     if (favorites.length === 0) {
