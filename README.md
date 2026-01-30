@@ -1,38 +1,34 @@
-# 🎬 Siname - React Native Animated & Expo Router Projesi
+# 🎬 Siname - Expo Router & Animated Film Keşif Uygulaması
 
-Bu proje, **React Native Animated API** ve **Expo Router** kullanılarak geliştirilmiş bir film keşif uygulamasıdır.  
-Kullanıcılar modern animasyonlarla zenginleştirilmiş arayüzde film listelerini gezebilir, detay sayfalarına geçiş yapabilir.
+**Siname**, modern mobil deneyimi hedefleyen bir **React Native** projesidir.  
+Expo Router ile yönlendirme, React Native Animated ile geçiş efektleri ve **expo-liquid-glass** ile cam efekti gibi görsel detaylar bir araya getirildi.  
+Kullanıcılar film listelerini gezebilir, detay sayfalarına geçiş yapabilir ve animasyonlarla zenginleştirilmiş bir arayüz deneyimi yaşar.
 
 ---
 
 ## 🚀 Özellikler
-- **Expo Router** ile kolay sayfa yönlendirme
-- **React Native Animated** ile akıcı animasyonlar
-- Film listesi ve detay ekranları
-- Responsive tasarım
-- Kolay kurulum ve geliştirme ortamı
+
+- ⚡ **Expo Router** ile dosya tabanlı sayfa yönlendirme  
+- 🎞️ **React Native Animated** ile akıcı geçişler ve scroll efektleri  
+- 🧊 **expo-liquid-glass** ile blur & cam efekti  
+- 🎬 Film listesi ve detay ekranları  
+- 📱 Responsive tasarım  
+- 🛠️ Kolay kurulum ve geliştirme ortamı  
 
 ---
 
 ## 📦 Kurulum
 
-1. Repoyu klonla:
-   ```bash
-   git clone https://github.com/fturkyilmaz/react-native-reanimated-expo-router-app.git
-   cd siname
-   ```
+```bash
+git clone https://github.com/fturkyilmaz/react-native-reanimated-expo-router-app.git
+cd siname
 
-2. Bağımlılıkları yükle:
-   ```bash
-   npm install
-   # veya
-   yarn install
-   ```
+npm install
+# veya
+yarn install
 
-3. Projeyi çalıştır:
-   ```bash
-   npx expo start
-   ```
+npx expo start
+```
 
 ---
 
@@ -47,9 +43,12 @@ siname/
 │
 │── components/
 │   ├── MovieCard.tsx      # Film kartı componenti
-│   └── AnimatedHeader.tsx # Animasyonlu header
+│   ├── AnimatedHeader.tsx # Scroll animasyonlu header
+│   └── GlassPanel.tsx     # expo-liquid-glass ile cam efekti
 │
 │── assets/                # Görseller, ikonlar
+│── constants/             # Sabitler ve tema
+│── hooks/                 # Custom hook'lar
 │── package.json
 │── README.md
 ```
@@ -57,36 +56,45 @@ siname/
 ---
 
 ## 🎨 Kullanılan Teknolojiler
-- [React Native](https://reactnative.dev/)
-- [Expo](https://expo.dev/)
-- [Expo Router](https://expo.github.io/router/docs)
-- [React Native Animated](https://reactnative.dev/docs/animated)
+
+| Teknoloji              | Açıklama                              |
+|------------------------|----------------------------------------|
+| [React Native](https://reactnative.dev/) | Mobil uygulama çatısı |
+| [Expo](https://expo.dev/) | Geliştirme ve bundling |
+| [Expo Router](https://expo.github.io/router/docs) | Dosya tabanlı routing |
+| [React Native Animated](https://reactnative.dev/docs/animated) | Animasyon API |
+| expo-liquid-glass [(github.com in Bing)](https://www.bing.com/search?q="https%3A%2F%2Fgithub.com%2Fexpo%2Fexpo-liquid-glass") | Cam efekti ve blur |
 
 ---
 
 ## 🛠 Geliştirme Notları
-- Animasyonlar için `Animated.Value`, `interpolate` ve `useNativeDriver` kullanıldı.
-- Sayfa geçişleri `expo-router` ile yönetildi.
-- Tasarımda **Material Design** ve minimalist yaklaşım benimsendi.
+
+- Animasyonlar `Animated.Value`, `interpolate`, `useAnimatedScrollHandler` ve `useNativeDriver` ile yönetildi.  
+- Sayfa geçişleri `expo-router` ile segment bazlı olarak tanımlandı.  
+- Cam efekti için `expo-liquid-glass` kullanıldı, özellikle header ve modal arayüzlerde.  
+- Tasarımda **Material Design** ve **minimalist** yaklaşım benimsendi.  
 
 ---
 
 ## 📸 Ekran Görüntüleri
-> Buraya uygulamanın ekran görüntülerini ekleyebilirsin.
+
+> Uygulama ekran görüntüleri buraya eklenebilir (MovieCard, detay geçişi, blur header vs.)
 
 ---
 
 ## 🤝 Katkı
+
 Katkıda bulunmak için:
-1. Fork yap
-2. Yeni branch oluştur (`feature/yenilik`)
-3. Değişikliklerini commit et
-4. Pull request gönder
+
+```bash
+# Forkla
+# Yeni branch oluştur: feature/yenilik
+# Değişiklikleri commit et
+# Pull request gönder
+```
 
 ---
 
 ## 📄 Lisans
-Bu proje MIT lisansı ile lisanslanmıştır.
-```
 
----
+Bu proje **MIT lisansı** ile lisanslanmıştır.
