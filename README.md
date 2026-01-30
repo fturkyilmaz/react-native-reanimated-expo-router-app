@@ -90,5 +90,3 @@ Bu proje MIT lisansı ile lisanslanmıştır.
 ```
 
 ---
-
-Bu `README.md` sana başlangıç için güçlü bir temel sunuyor. İstersen ben sana **örnek kod parçaları** da ekleyebilirim, mesela `AnimatedHeader` veya `MovieCard` componenti. İlgini çeker mi?
