@@ -53,6 +53,13 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: 'Keşfet' }} />
       <Tabs.Screen name="favorites" options={{ title: 'Favoriler' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Ayarlar',
+          tabBarIcon: ({ color }) => <Ionicons name="settings-outline" size={24} color={color} />,
+        }}
+      />
     </Tabs>
   );
 }

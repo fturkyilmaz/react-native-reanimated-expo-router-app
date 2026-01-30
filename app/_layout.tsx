@@ -1,6 +1,7 @@
 import { AuthTransition } from '@/components/auth-transition';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { FavoritesProvider } from '@/hooks/useFavorites';
+import { QueryProvider } from '@/providers/query-provider';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
@@ -36,13 +37,15 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <AuthProvider>
-        <FavoritesProvider>
-          <RootLayoutNav />
-        </FavoritesProvider>
-      </AuthProvider>
-    </GestureHandlerRootView>
+    <QueryProvider>
+      <GestureHandlerRootView style={styles.container}>
+        <AuthProvider>
+          <FavoritesProvider>
+            <RootLayoutNav />
+          </FavoritesProvider>
+        </AuthProvider>
+      </GestureHandlerRootView>
+    </QueryProvider>
   );
 }
 

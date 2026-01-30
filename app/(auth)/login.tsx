@@ -1,32 +1,34 @@
-import { useAuth } from '@/hooks/useAuth';
+import { LoginFormData, loginSchema } from '@/schemas/auth';
+import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function LoginScreen() {
     const router = useRouter();
-    const { login, isLoading } = useAuth();
+    const { login, isLoading, error, clearError } = useAuthStore();
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [errors, setErrors] = useState({ email: '', password: '' });
+    const {
+        control,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: '',
+            password: '',
+        },
+    });
 
-    const handleLogin = async () => {
-        // Basit validasyon
-        const newErrors = { email: '', password: '' };
-        if (!email) newErrors.email = 'E-posta gerekli';
-        if (!password) newErrors.password = 'Şifre gerekli';
-
-        if (newErrors.email || newErrors.password) {
-            setErrors(newErrors);
-            return;
-        }
-
+    const onSubmit = async (data: LoginFormData) => {
         try {
-            await login(email, password);
+            clearError(); // Önceki hatayı temizle
+            await login(data.email, data.password);
+            router.replace('/(tabs)');
         } catch (error) {
-            // Hata useAuth içinde yönetiliyor
+            // Hata Zustand tarafından handle ediliyor
         }
     };
 
@@ -45,51 +47,79 @@ export default function LoginScreen() {
                 </View>
 
                 <View style={styles.form}>
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={[styles.input, errors.email && styles.inputError]}
-                            placeholder="E-posta adresi"
-                            value={email}
-                            onChangeText={(text) => {
-                                setEmail(text);
-                                if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
-                            }}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            editable={!isLoading}
-                        />
-                    </View>
-                    {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+                    {/* Zustand Global Error */}
+                    {error && (
+                        <View style={styles.globalErrorContainer}>
+                            <Ionicons name="alert-circle" size={20} color="#E50914" />
+                            <Text style={styles.globalErrorText}>{error}</Text>
+                        </View>
+                    )}
 
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={[styles.input, errors.password && styles.inputError]}
-                            placeholder="Şifre"
-                            value={password}
-                            onChangeText={(text) => {
-                                setPassword(text);
-                                if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
-                            }}
-                            secureTextEntry
-                            editable={!isLoading}
-                        />
+                    {/* Email Input */}
+                    <View style={styles.inputWrapper}>
+                        <View style={[styles.inputContainer, errors.email && styles.inputError]}>
+                            <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+                            <Controller
+                                control={control}
+                                name="email"
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="E-posta"
+                                        value={value}
+                                        onChangeText={(text) => {
+                                            onChange(text);
+                                            if (error) clearError(); // Yazarken hatayı temizle
+                                        }}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        editable={!isLoading}
+                                    />
+                                )}
+                            />
+                        </View>
+                        {errors.email && (
+                            <Text style={styles.errorText}>{errors.email.message}</Text>
+                        )}
                     </View>
-                    {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
-                    <Link href="/(auth)/forgot-password" asChild>
-                        <Pressable
-                            style={styles.forgotPassword}
-                            onPress={() => router.push('/(auth)/forgot-password')}
-                        >
-                            <Text style={styles.forgotPasswordText}>Şifremi unuttum?</Text>
-                        </Pressable>
-                    </Link>
+                    {/* Password Input */}
+                    <View style={styles.inputWrapper}>
+                        <View style={[styles.inputContainer, errors.password && styles.inputError]}>
+                            <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+                            <Controller
+                                control={control}
+                                name="password"
+                                render={({ field: { onChange, value } }) => (
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="Şifre"
+                                        secureTextEntry
+                                        value={value}
+                                        onChangeText={(text) => {
+                                            onChange(text);
+                                            if (error) clearError();
+                                        }}
+                                        editable={!isLoading}
+                                    />
+                                )}
+                            />
+                        </View>
+                        {errors.password && (
+                            <Text style={styles.errorText}>{errors.password.message}</Text>
+                        )}
+                    </View>
+
+                    <Pressable
+                        style={styles.forgotPassword}
+                        onPress={() => router.push('/(auth)/forgot-password')}
+                    >
+                        <Text style={styles.forgotPasswordText}>Şifremi unuttum?</Text>
+                    </Pressable>
 
                     <Pressable
                         style={[styles.button, isLoading && styles.buttonDisabled]}
-                        onPress={handleLogin}
+                        onPress={handleSubmit(onSubmit)}
                         disabled={isLoading}
                     >
                         {isLoading ? (
@@ -149,13 +179,29 @@ const styles = StyleSheet.create({
     form: {
         width: '100%',
     },
+    globalErrorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF3F3',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 16,
+        gap: 8,
+    },
+    globalErrorText: {
+        color: '#E50914',
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    inputWrapper: {
+        marginBottom: 16,
+    },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#E0E0E0',
         borderRadius: 12,
-        marginBottom: 4,
         paddingHorizontal: 16,
         height: 56,
         backgroundColor: '#FAFAFA',
@@ -169,13 +215,15 @@ const styles = StyleSheet.create({
         color: '#1a1a1a',
     },
     inputError: {
-        borderColor: '#FF3B30',
+        borderColor: '#E50914',
+        backgroundColor: '#FFF3F3',
     },
     errorText: {
-        color: '#FF3B30',
+        color: '#E50914',
         fontSize: 12,
-        marginBottom: 12,
+        marginTop: 4,
         marginLeft: 4,
+        fontWeight: '500',
     },
     forgotPassword: {
         alignSelf: 'flex-end',
