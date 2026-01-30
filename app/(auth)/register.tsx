@@ -1,57 +1,33 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+
+import { RegisterFormData, registerSchema } from '@/schemas/auth';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
 
 export default function RegisterScreen() {
     const router = useRouter();
     const { register, isLoading } = useAuth();
 
-    // Form state
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
+    const {
+        control,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<RegisterFormData>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+            name: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+        },
     });
 
-    // Hata mesajları
-    const [errors, setErrors] = useState<Record<string, string>>({});
-
-    const validateForm = () => {
-        const newErrors: Record<string, string> = {};
-
-        if (!formData.name.trim()) {
-            newErrors.name = 'İsim zorunludur';
-        }
-
-        if (!formData.email.trim()) {
-            newErrors.email = 'E-posta zorunludur';
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = 'Geçerli bir e-posta girin';
-        }
-
-        if (!formData.password) {
-            newErrors.password = 'Şifre zorunludur';
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Şifre en az 6 karakter olmalı';
-        }
-
-        if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Şifreler eşleşmiyor';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleRegister = async () => {
-        if (!validateForm()) return;
-
+    const onSubmit = async (data: RegisterFormData) => {
         try {
-            await register(formData.email, formData.password, formData.name);
-            // Başarılı kayıt sonrası tabs'a yönlendirme useAuth içinde yapılıyor
+            await register(data.email, data.password, data.name);
         } catch (error) {
             console.error('Register error:', error);
         }
@@ -62,10 +38,7 @@ export default function RegisterScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
         >
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={styles.iconContainer}>
@@ -77,79 +50,91 @@ export default function RegisterScreen() {
 
                 {/* Form */}
                 <View style={styles.form}>
-                    {/* İsim Input */}
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={[styles.input, errors.name && styles.inputError]}
-                            placeholder="Ad Soyad"
-                            value={formData.name}
-                            onChangeText={(text) => {
-                                setFormData(prev => ({ ...prev, name: text }));
-                                if (errors.name) setErrors(prev => ({ ...prev, name: '' }));
-                            }}
-                            autoCapitalize="words"
-                            editable={!isLoading}
-                        />
-                    </View>
-                    {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+                    {/* Name */}
+                    <Controller
+                        control={control}
+                        name="name"
+                        render={({ field: { onChange, value } }) => (
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
+                                <TextInput
+                                    style={[styles.input, errors.name && styles.inputError]}
+                                    placeholder="Ad Soyad"
+                                    value={value}
+                                    onChangeText={onChange}
+                                    autoCapitalize="words"
+                                    editable={!isLoading}
+                                />
+                            </View>
+                        )}
+                    />
+                    {errors.name && <Text style={styles.errorText}>{errors.name.message}</Text>}
 
-                    {/* Email Input */}
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={[styles.input, errors.email && styles.inputError]}
-                            placeholder="E-posta adresi"
-                            value={formData.email}
-                            onChangeText={(text) => {
-                                setFormData(prev => ({ ...prev, email: text }));
-                                if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
-                            }}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            editable={!isLoading}
-                        />
-                    </View>
-                    {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+                    {/* Email */}
+                    <Controller
+                        control={control}
+                        name="email"
+                        render={({ field: { onChange, value } }) => (
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+                                <TextInput
+                                    style={[styles.input, errors.email && styles.inputError]}
+                                    placeholder="E-posta adresi"
+                                    value={value}
+                                    onChangeText={onChange}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    editable={!isLoading}
+                                />
+                            </View>
+                        )}
+                    />
+                    {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
 
-                    {/* Password Input */}
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={[styles.input, errors.password && styles.inputError]}
-                            placeholder="Şifre"
-                            value={formData.password}
-                            onChangeText={(text) => {
-                                setFormData(prev => ({ ...prev, password: text }));
-                                if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
-                            }}
-                            secureTextEntry
-                            editable={!isLoading}
-                        />
-                    </View>
-                    {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+                    {/* Password */}
+                    <Controller
+                        control={control}
+                        name="password"
+                        render={({ field: { onChange, value } }) => (
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+                                <TextInput
+                                    style={[styles.input, errors.password && styles.inputError]}
+                                    placeholder="Şifre"
+                                    value={value}
+                                    onChangeText={onChange}
+                                    secureTextEntry
+                                    editable={!isLoading}
+                                />
+                            </View>
+                        )}
+                    />
+                    {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
 
-                    {/* Confirm Password Input */}
-                    <View style={styles.inputContainer}>
-                        <Ionicons name="shield-checkmark-outline" size={20} color="#666" style={styles.inputIcon} />
-                        <TextInput
-                            style={[styles.input, errors.confirmPassword && styles.inputError]}
-                            placeholder="Şifreyi Onayla"
-                            value={formData.confirmPassword}
-                            onChangeText={(text) => {
-                                setFormData(prev => ({ ...prev, confirmPassword: text }));
-                                if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: '' }));
-                            }}
-                            secureTextEntry
-                            editable={!isLoading}
-                        />
-                    </View>
-                    {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+                    {/* Confirm Password */}
+                    <Controller
+                        control={control}
+                        name="confirmPassword"
+                        render={({ field: { onChange, value } }) => (
+                            <View style={styles.inputContainer}>
+                                <Ionicons name="shield-checkmark-outline" size={20} color="#666" style={styles.inputIcon} />
+                                <TextInput
+                                    style={[styles.input, errors.confirmPassword && styles.inputError]}
+                                    placeholder="Şifreyi Onayla"
+                                    value={value}
+                                    onChangeText={onChange}
+                                    secureTextEntry
+                                    editable={!isLoading}
+                                />
+                            </View>
+                        )}
+                    />
+                    {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>}
 
                     {/* Register Button */}
                     <Pressable
                         style={[styles.button, isLoading && styles.buttonDisabled]}
-                        onPress={handleRegister}
+                        onPress={handleSubmit(onSubmit)}
                         disabled={isLoading}
                     >
                         {isLoading ? (
@@ -169,7 +154,7 @@ export default function RegisterScreen() {
                         <View style={styles.dividerLine} />
                     </View>
 
-                    {/* Social Register (Simgeler) */}
+                    {/* Social Register */}
                     <View style={styles.socialContainer}>
                         <Pressable style={styles.socialButton}>
                             <Ionicons name="logo-google" size={24} color="#DB4437" />
@@ -196,6 +181,7 @@ export default function RegisterScreen() {
         </KeyboardAvoidingView>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {

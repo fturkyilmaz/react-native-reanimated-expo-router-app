@@ -14,32 +14,36 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+const schema = z.object({
+    email: z.string().min(1, 'E-posta adresi giriniz').email('Geçerli bir e-posta adresi giriniz'),
+});
+
+type FormData = z.infer<typeof schema>;
+
 export default function ForgotPasswordScreen() {
     const router = useRouter();
-    const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
-    const [error, setError] = useState('');
 
-    const validateEmail = (email: string) => {
-        return /\S+@\S+\.\S+/.test(email);
-    };
+    const {
+        control,
+        handleSubmit,
+        formState: { errors },
+        watch,
+        reset,
+    } = useForm<FormData>({
+        resolver: zodResolver(schema),
+        defaultValues: { email: '' },
+    });
 
-    const handleResetPassword = async () => {
-        if (!email.trim()) {
-            setError('E-posta adresi giriniz');
-            return;
-        }
+    const emailValue = watch('email');
 
-        if (!validateEmail(email)) {
-            setError('Geçerli bir e-posta adresi giriniz');
-            return;
-        }
-
-        setError('');
+    const onSubmit = async (data: FormData) => {
         setIsLoading(true);
-
-        // API çağrısı simülasyonu
         setTimeout(() => {
             setIsLoading(false);
             setIsSuccess(true);
@@ -54,15 +58,9 @@ export default function ForgotPasswordScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
             >
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                >
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {/* Back Button */}
-                    <Pressable
-                        style={styles.backButton}
-                        onPress={() => router.back()}
-                    >
+                    <Pressable style={styles.backButton} onPress={() => router.back()}>
                         <View style={styles.backCircle}>
                             <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
                         </View>
@@ -84,8 +82,7 @@ export default function ForgotPasswordScreen() {
                         <Text style={styles.subtitle}>
                             {isSuccess
                                 ? 'Şifre sıfırlama bağlantısını e-posta adresinize gönderdik.'
-                                : 'E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.'
-                            }
+                                : 'E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.'}
                         </Text>
                     </View>
 
@@ -95,39 +92,43 @@ export default function ForgotPasswordScreen() {
                             {/* Email Input */}
                             <View style={styles.inputWrapper}>
                                 <Text style={styles.label}>E-posta Adresi</Text>
-                                <View style={[
-                                    styles.inputContainer,
-                                    error && styles.inputError
-                                ]}>
-                                    <Ionicons
-                                        name="mail-outline"
-                                        size={20}
-                                        color={error ? '#E50914' : '#666'}
-                                        style={styles.inputIcon}
-                                    />
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="ornek@email.com"
-                                        value={email}
-                                        onChangeText={(text) => {
-                                            setEmail(text);
-                                            setError('');
-                                        }}
-                                        keyboardType="email-address"
-                                        autoCapitalize="none"
-                                        autoCorrect={false}
-                                        editable={!isLoading}
-                                    />
-                                    {email.length > 0 && !error && (
-                                        <Ionicons name="checkmark-circle" size={20} color="#22C55E" />
+                                <Controller
+                                    control={control}
+                                    name="email"
+                                    render={({ field: { onChange, onBlur, value } }) => (
+                                        <View
+                                            style={[
+                                                styles.inputContainer,
+                                                errors.email && styles.inputError,
+                                            ]}
+                                        >
+                                            <Ionicons
+                                                name="mail-outline"
+                                                size={20}
+                                                color={errors.email ? '#E50914' : '#666'}
+                                                style={styles.inputIcon}
+                                            />
+                                            <TextInput
+                                                style={styles.input}
+                                                placeholder="ornek@email.com"
+                                                value={value}
+                                                onBlur={onBlur}
+                                                onChangeText={onChange}
+                                                keyboardType="email-address"
+                                                autoCapitalize="none"
+                                                autoCorrect={false}
+                                                editable={!isLoading}
+                                            />
+                                            {value.length > 0 && !errors.email && (
+                                                <Ionicons name="checkmark-circle" size={20} color="#22C55E" />
+                                            )}
+                                        </View>
                                     )}
-                                </View>
-                                {error ? (
-                                    <Text style={styles.errorText}>{error}</Text>
+                                />
+                                {errors.email ? (
+                                    <Text style={styles.errorText}>{errors.email.message}</Text>
                                 ) : (
-                                    <Text style={styles.hintText}>
-                                        Kayıtlı e-posta adresinizi girin
-                                    </Text>
+                                    <Text style={styles.hintText}>Kayıtlı e-posta adresinizi girin</Text>
                                 )}
                             </View>
 
@@ -136,18 +137,16 @@ export default function ForgotPasswordScreen() {
                                 style={[
                                     styles.resetButton,
                                     isLoading && styles.buttonDisabled,
-                                    !email && styles.buttonInactive
+                                    !emailValue && styles.buttonInactive,
                                 ]}
-                                onPress={handleResetPassword}
-                                disabled={isLoading || !email}
+                                onPress={handleSubmit(onSubmit)}
+                                disabled={isLoading || !emailValue}
                             >
                                 {isLoading ? (
                                     <ActivityIndicator color="white" />
                                 ) : (
                                     <>
-                                        <Text style={styles.buttonText}>
-                                            Sıfırlama Bağlantısı Gönder
-                                        </Text>
+                                        <Text style={styles.buttonText}>Sıfırlama Bağlantısı Gönder</Text>
                                         <Ionicons
                                             name="arrow-forward"
                                             size={20}
@@ -164,7 +163,7 @@ export default function ForgotPasswordScreen() {
                             <View style={styles.successIcon}>
                                 <Ionicons name="checkmark-circle" size={64} color="#22C55E" />
                             </View>
-                            <Text style={styles.successEmail}>{email}</Text>
+                            <Text style={styles.successEmail}>{emailValue}</Text>
                             <Text style={styles.successText}>
                                 Lütfen gelen kutunuzu ve spam klasörünü kontrol edin.
                             </Text>
@@ -172,19 +171,18 @@ export default function ForgotPasswordScreen() {
                                 style={styles.backToLoginButton}
                                 onPress={() => router.replace('/(auth)/login')}
                             >
-                                <Text style={styles.backToLoginText}>
-                                    Giriş Ekranına Dön
-                                </Text>
+                                <Text style={styles.backToLoginText}>Giriş Ekranına Dön</Text>
                             </Pressable>
 
                             {/* Resend Option */}
                             <Pressable
                                 style={styles.resendButton}
-                                onPress={() => setIsSuccess(false)}
+                                onPress={() => {
+                                    setIsSuccess(false);
+                                    reset();
+                                }}
                             >
-                                <Text style={styles.resendText}>
-                                    Farklı bir e-posta dene
-                                </Text>
+                                <Text style={styles.resendText}>Farklı bir e-posta dene</Text>
                             </Pressable>
                         </View>
                     )}
@@ -203,6 +201,7 @@ export default function ForgotPasswordScreen() {
         </SafeAreaView>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {

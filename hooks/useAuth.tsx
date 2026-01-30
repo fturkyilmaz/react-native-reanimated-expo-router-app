@@ -5,12 +5,12 @@ import { createContext, ReactNode, useContext, useEffect, useState } from 'react
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
-    isTransitioning: boolean; // Yeni!
+    isTransitioning: boolean;
     error: string | null;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     register: (email: string, password: string, name: string) => Promise<void>;
-    completeTransition: () => void; // Yeni!
+    completeTransition: () => void;
 }
 
 interface User {
@@ -106,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
 
             setUser(mockUser);
-            setIsTransitioning(true); // Kayıtta da animasyon!
+            setIsTransitioning(true);
         } catch (err: any) {
             setError(err.message);
             throw err;
