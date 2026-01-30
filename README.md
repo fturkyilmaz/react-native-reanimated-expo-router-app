@@ -1,50 +1,94 @@
-# Welcome to your Expo app 👋
+# 🎬 Siname - React Native Animated & Expo Router Projesi
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Bu proje, **React Native Animated API** ve **Expo Router** kullanılarak geliştirilmiş bir film keşif uygulamasıdır.  
+Kullanıcılar modern animasyonlarla zenginleştirilmiş arayüzde film listelerini gezebilir, detay sayfalarına geçiş yapabilir.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Özellikler
+- **Expo Router** ile kolay sayfa yönlendirme
+- **React Native Animated** ile akıcı animasyonlar
+- Film listesi ve detay ekranları
+- Responsive tasarım
+- Kolay kurulum ve geliştirme ortamı
 
+---
+
+## 📦 Kurulum
+
+1. Repoyu klonla:
    ```bash
-   npm install
+   git clone https://github.com/fturkyilmaz/react-native-reanimated-expo-router-app.git
+   cd siname
    ```
 
-2. Start the app
+2. Bağımlılıkları yükle:
+   ```bash
+   npm install
+   # veya
+   yarn install
+   ```
 
+3. Projeyi çalıştır:
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+---
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📂 Proje Yapısı
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+siname/
+│── app/
+│   ├── index.tsx          # Ana sayfa
+│   ├── movie/[id].tsx     # Film detay sayfası
+│   └── _layout.tsx        # Router layout
+│
+│── components/
+│   ├── MovieCard.tsx      # Film kartı componenti
+│   └── AnimatedHeader.tsx # Animasyonlu header
+│
+│── assets/                # Görseller, ikonlar
+│── package.json
+│── README.md
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 🎨 Kullanılan Teknolojiler
+- [React Native](https://reactnative.dev/)
+- [Expo](https://expo.dev/)
+- [Expo Router](https://expo.github.io/router/docs)
+- [React Native Animated](https://reactnative.dev/docs/animated)
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 🛠 Geliştirme Notları
+- Animasyonlar için `Animated.Value`, `interpolate` ve `useNativeDriver` kullanıldı.
+- Sayfa geçişleri `expo-router` ile yönetildi.
+- Tasarımda **Material Design** ve minimalist yaklaşım benimsendi.
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## 📸 Ekran Görüntüleri
+> Buraya uygulamanın ekran görüntülerini ekleyebilirsin.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## 🤝 Katkı
+Katkıda bulunmak için:
+1. Fork yap
+2. Yeni branch oluştur (`feature/yenilik`)
+3. Değişikliklerini commit et
+4. Pull request gönder
+
+---
+
+## 📄 Lisans
+Bu proje MIT lisansı ile lisanslanmıştır.
+```
+
+---
+
+Bu `README.md` sana başlangıç için güçlü bir temel sunuyor. İstersen ben sana **örnek kod parçaları** da ekleyebilirim, mesela `AnimatedHeader` veya `MovieCard` componenti. İlgini çeker mi?
