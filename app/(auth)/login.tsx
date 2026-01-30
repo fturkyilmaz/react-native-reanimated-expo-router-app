@@ -79,7 +79,10 @@ export default function LoginScreen() {
                     {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
                     <Link href="/(auth)/forgot-password" asChild>
-                        <Pressable style={styles.forgotPassword}>
+                        <Pressable
+                            style={styles.forgotPassword}
+                            onPress={() => router.push('/(auth)/forgot-password')}
+                        >
                             <Text style={styles.forgotPasswordText}>Şifremi unuttum?</Text>
                         </Pressable>
                     </Link>
