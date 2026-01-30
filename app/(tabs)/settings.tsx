@@ -13,6 +13,7 @@ import {
     Text,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../hooks/useAuth';
 
 const { width } = Dimensions.get('window');
@@ -117,7 +118,7 @@ export default function SettingsScreen() {
     );
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <Stack.Screen
                 options={{
                     title: 'Ayarlar',
@@ -280,7 +281,7 @@ export default function SettingsScreen() {
                     <Text style={styles.footerSubtext}>Made with ❤️ in Istanbul</Text>
                 </View>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 

@@ -17,6 +17,7 @@ import Animated, {
     FadeOut,
     Layout
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -77,7 +78,7 @@ export default function FavoritesScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <Stack.Screen
                 options={{
                     headerShown: true,
@@ -159,7 +160,7 @@ export default function FavoritesScreen() {
                 numColumns={2}
                 columnWrapperStyle={styles.columnWrapper}
             />
-        </View>
+        </SafeAreaView>
     );
 }
 

@@ -1,10 +1,10 @@
-import { Skeleton } from '@/components//skeleton';
 import { MovieCard } from '@/components/movie-card';
+import { Skeleton } from '@/components/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useMovies } from '@/hooks/useMovies';
-import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { movies, loading, error, refresh, loadMore, hasMore } = useMovies('popular');
@@ -29,24 +29,19 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Stack.Screen
         options={{
           headerShown: true,
           title: `Merhaba, ${user?.name || 'Film Sever'}`,
           headerLargeTitle: true,
-          headerRight: () => (
-            <Pressable onPress={handleLogout} style={styles.logoutButton}>
-              <Ionicons name="log-out-outline" size={24} color="#E50914" />
-            </Pressable>
-          ),
         }}
       />
 
       <FlatList
         data={movies}
         renderItem={({ item, index }) => <MovieCard movie={item} index={index} />}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item, index) => item.id.toString() + index}
         numColumns={2}
         contentContainerStyle={styles.list}
         refreshControl={
@@ -65,7 +60,7 @@ export default function HomeScreen() {
           ) : null
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

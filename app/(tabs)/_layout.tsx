@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
+import { useEffect } from 'react';
+import { DynamicColorIOS } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 type TabIconProps = {
@@ -8,10 +10,14 @@ type TabIconProps = {
   focused: boolean;
 };
 
-function TabIcon({ name, color, focused }: TabIconProps) {
+function TabIcon({ name, focused }: TabIconProps) {
   const scale = useSharedValue(1);
 
-  scale.value = withSpring(focused ? 1.2 : 1, { damping: 10 });
+  useEffect(() => {
+    scale.value = withSpring(focused ? 1.2 : 1, {
+      damping: 10,
+    });
+  }, [focused]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -19,45 +25,49 @@ function TabIcon({ name, color, focused }: TabIconProps) {
 
   return (
     <Animated.View style={animatedStyle}>
-      <Ionicons name={name} size={24} color={color} />
+      <Ionicons
+        name={name}
+        size={24}
+        color={focused ? '#007AFF' : '#1C1C1E'}
+      />
     </Animated.View>
   );
 }
 
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarStyle: {
-          height: 70,
-          paddingBottom: 10,
-          backgroundColor: 'white',
-          borderTopWidth: 0,
-          elevation: 10,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -5 },
-          shadowOpacity: 0.1,
-        },
-        tabBarActiveTintColor: '#E50914',
-        tabBarInactiveTintColor: '#999',
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
-        tabBarIcon: ({ color, focused }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'home';
+    <NativeTabs iconColor={{
+      default: '#787878ff',
+      selected: '#007AFF',
+    }}
+      backgroundColor="rgba(255,255,255,0.95)"
+      blurEffect="systemMaterial"
+      labelStyle={{
+        color: DynamicColorIOS({
+          dark: '#fff',
+          light: '#000',
+        }),
+      }} tintColor={DynamicColorIOS({
+        dark: '#007AFF',
+        light: '#000',
+      })}>
+      {/* Keşfet */}
+      <NativeTabs.Trigger name="index">
+        <Icon sf={{ default: 'film', selected: 'film.fill' }} />
+        <Label>Keşfet</Label>
+      </NativeTabs.Trigger>
 
-          if (route.name === 'index') iconName = 'film';
-          else if (route.name === 'favorites') iconName = 'heart';
-          else if (route.name === 'profile') iconName = 'person';
-          else if (route.name === 'settings') iconName = 'settings-outline';
+      {/* Favoriler */}
+      <NativeTabs.Trigger name="favorites">
+        <Icon sf={{ default: 'heart', selected: 'heart.fill' }} />
+        <Label>Favoriler</Label>
+      </NativeTabs.Trigger>
 
-          return <TabIcon name={iconName} color={color} focused={focused} />;
-        },
-      })}
-    >
-      <Tabs.Screen name="index" options={{ title: 'Keşfet' }} />
-      <Tabs.Screen name="favorites" options={{ title: 'Favoriler' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
-      <Tabs.Screen name="settings" options={{ title: 'Ayarlar' }} />
-    </Tabs>
+      {/* Ayarlar */}
+      <NativeTabs.Trigger name="settings">
+        <Icon sf={{ default: 'gear', selected: 'gearshape.fill' }} />
+        <Label>Ayarlar</Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
