@@ -2,14 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
-function TabIcon({ name, color, focused }: { name: any; color: string; focused: boolean }) {
+type TabIconProps = {
+  name: keyof typeof Ionicons.glyphMap;
+  color: string;
+  focused: boolean;
+};
+
+function TabIcon({ name, color, focused }: TabIconProps) {
   const scale = useSharedValue(1);
 
-  if (focused) {
-    scale.value = withSpring(1.2, { damping: 10 });
-  } else {
-    scale.value = withSpring(1);
-  }
+  scale.value = withSpring(focused ? 1.2 : 1, { damping: 10 });
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -41,10 +43,12 @@ export default function TabLayout() {
         tabBarInactiveTintColor: '#999',
         tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
         tabBarIcon: ({ color, focused }) => {
-          let iconName: any = 'home';
+          let iconName: keyof typeof Ionicons.glyphMap = 'home';
+
           if (route.name === 'index') iconName = 'film';
           else if (route.name === 'favorites') iconName = 'heart';
           else if (route.name === 'profile') iconName = 'person';
+          else if (route.name === 'settings') iconName = 'settings-outline';
 
           return <TabIcon name={iconName} color={color} focused={focused} />;
         },
@@ -53,13 +57,7 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: 'Keşfet' }} />
       <Tabs.Screen name="favorites" options={{ title: 'Favoriler' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Ayarlar',
-          tabBarIcon: ({ color }) => <Ionicons name="settings-outline" size={24} color={color} />,
-        }}
-      />
+      <Tabs.Screen name="settings" options={{ title: 'Ayarlar' }} />
     </Tabs>
   );
 }
