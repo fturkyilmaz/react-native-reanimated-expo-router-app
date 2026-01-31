@@ -1,0 +1,70 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Skeleton Snapshot renders correctly with custom dimensions 1`] = `
+<View
+  collapsable={false}
+  style={
+    [
+      {
+        "backgroundColor": "#E1E9EE",
+        "borderRadius": 4,
+      },
+      {
+        "height": 100,
+        "width": 200,
+      },
+      undefined,
+      {
+        "opacity": 0.5,
+      },
+    ]
+  }
+/>
+`;
+
+exports[`Skeleton Snapshot renders correctly with custom style 1`] = `
+<View
+  collapsable={false}
+  style={
+    [
+      {
+        "backgroundColor": "#E1E9EE",
+        "borderRadius": 4,
+      },
+      {
+        "height": 75,
+        "width": 150,
+      },
+      {
+        "borderRadius": 8,
+        "marginTop": 10,
+      },
+      {
+        "opacity": 0.5,
+      },
+    ]
+  }
+/>
+`;
+
+exports[`Skeleton Snapshot renders correctly with default props 1`] = `
+<View
+  collapsable={false}
+  style={
+    [
+      {
+        "backgroundColor": "#E1E9EE",
+        "borderRadius": 4,
+      },
+      {
+        "height": 50,
+        "width": 100,
+      },
+      undefined,
+      {
+        "opacity": 0.5,
+      },
+    ]
+  }
+/>
+`;

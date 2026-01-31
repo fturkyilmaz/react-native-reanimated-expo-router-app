@@ -8,7 +8,21 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest tests/unit",
+    "test:integration": "jest tests/integration",
+    "test:snapshot": "jest tests/snapshot --updateSnapshot",
+    "test:e2e:ios": "detox test --configuration ios.sim.debug",
+    "test:e2e:ios:release": "detox test --configuration ios.sim.release",
+    "test:e2e:android": "detox test --configuration android.emu.debug",
+    "test:e2e:android:release": "detox test --configuration android.emu.release",
+    "detox:build:ios": "detox build --configuration ios.sim.debug",
+    "detox:build:ios:release": "detox build --configuration ios.sim.release",
+    "detox:build:android": "detox build --configuration android.emu.debug",
+    "detox:build:android:release": "detox build --configuration android.emu.release"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
@@ -59,9 +73,15 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
+    "detox": "^20.47.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "jest": "^30.2.0",
+    "react-test-renderer": "^19.2.4",
     "typescript": "~5.9.2"
   },
   "private": true

@@ -1,0 +1,293 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`MovieCard Snapshot renders correctly 1`] = `
+<View
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "white",
+        "borderRadius": 16,
+        "elevation": 3,
+        "flex": 1,
+        "margin": 8,
+        "minWidth": 150,
+        "overflow": "hidden",
+        "shadowColor": "#000",
+        "shadowOffset": {
+          "height": 2,
+          "width": 0,
+        },
+        "shadowOpacity": 0.1,
+        "shadowRadius": 8,
+      },
+      {
+        "transform": [
+          {
+            "scale": 1,
+          },
+        ],
+      },
+      {
+        "backgroundColor": "#ffffff",
+      },
+    ]
+  }
+  testID="movie-card"
+>
+  <Image
+    resizeMode="cover"
+    source={
+      {
+        "uri": "https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg",
+      }
+    }
+    style={
+      {
+        "height": 225,
+        "width": "100%",
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "padding": 12,
+      }
+    }
+  >
+    <Text
+      numberOfLines={2}
+      style={
+        [
+          {
+            "fontSize": 14,
+            "fontWeight": "600",
+            "marginBottom": 4,
+          },
+          {
+            "color": "#1a1a1a",
+          },
+        ]
+      }
+    >
+      Joker
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+            },
+            {
+              "color": "#666666",
+            },
+          ]
+        }
+      >
+        2019
+      </Text>
+      <View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 12,
+                "fontWeight": "500",
+              },
+              {
+                "color": "#666666",
+              },
+            ]
+          }
+        >
+          ⭐ 8.2
+        </Text>
+      </View>
+    </View>
+  </View>
+</View>
+`;
+
+exports[`MovieCard Snapshot renders with placeholder image when poster is null 1`] = `
+<View
+  accessibilityState={
+    {
+      "busy": undefined,
+      "checked": undefined,
+      "disabled": undefined,
+      "expanded": undefined,
+      "selected": undefined,
+    }
+  }
+  accessibilityValue={
+    {
+      "max": undefined,
+      "min": undefined,
+      "now": undefined,
+      "text": undefined,
+    }
+  }
+  accessible={true}
+  collapsable={false}
+  focusable={true}
+  onBlur={[Function]}
+  onClick={[Function]}
+  onFocus={[Function]}
+  onResponderGrant={[Function]}
+  onResponderMove={[Function]}
+  onResponderRelease={[Function]}
+  onResponderTerminate={[Function]}
+  onResponderTerminationRequest={[Function]}
+  onStartShouldSetResponder={[Function]}
+  style={
+    [
+      {
+        "backgroundColor": "white",
+        "borderRadius": 16,
+        "elevation": 3,
+        "flex": 1,
+        "margin": 8,
+        "minWidth": 150,
+        "overflow": "hidden",
+        "shadowColor": "#000",
+        "shadowOffset": {
+          "height": 2,
+          "width": 0,
+        },
+        "shadowOpacity": 0.1,
+        "shadowRadius": 8,
+      },
+      {
+        "transform": [
+          {
+            "scale": 1,
+          },
+        ],
+      },
+      {
+        "backgroundColor": "#ffffff",
+      },
+    ]
+  }
+  testID="movie-card"
+>
+  <Image
+    resizeMode="cover"
+    source={
+      {
+        "uri": "https://picsum.photos/300/450?random=1",
+      }
+    }
+    style={
+      {
+        "height": 225,
+        "width": "100%",
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "padding": 12,
+      }
+    }
+  >
+    <Text
+      numberOfLines={2}
+      style={
+        [
+          {
+            "fontSize": 14,
+            "fontWeight": "600",
+            "marginBottom": 4,
+          },
+          {
+            "color": "#1a1a1a",
+          },
+        ]
+      }
+    >
+      Test Movie
+    </Text>
+    <View
+      style={
+        {
+          "alignItems": "center",
+          "flexDirection": "row",
+          "justifyContent": "space-between",
+        }
+      }
+    >
+      <Text
+        style={
+          [
+            {
+              "fontSize": 12,
+            },
+            {
+              "color": "#666666",
+            },
+          ]
+        }
+      >
+        2024
+      </Text>
+      <View>
+        <Text
+          style={
+            [
+              {
+                "fontSize": 12,
+                "fontWeight": "500",
+              },
+              {
+                "color": "#666666",
+              },
+            ]
+          }
+        >
+          ⭐ 7.5
+        </Text>
+      </View>
+    </View>
+  </View>
+</View>
+`;
