@@ -1,5 +1,6 @@
 import LottieView from 'lottie-react-native';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
     runOnJS,
@@ -25,27 +26,25 @@ export function AuthTransition({
     const containerOpacity = useSharedValue(0);
     const scale = useSharedValue(0);
     const textOpacity = useSharedValue(0);
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (!isVisible) return;
 
-        // Background fade in
-        containerOpacity.value = withTiming(1, { duration: 300 });
+        containerOpacity.value = withTiming(1, { duration: 200 });
 
-        // Logo scale bounce
         scale.value = withSequence(
-            withSpring(1.2, { damping: 12 }),
-            withSpring(1, { damping: 14 }),
+            withSpring(1.2, { damping: 14, stiffness: 200 }),
+            withSpring(1, { damping: 16, stiffness: 200 }),
             withDelay(
-                1800,
-                withTiming(20, { duration: 700 }, () => {
+                1000,
+                withTiming(20, { duration: 400 }, () => {
                     runOnJS(onAnimationComplete)();
                 })
             )
         );
 
-        // Text fade in
-        textOpacity.value = withDelay(300, withTiming(1, { duration: 600 }));
+        textOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
     }, [isVisible]);
 
     const containerStyle = useAnimatedStyle(() => ({
@@ -67,26 +66,20 @@ export function AuthTransition({
         <View style={StyleSheet.absoluteFill} pointerEvents="auto">
             <Animated.View style={[styles.container, containerStyle]}>
                 <Animated.View style={scaleStyle}>
-                    <LottieView
-                        source={require('@/assets/animations/success.json')}
-                        autoPlay
-                        loop={false}
-                        style={styles.lottie}
-                    />
+                    <LottieView source={require('@/assets/animations/success.json')} autoPlay loop={false} style={styles.lottie} />
                 </Animated.View>
 
                 <Animated.Text style={[styles.welcomeText, textStyle]}>
-                    Hoşgeldin {userName}! 🎬
+                    {t('authTransition.welcome', { name: userName })}
                 </Animated.Text>
 
                 <Animated.Text style={[styles.subText, textStyle]}>
-                    Film dünyası seni bekliyor...
+                    {t('authTransition.subText')}
                 </Animated.Text>
             </Animated.View>
         </View>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: {

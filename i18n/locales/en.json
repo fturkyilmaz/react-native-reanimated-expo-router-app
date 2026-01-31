@@ -1,0 +1,90 @@
+{
+    "common": {
+        "appName": "CineSearch",
+        "loading": "Loading...",
+        "error": "An error occurred",
+        "retry": "Retry",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "close": "Close",
+        "search": "Search...",
+        "seeAll": "See All"
+    },
+    "auth": {
+        "welcomeBack": "Welcome Back",
+        "discoverMovies": "Discover your favorite movies",
+        "email": "Email",
+        "password": "Password",
+        "login": "Login",
+        "register": "Register",
+        "noAccount": "Don't have an account?",
+        "hasAccount": "Already have an account?",
+        "forgotPassword": "Forgot Password?",
+        "name": "Full Name",
+        "confirmPassword": "Confirm Password",
+        "passwordsDontMatch": "Passwords do not match",
+        "invalidEmail": "Please enter a valid email address",
+        "passwordMinLength": "Password must be at least {{count}} characters",
+        "logout": "Logout",
+        "logoutConfirm": "Are you sure you want to log out of your account?"
+    },
+    "home": {
+        "greeting": "Hello, {{name}}",
+        "discover": "Discover",
+        "popular": "Popular",
+        "topRated": "Top Rated",
+        "upcoming": "Upcoming",
+        "noResults": "No results found",
+        "resultsFor": "{{count}} results for \"{{query}}\""
+    },
+    "movie": {
+        "details": "Movie Details",
+        "summary": "Summary",
+        "cast": "Cast",
+        "trailer": "Watch Trailer",
+        "addToFavorites": "Add to Favorites",
+        "removeFromFavorites": "Remove from Favorites",
+        "minutes": "min",
+        "hours": "h",
+        "genres": "Genres"
+    },
+    "favorites": {
+        "title": "My Favorites",
+        "empty": "No Favorites Yet",
+        "emptyMessage": "Tap the heart icon to add movies you like here",
+        "explore": "Start Exploring",
+        "movieCount": "{{count}} movies in your favorites"
+    },
+    "settings": {
+        "title": "Settings",
+        "account": "ACCOUNT",
+        "preferences": "PREFERENCES",
+        "content": "CONTENT",
+        "support": "SUPPORT",
+        "editProfile": "Edit Profile",
+        "privacy": "Privacy and Security",
+        "subscription": "Subscription",
+        "darkMode": "Dark Mode",
+        "language": "Language",
+        "notifications": "Notifications",
+        "emailUpdates": "Email Newsletter",
+        "autoPlay": "Auto Play",
+        "downloads": "Downloads",
+        "clearCache": "Clear Cache",
+        "help": "Help Center",
+        "contact": "Contact Us",
+        "privacyPolicy": "Privacy Policy",
+        "about": "About",
+        "version": "Version {{version}}"
+    },
+    "authTransition": {
+        "welcome": "Welcome {{name}}! 🎬",
+        "subText": "The world of movies is waiting for you..."
+    },
+    "languages": {
+        "tr": "Turkish",
+        "en": "English"
+    }
+}

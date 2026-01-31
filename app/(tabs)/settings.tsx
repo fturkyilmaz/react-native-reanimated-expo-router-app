@@ -1,64 +1,63 @@
+import { useTheme } from '@/hooks/use-theme';
+import i18n from '@/i18n';
+import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Alert,
-    Dimensions,
     Image,
     Pressable,
     ScrollView,
     StyleSheet,
     Switch,
     Text,
-    View,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../hooks/useAuth';
-
-const { width } = Dimensions.get('window');
 
 export default function SettingsScreen() {
     const router = useRouter();
-    const { user, logout } = useAuth();
-
-    // State'ler
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    const { user, logout } = useAuthStore();
+    const { isDarkMode, toggleTheme, theme } = useTheme();
+    const { t } = useTranslation();
     const [notifications, setNotifications] = useState(true);
     const [emailUpdates, setEmailUpdates] = useState(false);
     const [autoPlay, setAutoPlay] = useState(true);
-    const [selectedLanguage, setSelectedLanguage] = useState('Türkçe');
+    const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
+
+    const changeLanguage = (lang: 'tr' | 'en') => {
+        i18n.changeLanguage(lang);
+        setSelectedLanguage(lang === 'tr' ? t('languages.tr') : t('languages.en'));
+    };
 
     const handleLogout = () => {
-        Alert.alert(
-            'Çıkış Yap',
-            'Hesabınızdan çıkış yapmak istediğinize emin misiniz?',
-            [
-                { text: 'İptal', style: 'cancel' },
-                {
-                    text: 'Çıkış Yap',
-                    style: 'destructive',
-                    onPress: () => logout()
-                },
-            ]
+        Alert.alert(t('auth.logout'), t('auth.logoutConfirm'),
+            [{ text: t('common.cancel'), style: 'cancel' },
+            {
+                text: t('auth.logout'),
+                style: 'destructive',
+                onPress: () => { logout(); router.replace('/(auth)/login'); }
+            }
+            ],
         );
     };
 
     const handleClearCache = async () => {
-        Alert.alert(
-            'Önbelleği Temizle',
-            'Tüm yerel veriler silinecek. Devam etmek istiyor musunuz?',
+        Alert.alert(t('settings.clearCache'), t('settings.clearCacheConfirm'),
             [
-                { text: 'İptal', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Temizle',
+                    text: t('common.clear'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             await AsyncStorage.clear();
-                            Alert.alert('Başarılı', 'Önbellek temizlendi.');
+                            Alert.alert(t('common.success'), t('settings.cacheCleared'));
                         } catch (error) {
-                            Alert.alert('Hata', 'İşlem sırasında bir hata oluştu.');
+                            Alert.alert(t('common.error'), t('common.errorOccured'));
                         }
                     }
                 },
@@ -74,16 +73,25 @@ export default function SettingsScreen() {
         showArrow = true,
         rightElement
     }: any) => (
-        <Pressable style={styles.settingItem} onPress={onPress}>
-            <View style={styles.settingIcon}>
-                <Ionicons name={icon} size={22} color="#E50914" />
+        <Pressable
+            style={[
+                styles.settingItem,
+                {
+                    backgroundColor: theme.card,
+                    borderBottomColor: theme.divider
+                }
+            ]}
+            onPress={onPress}
+        >
+            <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                <Ionicons name={icon} size={22} color={theme.primary} />
             </View>
             <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>{title}</Text>
-                {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+                <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
+                {subtitle && <Text style={[styles.settingSubtitle, { color: theme.textMuted }]}>{subtitle}</Text>}
             </View>
             {rightElement || (showArrow && (
-                <Ionicons name="chevron-forward" size={20} color="#999" />
+                <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
             ))}
         </Pressable>
     );
@@ -95,37 +103,44 @@ export default function SettingsScreen() {
         value,
         onValueChange
     }: any) => (
-        <View style={styles.settingItem}>
-            <View style={styles.settingIcon}>
-                <Ionicons name={icon} size={22} color="#E50914" />
+        <View style={[
+            styles.settingItem,
+            {
+                backgroundColor: theme.card,
+                borderBottomColor: theme.divider
+            }
+        ]}>
+            <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
+                <Ionicons name={icon} size={22} color={theme.primary} />
             </View>
             <View style={styles.settingContent}>
-                <Text style={styles.settingTitle}>{title}</Text>
-                {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+                <Text style={[styles.settingTitle, { color: theme.text }]}>{title}</Text>
+                {subtitle && <Text style={[styles.settingSubtitle, { color: theme.textMuted }]}>{subtitle}</Text>}
             </View>
             <Switch
                 value={value}
                 onValueChange={onValueChange}
-                trackColor={{ false: '#ddd', true: '#E50914' }}
-                thumbColor={value ? '#fff' : '#fff'}
-                ios_backgroundColor="#ddd"
+                trackColor={{ false: theme.divider, true: theme.primary }}
+                thumbColor={'#fff'}
+                ios_backgroundColor={theme.divider}
             />
         </View>
     );
 
     const SectionHeader = ({ title }: { title: string }) => (
-        <Text style={styles.sectionHeader}>{title}</Text>
+        <Text style={[styles.sectionHeader, { color: theme.textMuted }]}>{title}</Text>
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <Stack.Screen
                 options={{
-                    title: 'Ayarlar',
+                    title: t('settings.title'),
                     headerShown: true,
-                    headerStyle: { backgroundColor: '#fff' },
-                    headerTitleStyle: { color: '#1a1a1a', fontWeight: '700' },
+                    headerStyle: { backgroundColor: theme.card },
+                    headerTitleStyle: { color: theme.text, fontWeight: '700' },
                     headerShadowVisible: false,
+                    headerTintColor: theme.text,
                 }}
             />
 
@@ -134,7 +149,13 @@ export default function SettingsScreen() {
                 contentContainerStyle={styles.scrollContent}
             >
                 {/* Profil Kartı */}
-                <View style={styles.profileCard}>
+                <View style={[
+                    styles.profileCard,
+                    {
+                        backgroundColor: theme.card,
+                        shadowColor: theme.shadow
+                    }
+                ]}>
                     <View style={styles.avatarContainer}>
                         <Image
                             source={{
@@ -149,26 +170,30 @@ export default function SettingsScreen() {
                         </Pressable>
                     </View>
                     <View style={styles.profileInfo}>
-                        <Text style={styles.profileName}>{user?.name || 'Kullanıcı'}</Text>
-                        <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
+                        <Text style={[styles.profileName, { color: theme.text }]}>
+                            {user?.name || 'User'}
+                        </Text>
+                        <Text style={[styles.profileEmail, { color: theme.textSecondary }]}>
+                            {user?.email || 'user@example.com'}
+                        </Text>
                     </View>
-                    <Pressable style={styles.editButton}>
-                        <Ionicons name="create-outline" size={20} color="#666" />
+                    <Pressable style={[styles.editButton, { backgroundColor: theme.background }]}>
+                        <Ionicons name="create-outline" size={20} color={theme.textSecondary} />
                     </Pressable>
                 </View>
 
                 {/* Hesap Ayarları */}
-                <SectionHeader title="HESAP" />
-                <View style={styles.section}>
+                <SectionHeader title={t('settings.account')} />
+                <View style={[styles.section, { backgroundColor: theme.card }]}>
                     <SettingItem
                         icon="person-outline"
-                        title="Profili Düzenle"
+                        title={t('settings.editProfile')}
                         subtitle="Ad, e-posta, şifre"
                         onPress={() => router.push('/(settings)/edit-profile')}
                     />
                     <SettingItem
                         icon="lock-closed-outline"
-                        title="Gizlilik ve Güvenlik"
+                        title={t('settings.privacy')}
                         subtitle="Şifre değiştir, 2FA"
                         onPress={() => { }}
                     />
@@ -176,43 +201,50 @@ export default function SettingsScreen() {
                         icon="card-outline"
                         title="Abonelik"
                         subtitle="Premium Plan"
-                        rightElement={<Text style={styles.badge}>AKTİF</Text>}
+                        rightElement={
+                            <Text style={[styles.badge, {
+                                color: theme.success,
+                                backgroundColor: isDarkMode ? '#1a2f1a' : '#DCFCE7'
+                            }]}>
+                                AKTİF
+                            </Text>
+                        }
                     />
                 </View>
 
                 {/* Tercihler */}
-                <SectionHeader title="TERCİHLER" />
-                <View style={styles.section}>
+                <SectionHeader title={t('settings.preferences')} />
+                <View style={[styles.section, { backgroundColor: theme.card }]}>
                     <SettingToggle
                         icon={isDarkMode ? "moon" : "sunny-outline"}
-                        title="Karanlık Mod"
+                        title={t('settings.darkMode')}
                         subtitle={isDarkMode ? "Açık" : "Kapalı"}
                         value={isDarkMode}
-                        onValueChange={setIsDarkMode}
+                        onValueChange={toggleTheme}
                     />
                     <SettingItem
                         icon="language-outline"
-                        title="Dil"
+                        title={t('settings.language')}
                         subtitle={selectedLanguage}
-                        onPress={() => { }}
+                        onPress={() => changeLanguage(selectedLanguage === 'Türkçe' ? 'en' : 'tr')}
                     />
                     <SettingToggle
                         icon="notifications-outline"
-                        title="Bildirimler"
+                        title={t('settings.notifications')}
                         subtitle="Anlık güncellemeler"
                         value={notifications}
                         onValueChange={setNotifications}
                     />
                     <SettingToggle
                         icon="mail-outline"
-                        title="E-posta Bülteni"
+                        title={t('settings.emailUpdates')}
                         subtitle="Haftalık öneriler"
                         value={emailUpdates}
                         onValueChange={setEmailUpdates}
                     />
                     <SettingToggle
                         icon="play-circle-outline"
-                        title="Otomatik Oynat"
+                        title={t('settings.autoPlay')}
                         subtitle="Fragmanları otomatik başlat"
                         value={autoPlay}
                         onValueChange={setAutoPlay}
@@ -220,17 +252,17 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* İçerik */}
-                <SectionHeader title="İÇERİK" />
-                <View style={styles.section}>
+                <SectionHeader title={t('settings.content')} />
+                <View style={[styles.section, { backgroundColor: theme.card }]}>
                     <SettingItem
                         icon="download-outline"
-                        title="İndirmeler"
+                        title={t('settings.downloads')}
                         subtitle="12 film indirilmiş (2.4 GB)"
                         onPress={() => { }}
                     />
                     <SettingItem
                         icon="trash-outline"
-                        title="Önbelleği Temizle"
+                        title={t('settings.clearCache')}
                         subtitle="124 MB"
                         onPress={handleClearCache}
                         showArrow={false}
@@ -244,41 +276,53 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* Destek */}
-                <SectionHeader title="DESTEK" />
-                <View style={styles.section}>
+                <SectionHeader title={t('settings.support')} />
+                <View style={[styles.section, { backgroundColor: theme.card }]}>
                     <SettingItem
                         icon="help-circle-outline"
-                        title="Yardım Merkezi"
+                        title={t('settings.help')}
                         onPress={() => { }}
                     />
                     <SettingItem
                         icon="chatbubble-outline"
-                        title="Bize Ulaşın"
+                        title={t('settings.contact')}
                         onPress={() => { }}
                     />
                     <SettingItem
                         icon="document-text-outline"
-                        title="Gizlilik Politikası"
+                        title={t('settings.privacyPolicy')}
                         onPress={() => { }}
                     />
                     <SettingItem
                         icon="information-circle-outline"
-                        title="Hakkında"
+                        title={t('settings.about')}
                         subtitle="v1.0.0 (Build 2024)"
                         showArrow={false}
                     />
                 </View>
 
                 {/* Çıkış Butonu */}
-                <Pressable style={styles.logoutButton} onPress={handleLogout}>
-                    <Ionicons name="log-out-outline" size={20} color="#E50914" />
-                    <Text style={styles.logoutText}>Çıkış Yap</Text>
+                <Pressable
+                    style={[
+                        styles.logoutButton,
+                        {
+                            backgroundColor: isDarkMode ? '#2a1a1a' : '#FFF3F3'
+                        }
+                    ]}
+                    onPress={handleLogout}
+                >
+                    <Ionicons name="log-out-outline" size={20} color={theme.primary} />
+                    <Text style={[styles.logoutText, { color: theme.primary }]}>{t('auth.logout')}</Text>
                 </Pressable>
 
                 {/* Footer */}
                 <View style={styles.footer}>
-                    <Text style={styles.footerText}>CineSearch v1.0</Text>
-                    <Text style={styles.footerSubtext}>Made with ❤️ in Istanbul</Text>
+                    <Text style={[styles.footerText, { color: theme.textMuted }]}>
+                        CineSearch v1.0
+                    </Text>
+                    <Text style={[styles.footerSubtext, { color: theme.textSecondary }]}>
+                        Made with ❤️ in Istanbul
+                    </Text>
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -288,7 +332,6 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
     },
     scrollContent: {
         paddingBottom: 40,
@@ -296,12 +339,10 @@ const styles = StyleSheet.create({
     profileCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
         margin: 16,
         marginTop: 8,
         padding: 20,
         borderRadius: 20,
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 8,
@@ -314,7 +355,6 @@ const styles = StyleSheet.create({
         width: 70,
         height: 70,
         borderRadius: 35,
-        backgroundColor: '#f0f0f0',
     },
     cameraButton: {
         position: 'absolute',
@@ -336,32 +376,27 @@ const styles = StyleSheet.create({
     profileName: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#1a1a1a',
         marginBottom: 4,
     },
     profileEmail: {
         fontSize: 14,
-        color: '#666',
     },
     editButton: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#f8f9fa',
         justifyContent: 'center',
         alignItems: 'center',
     },
     sectionHeader: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#999',
         marginLeft: 32,
         marginTop: 24,
         marginBottom: 8,
         letterSpacing: 0.5,
     },
     section: {
-        backgroundColor: '#fff',
         marginHorizontal: 16,
         borderRadius: 16,
         overflow: 'hidden',
@@ -372,13 +407,11 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         paddingHorizontal: 16,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#f0f0f0',
     },
     settingIcon: {
         width: 36,
         height: 36,
         borderRadius: 10,
-        backgroundColor: '#FFF3F3',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
@@ -389,18 +422,14 @@ const styles = StyleSheet.create({
     settingTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1a1a1a',
         marginBottom: 2,
     },
     settingSubtitle: {
         fontSize: 13,
-        color: '#999',
     },
     badge: {
         fontSize: 12,
         fontWeight: 'bold',
-        color: '#22C55E',
-        backgroundColor: '#DCFCE7',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 6,
@@ -409,7 +438,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#FFF3F3',
         marginHorizontal: 16,
         marginTop: 32,
         padding: 16,
@@ -419,7 +447,6 @@ const styles = StyleSheet.create({
     logoutText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#E50914',
     },
     footer: {
         alignItems: 'center',
@@ -427,11 +454,9 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: 12,
-        color: '#999',
         marginBottom: 4,
     },
     footerSubtext: {
         fontSize: 11,
-        color: '#ccc',
     },
 });

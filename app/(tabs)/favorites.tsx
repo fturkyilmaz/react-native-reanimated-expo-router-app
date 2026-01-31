@@ -1,3 +1,4 @@
+import { useTheme } from '@/hooks/use-theme';
 import { useFavorites } from '@/hooks/useFavorites';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,6 +25,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function FavoritesScreen() {
     const { favorites, removeFavorite } = useFavorites();
+    const { theme, isDarkMode } = useTheme();
     const router = useRouter();
 
     const handleRemove = useCallback((id: number) => {
@@ -39,7 +41,7 @@ export default function FavoritesScreen() {
 
     if (favorites.length === 0) {
         return (
-            <View style={styles.emptyContainer}>
+            <View style={[styles.emptyContainer, { backgroundColor: theme.background }]}>
                 <Stack.Screen options={{ headerShown: false }} />
 
                 <View style={styles.emptyContent}>
@@ -47,16 +49,18 @@ export default function FavoritesScreen() {
                         entering={FadeInUp.duration(800)}
                         style={styles.emptyIconWrapper}
                     >
-                        <View style={styles.emptyIconContainer}>
-                            <Ionicons name="film-outline" size={80} color="#E50914" />
+                        <View style={[styles.emptyIconContainer, { backgroundColor: theme.primaryLight }]}>
+                            <Ionicons name="film-outline" size={80} color={theme.primary} />
                             <View style={styles.heartBadge}>
                                 <Ionicons name="heart" size={24} color="white" />
                             </View>
                         </View>
                     </Animated.View>
 
-                    <Text style={styles.emptyTitle}>Henüz Favori Yok</Text>
-                    <Text style={styles.emptyText}>
+                    <Text style={[styles.emptyTitle, { color: theme.text }]}>
+                        Henüz Favori Yok
+                    </Text>
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
                         Beğendiğiniz filmleri buraya eklemek için{'\n'}
                         kalp ikonuna dokunun
                     </Text>
@@ -81,16 +85,17 @@ export default function FavoritesScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <Stack.Screen
                 options={{
                     headerShown: true,
                     title: 'Favorilerim',
-                    headerStyle: { backgroundColor: '#fff' },
-                    headerTintColor: '#1a1a1a',
-                    headerTitleStyle: { fontWeight: '700' },
+                    headerStyle: { backgroundColor: theme.card },
+                    headerTintColor: theme.text,
+                    headerTitleStyle: { fontWeight: '700', color: theme.text },
+                    headerShadowVisible: false,
                     headerRight: () => (
-                        <View style={styles.headerBadge}>
+                        <View style={[styles.headerBadge, { backgroundColor: theme.primary }]}>
                             <Text style={styles.badgeText}>{favorites.length}</Text>
                         </View>
                     ),
@@ -104,8 +109,10 @@ export default function FavoritesScreen() {
                 showsVerticalScrollIndicator={false}
                 ListHeaderComponent={
                     <View style={styles.headerInfo}>
-                        <Text style={styles.headerTitle}>Favorilerim</Text>
-                        <Text style={styles.headerSubtitle}>
+                        <Text style={[styles.headerTitle, { color: theme.text }]}>
+                            Favorilerim
+                        </Text>
+                        <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
                             {favorites.length} film favorilerinizde
                         </Text>
                     </View>
@@ -118,7 +125,13 @@ export default function FavoritesScreen() {
                         style={styles.cardContainer}
                     >
                         <AnimatedPressable
-                            style={styles.card}
+                            style={[
+                                styles.card,
+                                {
+                                    backgroundColor: theme.card,
+                                    shadowColor: theme.shadow
+                                }
+                            ]}
                             onPress={() => navigateToDetail(item.id)}
                             layout={Layout.springify()}
                         >
@@ -126,13 +139,13 @@ export default function FavoritesScreen() {
                                 source={{
                                     uri: item.poster_path
                                         ? item.poster_path
-                                        : `https://picsum.photos/seed/movie ${item.id}/300/450`
+                                        : `https://picsum.photos/seed/movie${item.id}/300/450`
                                 }}
                                 style={styles.poster}
                                 imageStyle={styles.posterImage}
                             >
                                 <LinearGradient
-                                    colors={['transparent', 'rgba(0,0,0,0.6)']}
+                                    colors={['transparent', 'rgba(0,0,0,0.7)']}
                                     style={styles.posterGradient}
                                 />
 
@@ -152,8 +165,15 @@ export default function FavoritesScreen() {
                                     onPress={() => handleRemove(item.id)}
                                     hitSlop={10}
                                 >
-                                    <View style={styles.removeCircle}>
-                                        <Ionicons name="close" size={18} color="#E50914" />
+                                    <View style={[
+                                        styles.removeCircle,
+                                        { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)' }
+                                    ]}>
+                                        <Ionicons
+                                            name="close"
+                                            size={18}
+                                            color={theme.primary}
+                                        />
                                     </View>
                                 </Pressable>
                             </ImageBackground>
@@ -170,7 +190,6 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa', // Açık gri-beyaz arka plan
     },
     list: {
         padding: 16,
@@ -183,12 +202,10 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#1a1a1a',
         marginBottom: 4,
     },
     headerSubtitle: {
         fontSize: 14,
-        color: '#666',
         fontWeight: '500',
     },
     columnWrapper: {
@@ -203,9 +220,7 @@ const styles = StyleSheet.create({
         aspectRatio: 2 / 3,
         borderRadius: 16,
         overflow: 'hidden',
-        backgroundColor: '#fff',
         elevation: 3,
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.08,
         shadowRadius: 8,
@@ -263,7 +278,6 @@ const styles = StyleSheet.create({
         width: 28,
         height: 28,
         borderRadius: 14,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -273,10 +287,9 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
 
-    // Boş state stilleri - BEYAZ TEMA
+    // Boş state stilleri
     emptyContainer: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     emptyContent: {
         flex: 1,
@@ -289,6 +302,8 @@ const styles = StyleSheet.create({
     },
     emptyIconContainer: {
         position: 'relative',
+        borderRadius: 50,
+        padding: 20,
     },
     heartBadge: {
         position: 'absolute',
@@ -309,13 +324,11 @@ const styles = StyleSheet.create({
     emptyTitle: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#1a1a1a',
         marginBottom: 12,
         textAlign: 'center',
     },
     emptyText: {
         fontSize: 16,
-        color: '#666',
         textAlign: 'center',
         lineHeight: 24,
         marginBottom: 32,
@@ -345,7 +358,6 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     headerBadge: {
-        backgroundColor: '#E50914',
         borderRadius: 12,
         paddingHorizontal: 10,
         paddingVertical: 4,

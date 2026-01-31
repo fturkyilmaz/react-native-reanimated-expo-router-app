@@ -1,12 +1,15 @@
 import { AuthTransition } from '@/components/auth-transition';
 import { AuthProvider } from '@/hooks/useAuth';
 import { FavoritesProvider } from '@/hooks/useFavorites';
+import i18n from '@/i18n';
 import { QueryProvider } from '@/providers/query-provider';
 import { useAuthStore } from '@/store/authStore';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { I18nextProvider } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import '../i18n';
 
 function RootLayoutNav() {
   const { user, isTransitioning, completeTransition } = useAuthStore();
@@ -32,15 +35,17 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <QueryProvider>
-      <GestureHandlerRootView style={styles.container}>
-        <AuthProvider>
-          <FavoritesProvider>
-            <RootLayoutNav />
-          </FavoritesProvider>
-        </AuthProvider>
-      </GestureHandlerRootView>
-    </QueryProvider>
+    <I18nextProvider i18n={i18n}>
+      <QueryProvider>
+        <GestureHandlerRootView style={styles.container}>
+          <AuthProvider>
+            <FavoritesProvider>
+              <RootLayoutNav />
+            </FavoritesProvider>
+          </AuthProvider>
+        </GestureHandlerRootView>
+      </QueryProvider>
+    </I18nextProvider>
   );
 }
 

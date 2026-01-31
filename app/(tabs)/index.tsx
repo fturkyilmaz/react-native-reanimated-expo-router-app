@@ -1,19 +1,16 @@
 import { MovieCard } from '@/components/movie-card';
 import { Skeleton } from '@/components/skeleton';
-import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/use-theme';
 import { useMovies } from '@/hooks/useMovies';
-import { Stack, useRouter } from 'expo-router';
+import { useAuthStore } from '@/store/authStore';
+import { Stack } from 'expo-router';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { movies, loading, error, refresh, loadMore, hasMore } = useMovies('popular');
-  const { user, logout } = useAuth();
-  const router = useRouter();
-
-  const handleLogout = () => {
-    logout();
-  };
+  const { user } = useAuthStore();
+  const { theme } = useTheme();
 
   const renderFooter = () => {
     if (!hasMore) return <Text style={styles.endText}>Tüm filmler yüklendi</Text>;
@@ -28,8 +25,15 @@ export default function HomeScreen() {
     );
   }
 
+  const dynamicStyles = {
+    container: { backgroundColor: theme.background },
+    text: { color: theme.text },
+    textSecondary: { color: theme.textSecondary },
+    card: { backgroundColor: theme.card },
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, dynamicStyles.container]}>
       <Stack.Screen
         options={{
           headerShown: true,

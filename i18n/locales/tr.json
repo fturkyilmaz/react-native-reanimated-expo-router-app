@@ -1,0 +1,90 @@
+{
+    "common": {
+        "appName": "CineSearch",
+        "loading": "Yükleniyor...",
+        "error": "Bir hata oluştu",
+        "retry": "Tekrar Dene",
+        "save": "Kaydet",
+        "cancel": "İptal",
+        "delete": "Sil",
+        "edit": "Düzenle",
+        "close": "Kapat",
+        "search": "Ara...",
+        "seeAll": "Tümünü Gör"
+    },
+    "auth": {
+        "welcomeBack": "Tekrar Hoşgeldiniz",
+        "discoverMovies": "Favori filmlerinizi keşfedin",
+        "email": "E-posta",
+        "password": "Şifre",
+        "login": "Giriş Yap",
+        "register": "Kayıt Ol",
+        "noAccount": "Hesabınız yok mu?",
+        "hasAccount": "Zaten hesabınız var mı?",
+        "forgotPassword": "Şifremi unuttum?",
+        "name": "Ad Soyad",
+        "confirmPassword": "Şifreyi Onayla",
+        "passwordsDontMatch": "Şifreler eşleşmiyor",
+        "invalidEmail": "Geçerli bir e-posta adresi giriniz",
+        "passwordMinLength": "Şifre en az {{count}} karakter olmalı",
+        "logout": "Çıkış Yap",
+        "logoutConfirm": "Hesabınızdan çıkış yapmak istediğinize emin misiniz?"
+    },
+    "home": {
+        "greeting": "Merhaba, {{name}}",
+        "discover": "Keşfet",
+        "popular": "Popüler",
+        "topRated": "En Beğenilen",
+        "upcoming": "Yakında",
+        "noResults": "Sonuç bulunamadı",
+        "resultsFor": "\"{{query}}\" için {{count}} sonuç"
+    },
+    "movie": {
+        "details": "Film Detayı",
+        "summary": "Özet",
+        "cast": "Oyuncular",
+        "trailer": "Fragmanı İzle",
+        "addToFavorites": "Favorilere Ekle",
+        "removeFromFavorites": "Favorilerden Çıkar",
+        "minutes": "dk",
+        "hours": "s",
+        "genres": "Türler"
+    },
+    "favorites": {
+        "title": "Favorilerim",
+        "empty": "Henüz Favori Yok",
+        "emptyMessage": "Beğendiğiniz filmleri buraya eklemek için kalp ikonuna dokunun",
+        "explore": "Keşfetmeye Başla",
+        "movieCount": "{{count}} film favorilerinizde"
+    },
+    "authTransition": {
+        "welcome": "Hoşgeldin {{name}}! 🎬",
+        "subText": "Film dünyası seni bekliyor..."
+    },
+    "settings": {
+        "title": "Ayarlar",
+        "account": "HESAP",
+        "preferences": "TERCİHLER",
+        "content": "İÇERİK",
+        "support": "DESTEK",
+        "editProfile": "Profili Düzenle",
+        "privacy": "Gizlilik ve Güvenlik",
+        "subscription": "Abonelik",
+        "darkMode": "Karanlık Mod",
+        "language": "Dil",
+        "notifications": "Bildirimler",
+        "emailUpdates": "E-posta Bülteni",
+        "autoPlay": "Otomatik Oynat",
+        "downloads": "İndirmeler",
+        "clearCache": "Önbelleği Temizle",
+        "help": "Yardım Merkezi",
+        "contact": "Bize Ulaşın",
+        "privacyPolicy": "Gizlilik Politikası",
+        "about": "Hakkında",
+        "version": "Sürüm {{version}}"
+    },
+    "languages": {
+        "tr": "Türkçe",
+        "en": "English"
+    }
+}

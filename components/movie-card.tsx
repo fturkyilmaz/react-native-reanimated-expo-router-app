@@ -1,3 +1,4 @@
+import { useTheme } from '@/hooks/use-theme';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -26,6 +27,7 @@ interface MovieCardProps {
 export function MovieCard({ movie, index }: MovieCardProps) {
     const router = useRouter();
     const scale = useSharedValue(1);
+    const { theme } = useTheme();
 
     const handlePress = useCallback(() => {
         router.push({
@@ -51,19 +53,6 @@ export function MovieCard({ movie, index }: MovieCardProps) {
         };
     }, []);
 
-    const posterPaths = [
-        "/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg", // Joker (2019)
-        "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", // Interstellar
-        "/rSPw7tgCH9c6NqICZef4kZjFOQ5.jpg", // The Godfather
-        "/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg", // Avatar: The Way of Water
-        "/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg", // John Wick: Chapter 4
-        "/yF1eOkaYvwiORauRCPWznV9xVvi.jpg", // Dune: Part Two
-        "/fCayJrkfRaCRCTh8GqN30f8oyQF.jpg", // Fight Club
-        "/6KErczPBROQty7QoIsaa6wJYXZi.jpg", // Parasite
-        "/q719jXXEzOoYaps6babgKnONONX.jpg", // Spirited Away (Studio Ghibli)
-        "/d5NXSklXo0qyIYkgV94XAgMIckC.jpg", // Pulp Fiction
-    ];
-
     const imageUrl = movie.poster_path
         ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
         : `https://picsum.photos/300/450?random=${movie.id}`;
@@ -71,7 +60,7 @@ export function MovieCard({ movie, index }: MovieCardProps) {
     return (
         <AnimatedPressable
             entering={FadeIn.delay(index * 100).duration(500)}
-            style={[styles.card, animatedStyle]}
+            style={[styles.card, animatedStyle, { backgroundColor: theme.card }]}
             onPress={handlePress}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
@@ -82,13 +71,13 @@ export function MovieCard({ movie, index }: MovieCardProps) {
                 resizeMode="cover"
             />
             <View style={styles.info}>
-                <Text style={styles.title} numberOfLines={2}>{movie.title}</Text>
+                <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>{movie.title}</Text>
                 <View style={styles.meta}>
-                    <Text style={styles.year}>
+                    <Text style={[styles.year, { color: theme.textSecondary }]}>
                         {movie.release_date ? movie.release_date.split('-')[0] : '2024'}
                     </Text>
                     <View style={styles.ratingContainer}>
-                        <Text style={styles.rating}>⭐ {movie.vote_average?.toFixed(1)}</Text>
+                        <Text style={[styles.rating, { color: theme.textSecondary }]}>⭐ {movie.vote_average?.toFixed(1)}</Text>
                     </View>
                 </View>
             </View>

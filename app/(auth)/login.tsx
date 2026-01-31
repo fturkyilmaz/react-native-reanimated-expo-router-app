@@ -4,11 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function LoginScreen() {
     const router = useRouter();
     const { login, isLoading, error, clearError } = useAuthStore();
+    const { t } = useTranslation();
 
     const {
         control,
@@ -17,19 +19,17 @@ export default function LoginScreen() {
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
-            email: 'test@test.com',
-            password: '123456',
+            email: '',
+            password: '',
         },
     });
 
     const onSubmit = async (data: LoginFormData) => {
         try {
-            clearError(); // Önceki hatayı temizle
+            clearError();
             await login(data.email, data.password);
             router.replace('/(tabs)');
-        } catch (error) {
-            // Hata Zustand tarafından handle ediliyor
-        }
+        } catch (error) { }
     };
 
     return (
@@ -42,12 +42,11 @@ export default function LoginScreen() {
                     <View style={styles.iconContainer}>
                         <Ionicons name="film" size={40} color="#E50914" />
                     </View>
-                    <Text style={styles.title}>Tekrar Hoşgeldiniz</Text>
-                    <Text style={styles.subtitle}>Favori filmlerinizi keşfedin</Text>
+                    <Text style={styles.title}>{t('auth.welcomeBack')}</Text>
+                    <Text style={styles.subtitle}>{t('auth.discoverMovies')}</Text>
                 </View>
 
                 <View style={styles.form}>
-                    {/* Zustand Global Error */}
                     {error && (
                         <View style={styles.globalErrorContainer}>
                             <Ionicons name="alert-circle" size={20} color="#E50914" />
@@ -65,11 +64,11 @@ export default function LoginScreen() {
                                 render={({ field: { onChange, value } }) => (
                                     <TextInput
                                         style={styles.input}
-                                        placeholder="E-posta"
+                                        placeholder={t('auth.email')}
                                         value={value}
                                         onChangeText={(text) => {
                                             onChange(text);
-                                            if (error) clearError(); // Yazarken hatayı temizle
+                                            if (error) clearError();
                                         }}
                                         keyboardType="email-address"
                                         autoCapitalize="none"
@@ -93,7 +92,7 @@ export default function LoginScreen() {
                                 render={({ field: { onChange, value } }) => (
                                     <TextInput
                                         style={styles.input}
-                                        placeholder="Şifre"
+                                        placeholder={t('auth.password')}
                                         secureTextEntry
                                         value={value}
                                         onChangeText={(text) => {
@@ -114,7 +113,7 @@ export default function LoginScreen() {
                         style={styles.forgotPassword}
                         onPress={() => router.push('/(auth)/forgot-password')}
                     >
-                        <Text style={styles.forgotPasswordText}>Şifremi unuttum?</Text>
+                        <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
                     </Pressable>
 
                     <Pressable
@@ -125,16 +124,16 @@ export default function LoginScreen() {
                         {isLoading ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text style={styles.buttonText}>Giriş Yap</Text>
+                            <Text style={styles.buttonText}>{t('auth.login')}</Text>
                         )}
                     </Pressable>
                 </View>
 
                 <View style={styles.footer}>
-                    <Text style={styles.footerText}>Hesabınız yok mu? </Text>
+                    <Text style={styles.footerText}>{t('auth.noAccount')} </Text>
                     <Link href="/(auth)/register" asChild>
                         <Pressable>
-                            <Text style={styles.footerLink}>Kayıt Ol</Text>
+                            <Text style={styles.footerLink}>{t('auth.register')}</Text>
                         </Pressable>
                     </Link>
                 </View>
@@ -142,6 +141,7 @@ export default function LoginScreen() {
         </KeyboardAvoidingView>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
