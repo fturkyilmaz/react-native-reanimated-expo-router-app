@@ -1,16 +1,17 @@
-import { Movie } from '@/config/api';
-import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     Extrapolate,
     FadeInUp,
     interpolate,
     useAnimatedStyle,
+    useEvent,
     useSharedValue
 } from 'react-native-reanimated';
 
@@ -18,34 +19,37 @@ const { width, height } = Dimensions.get('window');
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
-export default function MovieDetail({ item }: { item: Movie }) {
-    const { id } = useLocalSearchParams();
+export default function MovieDetail() {
+    const { t } = useTranslation();
+    const { id, item } = useLocalSearchParams();
     const { toggleFavorite, isFavorite } = useFavorites();
     const router = useRouter();
     const scrollY = useSharedValue(0);
-    const { user } = useAuth();
-
-    // ID'yi number'a çevir
     const movieId = parseInt(id as string);
-
-    // Favori durumunu kontrol et
     const [isLiked, setIsLiked] = useState(false);
+    const movie = item ? JSON.parse(item as string) : null;
+
+    const videoSource = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+    const player = useVideoPlayer(videoSource, player => {
+        player.loop = true;
+        player.play();
+    });
+
+    const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
 
     useEffect(() => {
         setIsLiked(isFavorite(movieId));
     }, [movieId, isFavorite]);
 
-    // Favori butonu handler'ı - EKSİK OLAN BUYDU
     const handleFavoritePress = () => {
-        // Mock movie objesi oluştur (gerçek veri yerine)
-        const movie = {
+        const movieNew = {
             id: movieId,
-            title: 'Inception', // Gerçek uygulamada API'den gelen başlık
-            poster_path: null,
-            vote_average: 8.8,
+            title: movie.title,
+            poster_path: movie.poster_path,
+            vote_average: movie.vote_average,
         };
 
-        toggleFavorite(movie);
+        toggleFavorite(movieNew);
         setIsLiked(!isLiked);
     };
 
@@ -98,7 +102,7 @@ export default function MovieDetail({ item }: { item: Movie }) {
             <Stack.Screen options={{ headerShown: false }} />
             {/* Header (scroll edince görünür) */}
             <Animated.View style={[styles.header, headerAnimatedStyle]}>
-                <Text style={styles.headerTitle} numberOfLines={1}>Film Detayı</Text>
+                <Text style={styles.headerTitle} numberOfLines={1}>{t('movie.details')}</Text>
             </Animated.View>
 
             <AnimatedScrollView
@@ -174,7 +178,7 @@ export default function MovieDetail({ item }: { item: Movie }) {
                     </View>
 
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Özet</Text>
+                        <Text style={styles.sectionTitle}>{t('movie.summary')}</Text>
                         <Text style={styles.description}>
                             Dom Cobb çok yetenekli bir hırsızdır. Uzmanlık alanı, zihnin en savunmasız olduğu rüya görme anında,
                             bilinçaltının derinliklerindeki değerli sırları çekip çıkarmak ve onları çalmaktır.{'\n\n'}
@@ -184,7 +188,7 @@ export default function MovieDetail({ item }: { item: Movie }) {
                     </View>
 
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Oyuncular</Text>
+                        <Text style={styles.sectionTitle}>{t('movie.cast')}</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.castScroll}>
                             {['Leonardo DiCaprio', 'Joseph Gordon-Levitt', 'Elliot Page', 'Tom Hardy'].map((actor, index) => (
                                 <View key={index} style={styles.castCard}>
@@ -197,9 +201,16 @@ export default function MovieDetail({ item }: { item: Movie }) {
                         </ScrollView>
                     </View>
 
-                    <Pressable style={styles.watchButton}>
+                    <VideoView style={styles.video} player={player} allowsFullscreen allowsPictureInPicture />
+                    <Pressable style={styles.watchButton} onPress={() => {
+                        if (isPlaying) {
+                            player.pause();
+                        } else {
+                            player.play();
+                        }
+                    }}>
                         <Ionicons name="play" size={20} color="white" style={styles.watchIcon} />
-                        <Text style={styles.watchButtonText}>Fragmanı İzle</Text>
+                        <Text style={styles.watchButtonText}>{t('movie.trailer')}</Text>
                     </Pressable>
                 </Animated.View>
             </AnimatedScrollView>
@@ -244,6 +255,10 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         resizeMode: 'cover',
+    },
+    video: {
+        width: Dimensions.get('window').width - 40,
+        height: 250
     },
     gradient: {
         position: 'absolute',

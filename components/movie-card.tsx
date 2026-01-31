@@ -32,7 +32,7 @@ export function MovieCard({ movie, index }: MovieCardProps) {
     const handlePress = useCallback(() => {
         router.push({
             pathname: '/(movies)/[id]',
-            params: { id: movie.id },
+            params: { id: movie.id.toString(), item: JSON.stringify(movie) },
         });
     }, [router, movie.id]);
 
