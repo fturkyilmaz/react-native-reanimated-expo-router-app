@@ -30,6 +30,26 @@
         "logout": "Logout",
         "logoutConfirm": "Are you sure you want to log out of your account?"
     },
+    "biometric": {
+        "enable": "Face ID / Touch ID",
+        "disable": "Disable Face ID / Touch ID",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "promptTitle": "Authentication",
+        "promptSubtitle": "Use biometric authentication to continue",
+        "cancel": "Cancel",
+        "notAvailable": "Biometric Not Available",
+        "notAvailableMessage": "This device does not support biometric authentication or no biometric data is enrolled.",
+        "notEnrolled": "No biometric data found. Please add it in Settings.",
+        "enablePromptTitle": "Enable Quick Login",
+        "enablePromptMessage": "Would you like to use {{type}} to speed up logins?",
+        "authenticationFailed": "Authentication failed",
+        "tooManyAttempts": "Too many failed attempts. Please enter your password.",
+        "loginWith": "Login with {{type}}",
+        "enableError": "An error occurred while enabling biometric authentication.",
+        "disableConfirm": "Are you sure you want to disable Face ID / Touch ID?",
+        "disableError": "An error occurred while disabling biometric authentication."
+    },
     "home": {
         "greeting": "Hello, {{name}}",
         "discover": "Discover",

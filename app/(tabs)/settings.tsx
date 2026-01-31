@@ -1,10 +1,11 @@
 import { useTheme } from '@/hooks/use-theme';
+import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import i18n from '@/i18n';
 import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Alert,
@@ -20,13 +21,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
     const router = useRouter();
-    const { user, logout } = useAuthStore();
+    const { user, logout, isBiometricEnabled, enableBiometric, disableBiometric } = useAuthStore();
     const { isDarkMode, toggleTheme, theme } = useTheme();
     const { t } = useTranslation();
+    const { isAvailable, isEnrolled, biometricType, authenticate, getBiometricTypeName, checkBiometricSupport } = useBiometricAuth();
     const [notifications, setNotifications] = useState(true);
     const [emailUpdates, setEmailUpdates] = useState(false);
     const [autoPlay, setAutoPlay] = useState(true);
     const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
+    const [biometricSupported, setBiometricSupported] = useState(false);
+
+    useEffect(() => {
+        checkBiometricSupport().then((support) => {
+            setBiometricSupported(support.isAvailable && support.isEnrolled);
+        });
+    }, [checkBiometricSupport]);
 
     const changeLanguage = (lang: 'tr' | 'en') => {
         i18n.changeLanguage(lang);
@@ -43,6 +52,53 @@ export default function SettingsScreen() {
             }
             ],
         );
+    };
+
+    const handleToggleBiometric = async (value: boolean) => {
+        if (!biometricSupported) {
+            Alert.alert(
+                t('biometric.notAvailable'),
+                t('biometric.notAvailableMessage'),
+                [{ text: t('common.ok') }]
+            );
+            return;
+        }
+
+        if (value) {
+            // Biyometrik açma - önce doğrulama yap
+            const result = await authenticate(
+                t('biometric.promptTitle'),
+                t('common.cancel')
+            );
+
+            if (result.success) {
+                try {
+                    await enableBiometric(biometricType);
+                } catch (error) {
+                    Alert.alert(t('common.error'), t('biometric.enableError'));
+                }
+            }
+        } else {
+            // Biyometrik kapatma - onay iste
+            Alert.alert(
+                t('biometric.disable'),
+                t('biometric.disableConfirm'),
+                [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    {
+                        text: t('biometric.disable'),
+                        style: 'destructive',
+                        onPress: async () => {
+                            try {
+                                await disableBiometric();
+                            } catch (error) {
+                                Alert.alert(t('common.error'), t('biometric.disableError'));
+                            }
+                        },
+                    },
+                ]
+            );
+        }
     };
 
     const handleClearCache = async () => {
@@ -197,6 +253,16 @@ export default function SettingsScreen() {
                         subtitle="Şifre değiştir, 2FA"
                         onPress={() => { }}
                     />
+                    {/* Biometric Toggle */}
+                    {biometricSupported && (
+                        <SettingToggle
+                            icon={biometricType === 'faceID' ? 'scan-outline' : 'finger-print-outline'}
+                            title={t('biometric.enable')}
+                            subtitle={isBiometricEnabled ? t('biometric.enabled') : t('biometric.disabled')}
+                            value={isBiometricEnabled}
+                            onValueChange={handleToggleBiometric}
+                        />
+                    )}
                     <SettingItem
                         icon="card-outline"
                         title="Abonelik"

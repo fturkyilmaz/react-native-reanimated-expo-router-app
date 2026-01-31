@@ -1,16 +1,7 @@
-const { defaults: tsjPreset } = require("ts-jest/presets");
-
 module.exports = {
-  ...tsjPreset,
   preset: "react-native",
   transform: {
-    "^.+\\.tsx?$": [
-      "ts-jest",
-      {
-        tsconfig: "tsconfig.json",
-        babelConfig: true,
-      },
-    ],
+    "^.+\\.tsx?$": "babel-jest",
     "^.+\\.jsx?$": "babel-jest",
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
@@ -39,7 +30,6 @@ module.exports = {
   transformIgnorePatterns: [
     "node_modules/(?!((react-native.*|@react-native.*|expo.*|@expo.*|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|@react-navigation.*|react-native-web|lottie-react-native)/))",
   ],
-  testEnvironment: "node",
   globals: {
     __DEV__: true,
   },

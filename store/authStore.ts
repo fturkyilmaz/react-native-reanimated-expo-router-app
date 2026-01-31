@@ -1,3 +1,4 @@
+import { BiometricType } from '@/hooks/useBiometricAuth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
@@ -17,6 +18,10 @@ interface AuthState {
     isTransitioning: boolean;
     error: string | null;
     pendingNavigation: boolean;
+    // Biometric fields
+    isBiometricEnabled: boolean;
+    biometricType: BiometricType;
+    lastAuthenticatedAt: number | null;
     // Actions
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
@@ -24,6 +29,10 @@ interface AuthState {
     clearError: () => void;
     completeTransition: () => void;
     setPendingNavigation: (pendingNavigation: boolean) => void;
+    // Biometric actions
+    enableBiometric: (type: BiometricType) => Promise<void>;
+    disableBiometric: () => Promise<void>;
+    updateLastAuthenticated: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -35,6 +44,10 @@ export const useAuthStore = create<AuthState>()(
             pendingNavigation: false,
             isTransitioning: false,
             error: null,
+            // Biometric initial state
+            isBiometricEnabled: false,
+            biometricType: 'none',
+            lastAuthenticatedAt: null,
 
             completeTransition: () => set({ isTransitioning: false, pendingNavigation: false }),
             setPendingNavigation: (pendingNavigation: boolean) => set({ pendingNavigation }),
@@ -69,7 +82,7 @@ export const useAuthStore = create<AuthState>()(
             logout: () => {
                 SecureStore.deleteItemAsync('userToken');
                 SecureStore.deleteItemAsync('userData');
-                set({ user: null, isAuthenticated: false, error: null });
+                set({ user: null, isAuthenticated: false, error: null, isBiometricEnabled: false, biometricType: 'none', lastAuthenticatedAt: null });
             },
 
             register: async (email: string, password: string, name: string) => {
@@ -94,11 +107,44 @@ export const useAuthStore = create<AuthState>()(
             },
 
             clearError: () => set({ error: null }),
+
+            // Biometric actions
+            enableBiometric: async (type: BiometricType) => {
+                try {
+                    await SecureStore.setItemAsync('biometricEnabled', 'true');
+                    await SecureStore.setItemAsync('biometricType', type);
+                    set({ isBiometricEnabled: true, biometricType: type });
+                } catch (error) {
+                    console.error('Error enabling biometric:', error);
+                    throw error;
+                }
+            },
+
+            disableBiometric: async () => {
+                try {
+                    await SecureStore.deleteItemAsync('biometricEnabled');
+                    await SecureStore.deleteItemAsync('biometricType');
+                    set({ isBiometricEnabled: false, biometricType: 'none', lastAuthenticatedAt: null });
+                } catch (error) {
+                    console.error('Error disabling biometric:', error);
+                    throw error;
+                }
+            },
+
+            updateLastAuthenticated: () => {
+                set({ lastAuthenticatedAt: Date.now() });
+            },
         }),
         {
             name: 'auth-storage',
             storage: createJSONStorage(() => AsyncStorage),
-            partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+            partialize: (state) => ({
+                user: state.user,
+                isAuthenticated: state.isAuthenticated,
+                isBiometricEnabled: state.isBiometricEnabled,
+                biometricType: state.biometricType,
+                lastAuthenticatedAt: state.lastAuthenticatedAt,
+            }),
         }
     )
 );

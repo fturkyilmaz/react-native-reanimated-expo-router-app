@@ -30,6 +30,26 @@
         "logout": "Çıkış Yap",
         "logoutConfirm": "Hesabınızdan çıkış yapmak istediğinize emin misiniz?"
     },
+    "biometric": {
+        "enable": "Face ID / Touch ID",
+        "disable": "Face ID / Touch ID Kapat",
+        "enabled": "Aktif",
+        "disabled": "Kapalı",
+        "promptTitle": "Kimlik Doğrulama",
+        "promptSubtitle": "Devam etmek için biyometrik kimlik doğrulama kullanın",
+        "cancel": "İptal",
+        "notAvailable": "Biyometrik Doğrulama Yok",
+        "notAvailableMessage": "Bu cihaz biyometrik kimlik doğrulamayı desteklemiyor veya kayıtlı biyometrik veri bulunmuyor.",
+        "notEnrolled": "Kayıtlı biyometrik veri bulunamadı. Ayarlar'dan ekleyin.",
+        "enablePromptTitle": "Hızlı Giriş Aktif Et",
+        "enablePromptMessage": "Girişleri hızlandırmak için {{type}} kullanmak ister misiniz?",
+        "authenticationFailed": "Kimlik doğrulama başarısız oldu",
+        "tooManyAttempts": "Çok fazla başarısız deneme. Lütfen şifrenizi girin.",
+        "loginWith": "{{type}} ile Giriş Yap",
+        "enableError": "Biyometrik doğrulama aktif edilirken bir hata oluştu.",
+        "disableConfirm": "Face ID / Touch ID kapatmak istediğinize emin misiniz?",
+        "disableError": "Biyometrik doğrulama kapatılırken bir hata oluştu."
+    },
     "home": {
         "greeting": "Merhaba, {{name}}",
         "discover": "Keşfet",
