@@ -4,7 +4,7 @@ import "react-native-gesture-handler/jestSetup";
 // Mock react-native-reanimated
 jest.mock("react-native-reanimated", () => {
   const Reanimated = require("react-native-reanimated/mock");
-  Reanimated.default.call = () => {};
+  Reanimated.default.call = () => { };
   return Reanimated;
 });
 
@@ -28,6 +28,7 @@ jest.mock("expo-secure-store", () => ({
   getItemAsync: jest.fn(),
   setItemAsync: jest.fn(),
   deleteItemAsync: jest.fn(),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WhenUnlockedThisDeviceOnly',
 }));
 
 // Mock @react-native-async-storage/async-storage
@@ -303,6 +304,69 @@ global.console = {
   warn: jest.fn(),
   error: jest.fn(),
 };
+
+// Mock expo-linking
+jest.mock("expo-linking", () => ({
+  getInitialURL: jest.fn(() => Promise.resolve(null)),
+  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+  removeEventListener: jest.fn(),
+  parse: jest.fn((url: string) => {
+    const path = url.replace(/^[^:]+:\/\//, '').replace(/^https?:\/\/[^\/]+/, '');
+    const [pathname, queryString] = path.split('?');
+    const queryParams: Record<string, string> = {};
+    if (queryString) {
+      const params = new URLSearchParams(queryString);
+      params.forEach((value, key) => {
+        queryParams[key] = value;
+      });
+    }
+    return { path: pathname.replace(/^\//, ''), queryParams };
+  }),
+  createURL: jest.fn((path: string) => `cinesearch://${path}`),
+  canOpenURL: jest.fn(() => Promise.resolve(true)),
+  openURL: jest.fn(() => Promise.resolve(true)),
+}));
+
+// Mock expo-notifications
+jest.mock("expo-notifications", () => ({
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  getExpoPushTokenAsync: jest.fn(() => Promise.resolve({ data: 'test-push-token' })),
+  scheduleNotificationAsync: jest.fn(() => Promise.resolve('test-notification-id')),
+  cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
+  cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
+  getAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve([])),
+  setBadgeCountAsync: jest.fn(() => Promise.resolve()),
+  setNotificationChannelAsync: jest.fn(() => Promise.resolve()),
+  setNotificationHandler: jest.fn(),
+  AndroidImportance: {
+    HIGH: 'high',
+    DEFAULT: 'default',
+    LOW: 'low',
+    MIN: 'min',
+    MAX: 'max',
+    NONE: 'none',
+  },
+}));
+
+// Mock expo-device
+jest.mock("expo-device", () => ({
+  isDevice: true,
+  brand: 'Apple',
+  manufacturer: 'Apple',
+  modelName: 'iPhone 14',
+  osName: 'iOS',
+  osVersion: '16.0',
+}));
+
+// Mock expo-file-system
+jest.mock("expo-file-system", () => ({
+  getInfoAsync: jest.fn(() => Promise.resolve({ exists: false })),
+  writeAsStringAsync: jest.fn(() => Promise.resolve()),
+  deleteAsync: jest.fn(() => Promise.resolve()),
+  documentDirectory: '/mock/documents',
+  cacheDirectory: '/mock/cache',
+}));
 
 // Mock Dimensions
 jest.mock("react-native/Libraries/Utilities/Dimensions", () => ({

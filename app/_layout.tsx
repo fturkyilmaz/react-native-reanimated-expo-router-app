@@ -1,5 +1,6 @@
 import { AuthTransition } from '@/components/auth-transition';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { DeepLinkProvider } from '@/deep-linking';
 import { AuthProvider } from '@/hooks/useAuth';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import { FavoritesProvider } from '@/hooks/useFavorites';
@@ -24,28 +25,22 @@ function RootLayoutNav() {
   const { authenticate, checkBiometricSupport } = useBiometricAuth();
   const [isCheckingBiometric, setIsCheckingBiometric] = useState(false);
 
-  // Uygulama açılışında biyometrik kontrolü
   useEffect(() => {
     const checkBiometricOnLaunch = async () => {
-      // Kullanıcı oturum açık ve biyometrik aktif mi kontrol et
       if (isAuthenticated && isBiometricEnabled && user) {
         setIsCheckingBiometric(true);
 
-        // Cihaz hala biyometrik destekliyor mu kontrol et
         const support = await checkBiometricSupport();
         if (!support.isAvailable || !support.isEnrolled) {
-          // Biyometrik artık kullanılamıyor, kontrolü atla
           setIsCheckingBiometric(false);
           return;
         }
 
-        // Biyometrik doğrulama yap
         const result = await authenticate();
 
         if (!result.success) {
           router.replace('/(auth)/login');
         } else {
-          // Doğrulama başarılı, son doğrulama zamanını güncelle
           updateLastAuthenticated();
         }
 
@@ -97,19 +92,21 @@ export default function RootLayout() {
             }
           }}
         >
-          <I18nextProvider i18n={i18n}>
-            <QueryProvider>
-              <GestureHandlerRootView style={styles.container}>
-                <ErrorBoundary>
-                  <AuthProvider>
-                    <FavoritesProvider>
-                      <RootLayoutNav />
-                    </FavoritesProvider>
-                  </AuthProvider>
-                </ErrorBoundary>
-              </GestureHandlerRootView>
-            </QueryProvider>
-          </I18nextProvider>
+          <DeepLinkProvider>
+            <I18nextProvider i18n={i18n}>
+              <QueryProvider>
+                <GestureHandlerRootView style={styles.container}>
+                  <ErrorBoundary>
+                    <AuthProvider>
+                      <FavoritesProvider>
+                        <RootLayoutNav />
+                      </FavoritesProvider>
+                    </AuthProvider>
+                  </ErrorBoundary>
+                </GestureHandlerRootView>
+              </QueryProvider>
+            </I18nextProvider>
+          </DeepLinkProvider>
         </SecurityProvider>
       </OpenTelemetryProvider>
     </SentryProvider>
