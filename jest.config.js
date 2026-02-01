@@ -1,5 +1,5 @@
 module.exports = {
-  preset: "react-native",
+  preset: "jest-expo",
   transform: {
     "^.+\\.tsx?$": "babel-jest",
     "^.+\\.jsx?$": "babel-jest",
@@ -21,6 +21,9 @@ module.exports = {
     "schemas/**/*.{ts,tsx}",
     "config/**/*.{ts,tsx}",
     "constants/**/*.{ts,tsx}",
+    "security/**/*.{ts,tsx}",
+    "deep-linking/**/*.{ts,tsx}",
+    "notifications/**/*.{ts,tsx}",
     "!**/node_modules/**",
     "!**/*.d.ts",
     "!**/index.ts",
