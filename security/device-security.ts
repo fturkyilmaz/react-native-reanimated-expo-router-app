@@ -6,7 +6,7 @@
  */
 
 import Constants from 'expo-constants';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { Platform } from 'react-native';
 
 /**
@@ -253,8 +253,8 @@ export class DeviceSecurity {
         // Check for root indicator files
         for (const path of ANDROID_ROOT_INDICATORS) {
             try {
-                const info = await FileSystem.getInfoAsync(path);
-                if (info.exists) {
+                const file = new File(path);
+                if (file.exists) {
                     detected = true;
                     foundPaths.push(path);
                 }
@@ -291,8 +291,8 @@ export class DeviceSecurity {
         // Check for jailbreak indicator files
         for (const path of IOS_JAILBREAK_INDICATORS) {
             try {
-                const info = await FileSystem.getInfoAsync(path);
-                if (info.exists) {
+                const file = new File(path);
+                if (file.exists) {
                     detected = true;
                     foundPaths.push(path);
                 }
@@ -304,8 +304,9 @@ export class DeviceSecurity {
         // Check if we can write to restricted directories
         try {
             const testPath = '/private/jailbreakTest.txt';
-            await FileSystem.writeAsStringAsync(testPath, 'test');
-            await FileSystem.deleteAsync(testPath);
+            const testFile = new File(testPath);
+            testFile.write('test');
+            testFile.delete();
             detected = true;
         } catch {
             // Cannot write, device is likely not jailbroken

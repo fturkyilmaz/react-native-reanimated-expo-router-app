@@ -2,7 +2,6 @@ import { AuthTransition } from '@/components/auth-transition';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { DeepLinkProvider } from '@/deep-linking';
 import { AuthProvider } from '@/hooks/useAuth';
-import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import { FavoritesProvider } from '@/hooks/useFavorites';
 import i18n from '@/i18n';
 import { OpenTelemetryProvider } from '@/otel/provider';
@@ -11,60 +10,23 @@ import type { SecurityCheckResult } from '@/security';
 import { SecurityProvider } from '@/security';
 import { SentryProvider } from '@/sentry/provider';
 import { useAuthStore } from '@/store/authStore';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import '../i18n';
 
 function RootLayoutNav() {
-  const router = useRouter();
-  const { user, isAuthenticated, isTransitioning, completeTransition, isBiometricEnabled, updateLastAuthenticated } = useAuthStore();
-  const { authenticate, checkBiometricSupport } = useBiometricAuth();
-  const [isCheckingBiometric, setIsCheckingBiometric] = useState(false);
+  const authStore = useAuthStore();
 
-  useEffect(() => {
-    const checkBiometricOnLaunch = async () => {
-      if (isAuthenticated && isBiometricEnabled && user) {
-        setIsCheckingBiometric(true);
-
-        const support = await checkBiometricSupport();
-        if (!support.isAvailable || !support.isEnrolled) {
-          setIsCheckingBiometric(false);
-          return;
-        }
-
-        const result = await authenticate();
-
-        if (!result.success) {
-          router.replace('/(auth)/login');
-        } else {
-          updateLastAuthenticated();
-        }
-
-        setIsCheckingBiometric(false);
-      }
-    };
-
-    checkBiometricOnLaunch();
-  }, [isAuthenticated, isBiometricEnabled, user]);
-
-  if (isCheckingBiometric) {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#E50914" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
       <AuthTransition
-        isVisible={isTransitioning}
-        onAnimationComplete={completeTransition}
-        userName={user?.name || ''}
+        isVisible={authStore.isTransitioning}
+        onAnimationComplete={authStore.completeTransition}
+        userName={authStore.user?.name || ''}
       />
 
       <StatusBar style="light" />
@@ -72,7 +34,6 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(movies)" options={{ headerShown: false }} />
-
       </Stack>
     </View>
   );
@@ -87,7 +48,6 @@ export default function RootLayout() {
           runStorageAudit={__DEV__}
           onSecurityCheck={(result: SecurityCheckResult) => {
             if (result.isCompromised) {
-              // Log to Sentry for monitoring
               console.warn('[Security] Device compromised:', result.riskLevel, result.checks);
             }
           }}

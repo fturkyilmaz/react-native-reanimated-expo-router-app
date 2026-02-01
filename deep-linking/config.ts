@@ -5,41 +5,24 @@
  * Supports both custom URL schemes and universal/app links.
  */
 
-/**
- * Deep link route configuration
- */
 export interface DeepLinkRoute {
-    /** Route pattern (e.g., 'movie/:id') */
     pattern: string;
-    /** Target screen path */
     screen: string;
-    /** Parameter mappings */
     params?: Record<string, string>;
-    /** Whether authentication is required */
     requiresAuth?: boolean;
 }
 
-/**
- * Deep link configuration object
- */
 export interface DeepLinkConfig {
-    /** Custom URL scheme (e.g., 'cinesearch') */
     scheme: string;
-    /** Universal/App link domains */
     domains: {
         production: string;
         staging?: string;
         development?: string;
     };
-    /** Route definitions */
     routes: Record<string, DeepLinkRoute>;
-    /** Default screen when route not found */
     fallbackScreen: string;
 }
 
-/**
- * Default deep link configuration
- */
 export const DEEP_LINK_CONFIG: DeepLinkConfig = {
     scheme: 'cinesearch',
     domains: {
@@ -48,7 +31,6 @@ export const DEEP_LINK_CONFIG: DeepLinkConfig = {
         development: 'https://dev.cinesearch.app',
     },
     routes: {
-        // Home / Search
         home: {
             pattern: '',
             screen: '/(tabs)/index',
@@ -56,17 +38,13 @@ export const DEEP_LINK_CONFIG: DeepLinkConfig = {
         search: {
             pattern: 'search',
             screen: '/(tabs)/index',
-            params: { search: ':q' },
+            params: { q: ':q' },
         },
-
-        // Movie details
         movie: {
             pattern: 'movie/:id',
             screen: '/(movies)/[id]',
             params: { id: ':id' },
         },
-
-        // User sections
         favorites: {
             pattern: 'favorites',
             screen: '/(tabs)/favorites',
@@ -76,8 +54,6 @@ export const DEEP_LINK_CONFIG: DeepLinkConfig = {
             pattern: 'settings',
             screen: '/(tabs)/settings',
         },
-
-        // Auth
         login: {
             pattern: 'login',
             screen: '/(auth)/login',
@@ -95,14 +71,9 @@ export const DEEP_LINK_CONFIG: DeepLinkConfig = {
  */
 export function getLinkingPrefixes(): string[] {
     const prefixes = [`${DEEP_LINK_CONFIG.scheme}://`];
-
-    // Add domain prefixes
     Object.values(DEEP_LINK_CONFIG.domains).forEach((domain) => {
-        if (domain) {
-            prefixes.push(domain);
-        }
+        if (domain) prefixes.push(domain);
     });
-
     return prefixes;
 }
 
@@ -114,8 +85,13 @@ export function parseDeepLink(url: string): {
     params: Record<string, string>;
 } {
     try {
-        // Remove scheme and domain
         let path = url;
+
+        // Handle Expo dev URLs
+        if (path.startsWith('exp://')) {
+            const expMatch = path.match(/^exp:\/\/[^/]+\/?(.*)$/);
+            if (expMatch) path = expMatch[1] || '';
+        }
 
         // Remove custom scheme
         if (path.startsWith(`${DEEP_LINK_CONFIG.scheme}://`)) {
@@ -132,7 +108,7 @@ export function parseDeepLink(url: string): {
         // Remove leading slash
         path = path.replace(/^\//, '');
 
-        // Parse query parameters
+        // Split query
         const [pathPart, queryPart] = path.split('?');
         const params: Record<string, string> = {};
 
@@ -143,13 +119,17 @@ export function parseDeepLink(url: string): {
             });
         }
 
+        // Root path fallback
+        if (!pathPart || pathPart === '' || pathPart === '--') {
+            return { route: 'home', params };
+        }
+
         // Match route
         for (const [routeName, route] of Object.entries(DEEP_LINK_CONFIG.routes)) {
-            const pattern = route.pattern;
-            const patternParts = pattern.split('/');
+            const patternParts = route.pattern.split('/');
             const pathParts = pathPart.split('/');
 
-            if (patternParts.length !== pathParts.length && !pattern.includes(':')) {
+            if (patternParts.length !== pathParts.length && !route.pattern.includes(':')) {
                 continue;
             }
 
@@ -161,7 +141,6 @@ export function parseDeepLink(url: string): {
                 const pathPartValue = pathParts[i];
 
                 if (patternPart.startsWith(':')) {
-                    // Parameter
                     const paramName = patternPart.slice(1);
                     extractedParams[paramName] = pathPartValue;
                 } else if (patternPart !== pathPartValue) {
@@ -175,10 +154,11 @@ export function parseDeepLink(url: string): {
             }
         }
 
-        return { route: null, params };
+        // Fallback screen
+        return { route: 'home', params };
     } catch (error) {
         console.error('[DeepLink] Failed to parse URL:', error);
-        return { route: null, params: {} };
+        return { route: 'home', params: {} };
     }
 }
 
@@ -191,7 +171,6 @@ export function buildDeepLink(
     useUniversalLink: boolean = false
 ): string {
     const routeConfig = DEEP_LINK_CONFIG.routes[route];
-
     if (!routeConfig) {
         console.warn(`[DeepLink] Unknown route: ${route}`);
         return `${DEEP_LINK_CONFIG.scheme}://`;
@@ -203,19 +182,20 @@ export function buildDeepLink(
 
     let path = routeConfig.pattern;
 
-    // Replace parameters in path
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
             path = path.replace(`:${key}`, encodeURIComponent(value));
         });
     }
 
-    // Build query string for remaining params
     const queryParams: Record<string, string> = {};
     if (params && routeConfig.params) {
-        Object.entries(params).forEach(([key, value]) => {
-            if (!path.includes(value)) {
-                queryParams[key] = value;
+        Object.entries(routeConfig.params).forEach(([key, value]) => {
+            if (value.startsWith(':')) {
+                const paramName = value.slice(1);
+                if (params[paramName]) {
+                    queryParams[key] = params[paramName];
+                }
             }
         });
     }
@@ -224,11 +204,7 @@ export function buildDeepLink(
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
         .join('&');
 
-    if (queryString) {
-        return `${baseUrl}${path}?${queryString}`;
-    }
-
-    return `${baseUrl}${path}`;
+    return queryString ? `${baseUrl}${path}?${queryString}` : `${baseUrl}${path}`;
 }
 
 /**
@@ -239,15 +215,11 @@ export function getScreenFromRoute(
     params?: Record<string, string>
 ): { screen: string; params: Record<string, string> } | null {
     const routeConfig = DEEP_LINK_CONFIG.routes[route];
-
-    if (!routeConfig) {
-        return null;
-    }
+    if (!routeConfig) return null;
 
     let screen = routeConfig.screen;
     const finalParams = { ...params };
 
-    // Replace dynamic segments in screen path
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
             screen = screen.replace(`[${key}]`, value);
@@ -276,12 +248,7 @@ export function getExpoRouterConfig() {
             screens: {
                 '(tabs)': {
                     screens: {
-                        index: {
-                            path: '',
-                            parse: {
-                                search: (search: string) => search,
-                            },
-                        },
+                        index: '',
                         favorites: 'favorites',
                         settings: 'settings',
                     },

@@ -63,7 +63,7 @@ export function AuthTransition({
     if (!isVisible) return null;
 
     return (
-        <View style={StyleSheet.absoluteFill} pointerEvents="auto">
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <Animated.View style={[styles.container, containerStyle]}>
                 <Animated.View style={scaleStyle}>
                     <LottieView source={require('@/assets/animations/success.json')} autoPlay loop={false} style={styles.lottie} />

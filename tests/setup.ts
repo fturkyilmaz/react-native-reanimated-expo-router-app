@@ -361,11 +361,21 @@ jest.mock("expo-device", () => ({
 
 // Mock expo-file-system
 jest.mock("expo-file-system", () => ({
-  getInfoAsync: jest.fn(() => Promise.resolve({ exists: false })),
-  writeAsStringAsync: jest.fn(() => Promise.resolve()),
-  deleteAsync: jest.fn(() => Promise.resolve()),
-  documentDirectory: '/mock/documents',
-  cacheDirectory: '/mock/cache',
+  File: jest.fn().mockImplementation((path: string) => ({
+    uri: path,
+    exists: false,
+    write: jest.fn(),
+    delete: jest.fn(),
+  })),
+  Directory: jest.fn().mockImplementation((path: string) => ({
+    uri: path,
+    exists: false,
+  })),
+  Paths: {
+    cache: { uri: 'file:///mock/cache' },
+    document: { uri: 'file:///mock/documents' },
+    bundle: { uri: 'file:///mock/bundle' },
+  },
 }));
 
 // Mock Dimensions

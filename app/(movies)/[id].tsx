@@ -214,7 +214,7 @@ export default function MovieDetail() {
                         </ScrollView>
                     </View>
 
-                    <VideoView style={styles.video} player={player} allowsFullscreen allowsPictureInPicture />
+                    <VideoView style={styles.video} player={player} allowsPictureInPicture />
                     <Pressable style={styles.watchButton} onPress={() => {
                         if (isPlaying) {
                             player.pause();

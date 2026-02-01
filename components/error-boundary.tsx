@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
         try {
             await Updates.reloadAsync();
         } catch (e) {
-            this.setState({ hasError: false, error: null });
+
         }
     };
 

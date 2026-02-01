@@ -93,7 +93,8 @@ export function useDeepLinkHandler() {
                     params: screenInfo.params,
                 });
             } else {
-                router.push(screenPath);
+                console.log('[DeepLink] Navigating to:', screenPath);
+                // router.push(screenPath);
             }
 
             return {
@@ -134,7 +135,8 @@ export function useDeepLinkHandler() {
         };
 
         handleInitialURL();
-    }, [navigationState?.key, processDeepLink]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [navigationState?.key]);
 
     /**
      * Handle URL events (app already open)
@@ -146,7 +148,8 @@ export function useDeepLinkHandler() {
         });
 
         return () => subscription.remove();
-    }, [processDeepLink]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return { processDeepLink };
 }

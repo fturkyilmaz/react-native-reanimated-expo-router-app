@@ -173,7 +173,7 @@ export function createInstrumentations(): Instrumentation[] {
     instrumentations.push(
         new FetchInstrumentation({
             propagateTraceHeaderCorsUrls: [/.*/],
-            clearTimingResources: true,
+            clearTimingResources: false,
             applyCustomAttributesOnSpan: (span: Span, request: unknown, result: unknown) => {
                 // API Key'i maskele
                 let url: string;
