@@ -6,7 +6,8 @@ const MOVIES_KEY = 'movies';
 export function usePopularMovies() {
     return useInfiniteQuery({
         queryKey: [MOVIES_KEY, 'popular'],
-        queryFn: ({ pageParam = 1 }) => tmdbService.getPopularMovies(pageParam),
+        queryFn: ({ pageParam = 1 }) => tmdbService.getPopularMovies(pageParam as number),
+        initialPageParam: 1,
         getNextPageParam: (lastPage, allPages) => {
             if (lastPage.total_pages > allPages.length) {
                 return allPages.length + 1;

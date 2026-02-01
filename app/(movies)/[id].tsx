@@ -1,3 +1,4 @@
+import { Movie } from '@/config/api';
 import { useFavorites } from '@/hooks/useFavorites';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,7 +12,6 @@ import Animated, {
     FadeInUp,
     interpolate,
     useAnimatedStyle,
-    useEvent,
     useSharedValue
 } from 'react-native-reanimated';
 
@@ -35,18 +35,31 @@ export default function MovieDetail() {
         player.play();
     });
 
-    const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+    const [isPlaying, setIsPlaying] = useState(player.playing);
+
+    useEffect(() => {
+        const subscription = player.addListener('playingChange', (event) => {
+            setIsPlaying(event.isPlaying);
+        });
+        return () => subscription.remove();
+    }, [player]);
 
     useEffect(() => {
         setIsLiked(isFavorite(movieId));
     }, [movieId, isFavorite]);
 
     const handleFavoritePress = () => {
-        const movieNew = {
+        if (!movie) return;
+
+        const movieNew: Movie = {
             id: movieId,
             title: movie.title,
             poster_path: movie.poster_path,
             vote_average: movie.vote_average,
+            overview: movie.overview || '',
+            backdrop_path: movie.backdrop_path || null,
+            release_date: movie.release_date || '',
+            genre_ids: movie.genre_ids || [],
         };
 
         toggleFavorite(movieNew);

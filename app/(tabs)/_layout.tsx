@@ -22,19 +22,19 @@ export default function TabLayout() {
       {/* Keşfet / Discover */}
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: 'film', selected: 'film.fill' }} />
-        <Label style={{ color: theme.text }}>{t('home.discover')}</Label>
+        <Label>{t('home.discover')}</Label>
       </NativeTabs.Trigger>
 
       {/* Favoriler / Favorites */}
       <NativeTabs.Trigger name="favorites">
         <Icon sf={{ default: 'heart', selected: 'heart.fill' }} />
-        <Label style={{ color: theme.text }}>{t('favorites.title')}</Label>
+        <Label>{t('favorites.title')}</Label>
       </NativeTabs.Trigger>
 
       {/* Ayarlar / Settings */}
       <NativeTabs.Trigger name="settings">
         <Icon sf={{ default: 'gear', selected: 'gearshape.fill' }} />
-        <Label style={{ color: theme.text }}>{t('settings.title')}</Label>
+        <Label>{t('settings.title')}</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
