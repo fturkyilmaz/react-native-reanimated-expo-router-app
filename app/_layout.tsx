@@ -6,6 +6,8 @@ import { FavoritesProvider } from '@/hooks/useFavorites';
 import i18n from '@/i18n';
 import { OpenTelemetryProvider } from '@/otel/provider';
 import { QueryProvider } from '@/providers/query-provider';
+import type { SecurityCheckResult } from '@/security';
+import { SecurityProvider } from '@/security';
 import { SentryProvider } from '@/sentry/provider';
 import { useAuthStore } from '@/store/authStore';
 import { Stack, useRouter } from 'expo-router';
@@ -85,19 +87,30 @@ export default function RootLayout() {
   return (
     <SentryProvider dsn={process.env.EXPO_PUBLIC_SENTRY_DSN}>
       <OpenTelemetryProvider>
-        <I18nextProvider i18n={i18n}>
-          <QueryProvider>
-            <GestureHandlerRootView style={styles.container}>
-              <ErrorBoundary>
-                <AuthProvider>
-                  <FavoritesProvider>
-                    <RootLayoutNav />
-                  </FavoritesProvider>
-                </AuthProvider>
-              </ErrorBoundary>
-            </GestureHandlerRootView>
-          </QueryProvider>
-        </I18nextProvider>
+        <SecurityProvider
+          blockOnCompromised={!__DEV__}
+          runStorageAudit={__DEV__}
+          onSecurityCheck={(result: SecurityCheckResult) => {
+            if (result.isCompromised) {
+              // Log to Sentry for monitoring
+              console.warn('[Security] Device compromised:', result.riskLevel, result.checks);
+            }
+          }}
+        >
+          <I18nextProvider i18n={i18n}>
+            <QueryProvider>
+              <GestureHandlerRootView style={styles.container}>
+                <ErrorBoundary>
+                  <AuthProvider>
+                    <FavoritesProvider>
+                      <RootLayoutNav />
+                    </FavoritesProvider>
+                  </AuthProvider>
+                </ErrorBoundary>
+              </GestureHandlerRootView>
+            </QueryProvider>
+          </I18nextProvider>
+        </SecurityProvider>
       </OpenTelemetryProvider>
     </SentryProvider>
   );
