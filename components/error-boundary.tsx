@@ -1,3 +1,4 @@
+import { handleErrorBoundaryError } from '@/otel/instrumentation/errors';
 import * as Updates from 'expo-updates';
 import { Component, ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -20,6 +21,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
         console.error('App crash:', error, errorInfo);
+        handleErrorBoundaryError(error, errorInfo, {
+            'error.component': 'ErrorBoundary',
+            'error.screen': 'unknown',
+        });
     }
 
     handleRestart = async () => {

@@ -3,6 +3,7 @@ import { AuthProvider } from '@/hooks/useAuth';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import { FavoritesProvider } from '@/hooks/useFavorites';
 import i18n from '@/i18n';
+import { OpenTelemetryProvider } from '@/otel/provider';
 import { QueryProvider } from '@/providers/query-provider';
 import { useAuthStore } from '@/store/authStore';
 import { Stack, useRouter } from 'expo-router';
@@ -81,17 +82,19 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <I18nextProvider i18n={i18n}>
-      <QueryProvider>
-        <GestureHandlerRootView style={styles.container}>
-          <AuthProvider>
-            <FavoritesProvider>
-              <RootLayoutNav />
-            </FavoritesProvider>
-          </AuthProvider>
-        </GestureHandlerRootView>
-      </QueryProvider>
-    </I18nextProvider>
+    <OpenTelemetryProvider>
+      <I18nextProvider i18n={i18n}>
+        <QueryProvider>
+          <GestureHandlerRootView style={styles.container}>
+            <AuthProvider>
+              <FavoritesProvider>
+                <RootLayoutNav />
+              </FavoritesProvider>
+            </AuthProvider>
+          </GestureHandlerRootView>
+        </QueryProvider>
+      </I18nextProvider>
+    </OpenTelemetryProvider>
   );
 }
 
