@@ -1,6 +1,7 @@
 import { API_CONFIG, Movie, MovieDetails } from '@/config/api';
 import { logApiError } from '@/otel/instrumentation/errors';
 import { withTracing } from '@/otel/instrumentation/fetch';
+import { addApiBreadcrumb, captureException } from '@/sentry';
 
 class TMDBService {
     private baseUrl = API_CONFIG.BASE_URL;
@@ -8,6 +9,7 @@ class TMDBService {
 
     private async fetchWithError<T>(endpoint: string, operationName: string): Promise<T> {
         const url = `${this.baseUrl}${endpoint}?api_key=${this.apiKey}&language=tr-TR`;
+        const startTime = Date.now();
 
         try {
             const response = await withTracing(
@@ -23,6 +25,10 @@ class TMDBService {
                 }
             );
 
+            // Sentry breadcrumb ekle
+            const duration = Date.now() - startTime;
+            addApiBreadcrumb(endpoint, 'GET', response.status, duration);
+
             if (!response.ok) {
                 throw new Error(`HTTP Error: ${response.status}`);
             }
@@ -30,6 +36,8 @@ class TMDBService {
             return await response.json();
         } catch (error) {
             console.error('TMDB API Error:', error);
+
+            // OpenTelemetry'ye gönder
             logApiError(
                 error as Error,
                 endpoint,
@@ -39,6 +47,20 @@ class TMDBService {
                     'api.service': 'tmdb',
                 }
             );
+
+            // Sentry'ye gönder
+            captureException(error as Error, {
+                tags: {
+                    'api.service': 'tmdb',
+                    'api.endpoint': endpoint,
+                    'api.operation': operationName,
+                },
+                extra: {
+                    url: url.replace(this.apiKey || '', '***'),
+                    duration: Date.now() - startTime,
+                },
+            });
+
             throw error;
         }
     }

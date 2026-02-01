@@ -1,10 +1,12 @@
 import { AuthTransition } from '@/components/auth-transition';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { AuthProvider } from '@/hooks/useAuth';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import { FavoritesProvider } from '@/hooks/useFavorites';
 import i18n from '@/i18n';
 import { OpenTelemetryProvider } from '@/otel/provider';
 import { QueryProvider } from '@/providers/query-provider';
+import { SentryProvider } from '@/sentry/provider';
 import { useAuthStore } from '@/store/authStore';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -39,7 +41,6 @@ function RootLayoutNav() {
         const result = await authenticate();
 
         if (!result.success) {
-          // Doğrulama başarısız veya iptal edildi, login ekranına yönlendir
           router.replace('/(auth)/login');
         } else {
           // Doğrulama başarılı, son doğrulama zamanını güncelle
@@ -82,19 +83,23 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <OpenTelemetryProvider>
-      <I18nextProvider i18n={i18n}>
-        <QueryProvider>
-          <GestureHandlerRootView style={styles.container}>
-            <AuthProvider>
-              <FavoritesProvider>
-                <RootLayoutNav />
-              </FavoritesProvider>
-            </AuthProvider>
-          </GestureHandlerRootView>
-        </QueryProvider>
-      </I18nextProvider>
-    </OpenTelemetryProvider>
+    <SentryProvider dsn={process.env.EXPO_PUBLIC_SENTRY_DSN}>
+      <OpenTelemetryProvider>
+        <I18nextProvider i18n={i18n}>
+          <QueryProvider>
+            <GestureHandlerRootView style={styles.container}>
+              <ErrorBoundary>
+                <AuthProvider>
+                  <FavoritesProvider>
+                    <RootLayoutNav />
+                  </FavoritesProvider>
+                </AuthProvider>
+              </ErrorBoundary>
+            </GestureHandlerRootView>
+          </QueryProvider>
+        </I18nextProvider>
+      </OpenTelemetryProvider>
+    </SentryProvider>
   );
 }
 
