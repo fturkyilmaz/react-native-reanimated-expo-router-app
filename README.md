@@ -46,11 +46,21 @@ siname/
 │   ├── AnimatedHeader.tsx # Scroll animasyonlu header
 │   └── GlassPanel.tsx     # expo-liquid-glass ile cam efekti
 │
-│── assets/                # Görseller, ikonlar
-│── constants/             # Sabitler ve tema
-│── hooks/                 # Custom hook'lar
-│── package.json
-│── README.md
+├── components/            # Reusable UI components
+├── hooks/                 # Custom React hooks
+├── services/              # API services
+├── store/                 # Zustand state management
+├── config/                # Configuration files
+├── constants/             # Constants (theme, etc.)
+├── schemas/               # Zod validation schemas
+├── providers/             # React context providers
+├── i18n/                  # Internationalization
+├── analytics/             # Analytics & A/B Testing (yeni)
+├── otel/                  # OpenTelemetry (yeni)
+├── sentry/                # Sentry error tracking (yeni)
+├── tests/                 # Test files
+├── e2e/                   # E2E tests
+└── docs/                 # Documentation
 ```
 
 ---
@@ -92,9 +102,3 @@ Katkıda bulunmak için:
 # Değişiklikleri commit et
 # Pull request gönder
 ```
-
----
-
-## 📄 Lisans
-
-Bu proje **MIT lisansı** ile lisanslanmıştır.

@@ -96,7 +96,8 @@
   "devDependencies": {
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
-    "@types/jest": "29.5.14",
+    "@types/jest": "^30.0.0",
+    "@types/mocha": "^10.0.10",
     "@types/react": "~19.1.0",
     "@types/react-test-renderer": "^19.0.0",
     "detox": "^20.47.0",
