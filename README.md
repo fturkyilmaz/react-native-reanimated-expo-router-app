@@ -41,7 +41,7 @@
 ## 🏗️ Architecture
 
 ```
-siname/
+cinesearch/
 │── app/                # Expo Router pages
 │   ├── (tabs)/         # Tab navigation group
 │   ├── (auth)/         # Authentication flow
@@ -49,22 +49,29 @@ siname/
 │   ├── _layout.tsx     # Root layout & providers
 │   └── index.tsx       # Entry point
 │
-│── components/         # UI Components
-│── hooks/              # Custom React Hooks
-│── store/              # Zustand Stores
-│── providers/          # Context Providers
-│── services/           # API Services
-│── i18n/               # Internationalization
-│── analytics/          # Analytics & A/B Testing
-│── otel/               # OpenTelemetry config
-│── sentry/             # Sentry integration
-│── schemas/            # Zod validation schemas
-│── config/             # App configuration
+│── src/                # Application code (moved to src/)
+│   ├── components/     # UI Components
+│   ├── hooks/          # Custom React Hooks
+│   ├── store/          # Zustand Stores
+│   ├── providers/      # Context Providers
+│   ├── services/       # API Services
+│   ├── i18n/           # Internationalization
+│   ├── analytics/      # Analytics & A/B Testing
+│   ├── otel/           # OpenTelemetry config
+│   ├── sentry/         # Sentry integration
+│   ├── schemas/        # Zod validation schemas
+│   ├── config/         # App configuration
+│   ├── constants/      # Theme & constants
+│   ├── security/       # Security modules
+│   ├── deep-linking/   # Deep linking
+│   ├── notifications/  # Notifications
+│   └── utils/          # Utility functions
+│
+│── assets/             # Images, animations, fonts
 │── tests/              # Unit & Integration tests
 │── e2e/                # End‑to‑End tests
 │── docs/               # Documentation
-│── constants/          # Theme & constants
-└── types/              # TypeScript types
+└── plans/              # Planning documents
 ```
 
 ---
