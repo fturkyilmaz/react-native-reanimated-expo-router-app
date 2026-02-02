@@ -1,104 +1,195 @@
-# 🎬 Siname - Expo Router & Animated Film Keşif Uygulaması
+# 🎬 Siname – Modern Movie Discovery App
 
-**Siname**, modern mobil deneyimi hedefleyen bir **React Native** projesidir.  
-Expo Router ile yönlendirme, React Native Animated ile geçiş efektleri ve **expo-liquid-glass** ile cam efekti gibi görsel detaylar bir araya getirildi.  
-Kullanıcılar film listelerini gezebilir, detay sayfalarına geçiş yapabilir ve animasyonlarla zenginleştirilmiş bir arayüz deneyimi yaşar.
+<div align="center">
 
----
+**Production‑Ready React Native & Expo Router Template**
 
-## 🚀 Özellikler
+[`https://reactnative.dev/`](https://reactnative.dev/)  
+[`https://expo.dev/`](https://expo.dev/)  
+[`https://www.typescriptlang.org/`](https://www.typescriptlang.org/)
 
-- ⚡ **Expo Router** ile dosya tabanlı sayfa yönlendirme  
-- 🎞️ **React Native Animated** ile akıcı geçişler ve scroll efektleri  
-- 🧊 **expo-liquid-glass** ile blur & cam efekti  
-- 🎬 Film listesi ve detay ekranları  
-- 📱 Responsive tasarım  
-- 🛠️ Kolay kurulum ve geliştirme ortamı  
+*A modern movie discovery experience built with React Native Animated, Expo Router, and a scalable architecture.*
+
+</div>
 
 ---
 
-## 📦 Kurulum
+## 🚀 Features
 
-```bash
-git clone https://github.com/fturkyilmaz/react-native-reanimated-expo-router-app.git
-cd siname
+### 🎨 UI/UX
+- **Smooth Animations**: Native‑performance transitions powered by Reanimated 3  
+- **Liquid Glass Effects**: Modern blur & glassmorphism with expo‑liquid‑glass  
+- **Auth Transitions**: Custom animated authentication flow  
+- **Responsive Design**: Optimized for all screen sizes  
 
-npm install
-# veya
-yarn install
+### ⚙️ Technical Stack
+- **Expo Router v3**: File‑based routing with deep linking support  
+- **Zustand**: Lightweight and fast state management  
+- **React Query**: Server state management and caching  
+- **i18n**: Multi‑language support (English & Turkish)  
+- **Authentication Flow**: Integrated store + provider architecture  
 
-npx expo start
-```
+### 🛡️ Production Ready
+- **Sentry**: Crash reporting and error tracking  
+- **OpenTelemetry**: Performance monitoring and observability  
+- **Error Boundary**: Global crash protection  
+- **Deep Linking**: Native deep link integration  
+- **Favorites**: Local favorites management  
 
 ---
 
-## 📂 Proje Yapısı
+## 🏗️ Architecture
 
 ```
 siname/
-│── app/
-│   ├── index.tsx          # Ana sayfa
-│   ├── movie/[id].tsx     # Film detay sayfası
-│   └── _layout.tsx        # Router layout
+│── app/                # Expo Router pages
+│   ├── (tabs)/         # Tab navigation group
+│   ├── (auth)/         # Authentication flow
+│   ├── (movies)/       # Movie detail flow
+│   ├── _layout.tsx     # Root layout & providers
+│   └── index.tsx       # Entry point
 │
-│── components/
-│   ├── MovieCard.tsx      # Film kartı componenti
-│   ├── AnimatedHeader.tsx # Scroll animasyonlu header
-│   └── GlassPanel.tsx     # expo-liquid-glass ile cam efekti
-│
-├── components/            # Reusable UI components
-├── hooks/                 # Custom React hooks
-├── services/              # API services
-├── store/                 # Zustand state management
-├── config/                # Configuration files
-├── constants/             # Constants (theme, etc.)
-├── schemas/               # Zod validation schemas
-├── providers/             # React context providers
-├── i18n/                  # Internationalization
-├── analytics/             # Analytics & A/B Testing (yeni)
-├── otel/                  # OpenTelemetry (yeni)
-├── sentry/                # Sentry error tracking (yeni)
-├── tests/                 # Test files
-├── e2e/                   # E2E tests
-└── docs/                 # Documentation
+│── components/         # UI Components
+│── hooks/              # Custom React Hooks
+│── store/              # Zustand Stores
+│── providers/          # Context Providers
+│── services/           # API Services
+│── i18n/               # Internationalization
+│── analytics/          # Analytics & A/B Testing
+│── otel/               # OpenTelemetry config
+│── sentry/             # Sentry integration
+│── schemas/            # Zod validation schemas
+│── config/             # App configuration
+│── tests/              # Unit & Integration tests
+│── e2e/                # End‑to‑End tests
+│── docs/               # Documentation
+│── constants/          # Theme & constants
+└── types/              # TypeScript types
 ```
 
 ---
 
-## 🎨 Kullanılan Teknolojiler
-
-| Teknoloji              | Açıklama                              |
-|------------------------|----------------------------------------|
-| [React Native](https://reactnative.dev/) | Mobil uygulama çatısı |
-| [Expo](https://expo.dev/) | Geliştirme ve bundling |
-| [Expo Router](https://expo.github.io/router/docs) | Dosya tabanlı routing |
-| [React Native Animated](https://reactnative.dev/docs/animated) | Animasyon API |
-| expo-liquid-glass [(github.com in Bing)](https://www.bing.com/search?q="https%3A%2F%2Fgithub.com%2Fexpo%2Fexpo-liquid-glass") | Cam efekti ve blur |
-
----
-
-## 🛠 Geliştirme Notları
-
-- Animasyonlar `Animated.Value`, `interpolate`, `useAnimatedScrollHandler` ve `useNativeDriver` ile yönetildi.  
-- Sayfa geçişleri `expo-router` ile segment bazlı olarak tanımlandı.  
-- Cam efekti için `expo-liquid-glass` kullanıldı, özellikle header ve modal arayüzlerde.  
-- Tasarımda **Material Design** ve **minimalist** yaklaşım benimsendi.  
-
----
-
-## 📸 Ekran Görüntüleri
-
-> Uygulama ekran görüntüleri buraya eklenebilir (MovieCard, detay geçişi, blur header vs.)
-
----
-
-## 🤝 Katkı
-
-Katkıda bulunmak için:
+## 🛠️ Installation
 
 ```bash
-# Forkla
-# Yeni branch oluştur: feature/yenilik
-# Değişiklikleri commit et
-# Pull request gönder
+# Clone the repository
+git clone https://github.com/fturkyilmaz/react-native-reanimated-expo-router-app.git
+cd siname
+
+# Install dependencies
+npm install
+# or
+yarn install
+
+# Environment variables (optional)
+cp .env.example .env.local
+
+# Start Expo development server
+npx expo start
 ```
+
+### Requirements
+- Node.js ≥ 18  
+- Expo CLI  
+- iOS Simulator (macOS) or Android Emulator  
+
+---
+
+## 💡 Technical Highlights
+
+### Auth Transition Flow
+```tsx
+<AuthTransition
+  isVisible={authStore.isTransitioning}
+  onAnimationComplete={authStore.completeTransition}
+  userName={authStore.user?.name || ''}
+/>
+```
+
+### Provider Hierarchy
+```tsx
+<SentryProvider>
+  <OpenTelemetryProvider>
+    <SecurityProvider>
+      <DeepLinkProvider>
+        <I18nextProvider>
+          <QueryProvider>
+            <ErrorBoundary>
+              <AuthProvider>
+                <FavoritesProvider>
+                  {/* App Content */}
+                </FavoritesProvider>
+              </AuthProvider>
+            </ErrorBoundary>
+          </QueryProvider>
+        </I18nextProvider>
+      </DeepLinkProvider>
+    </SecurityProvider>
+  </OpenTelemetryProvider>
+</SentryProvider>
+```
+
+### Navigation Structure
+- **(tabs)** → Main navigation (Home, Search, Profile)  
+- **(auth)** → Authentication flow (Login, Register)  
+- **(movies)** → Movie detail screens  
+
+---
+
+## 🎨 Technology Stack
+
+| Category | Technologies |
+|----------|--------------|
+| **Core** | React Native 0.81+, Expo 54+, TypeScript 5.0+ |
+| **Navigation** | Expo Router v3 |
+| **Animation** | Reanimated 3, Animated API |
+| **UI Effects** | expo‑liquid‑glass, expo‑blur |
+| **State Management** | Zustand, React Query |
+| **Forms/Validation** | React Hook Form, Zod |
+| **Monitoring** | Sentry, OpenTelemetry |
+| **Localization** | i18next, react‑i18next |
+| **Gestures** | react‑native‑gesture‑handler |
+
+---
+
+## 📸 Screenshots
+
+<div align="center">
+
+| Home | Movie Detail | Auth Flow |
+|------|--------------|-----------|
+| *(Coming soon)* | *(Coming soon)* | *(Coming soon)* |
+
+</div>
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please open an issue first to discuss proposed changes.
+
+1. Fork the repository  
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)  
+3. Commit changes (`git commit -m 'feat: Add amazing feature'`)  
+4. Push to branch (`git push origin feature/amazing-feature`)  
+5. Open a Pull Request  
+
+### Development Guidelines
+- TypeScript strict mode enabled  
+- ESLint + Prettier enforced  
+- Unit tests per component  
+- E2E tests required for critical flows  
+
+---
+
+## 🙏 Acknowledgements
+
+- [Expo](https://expo.dev/) – for the ecosystem  
+- [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/) – for animation power  
+- [Zustand](https://docs.pmndrs.io/zustand) – for state management  
+
+<div align="center">
+
+**⭐ If you find this project useful, please give it a star!**
+
+</div>
