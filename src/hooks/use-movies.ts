@@ -11,7 +11,6 @@ interface UseMoviesReturn {
     page: number;
 }
 
-// Örnek poster_path array (TMDB’den bilinen filmler)
 const posterPaths = [
     "/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg", // Joker (2019)
     "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", // Interstellar
@@ -19,10 +18,10 @@ const posterPaths = [
     "/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg", // Avatar: The Way of Water
     "/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg", // John Wick: Chapter 4
     "/yF1eOkaYvwiORauRCPWznV9xVvi.jpg", // Dune: Part Two
-    "/fCayJrkfRaCRCTh8GqN30f8oyQF.jpg", // Fight Club
     "/6KErczPBROQty7QoIsaa6wJYXZi.jpg", // Parasite
     "/q719jXXEzOoYaps6babgKnONONX.jpg", // Spirited Away (Studio Ghibli)
     "/d5NXSklXo0qyIYkgV94XAgMIckC.jpg", // Pulp Fiction
+    "/q719jXXEzOoYaps6babgKnONONX.jpg", // Wicked (2024 musical adaptation)
 ];
 
 
