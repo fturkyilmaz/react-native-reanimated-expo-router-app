@@ -49,7 +49,10 @@ cinesearch/
 │   ├── _layout.tsx     # Root layout & providers
 │   └── index.tsx       # Entry point
 │
-│── src/                # Application code (moved to src/)
+│── src/                # Application source code
+│   ├── assets/         # Images, animations, fonts
+│   │   ├── animations/ # Lottie animations
+│   │   └── images/     # App images & icons
 │   ├── components/     # UI Components
 │   ├── hooks/          # Custom React Hooks
 │   ├── store/          # Zustand Stores
@@ -66,8 +69,6 @@ cinesearch/
 │   ├── deep-linking/   # Deep linking
 │   ├── notifications/  # Notifications
 │   └── utils/          # Utility functions
-│
-│── assets/             # Images, animations, fonts
 │── tests/              # Unit & Integration tests
 │── e2e/                # End‑to‑End tests
 │── docs/               # Documentation
