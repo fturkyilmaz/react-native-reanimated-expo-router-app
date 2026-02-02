@@ -1,8 +1,8 @@
 import { AuthTransition } from '@/components/auth-transition';
 import { ErrorBoundary } from '@/components/error-boundary';
 import DeepLinkProvider from '@/deep-linking';
-import { AuthProvider } from '@/hooks/useAuth';
-import { FavoritesProvider } from '@/hooks/useFavorites';
+import { AuthProvider } from '@/hooks/use-auth';
+import { FavoritesProvider } from '@/hooks/use-favorites';
 import i18n from '@/i18n';
 import { OpenTelemetryProvider } from '@/otel/provider';
 import { QueryProvider } from '@/providers/query-provider';

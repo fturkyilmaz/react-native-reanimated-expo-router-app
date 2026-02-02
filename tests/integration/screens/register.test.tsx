@@ -1,5 +1,5 @@
 import RegisterScreen from '@/app/(auth)/register';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
@@ -176,7 +176,7 @@ describe('RegisterScreen Integration', () => {
   });
 
   it('handles registration error', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
     mockRegister.mockRejectedValueOnce(new Error('Registration failed'));
 
     const { getByPlaceholderText, getByText } = render(<RegisterScreen />);

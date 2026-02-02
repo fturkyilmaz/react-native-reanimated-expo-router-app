@@ -1,6 +1,6 @@
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/use-auth';
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { RegisterFormData, registerSchema } from '@/schemas/auth';
@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 
 export default function RegisterScreen() {
-    const router = useRouter();
     const { register, isLoading } = useAuth();
 
     const {

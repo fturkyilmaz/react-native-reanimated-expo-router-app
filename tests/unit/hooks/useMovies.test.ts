@@ -1,4 +1,4 @@
-import { useMovies } from "@/hooks/useMovies";
+import { useMovies } from "@/hooks/use-movies";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 // Increase timeout for async tests

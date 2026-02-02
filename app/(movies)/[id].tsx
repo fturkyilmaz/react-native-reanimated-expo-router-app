@@ -1,5 +1,5 @@
 import { Movie } from '@/config/api';
-import { useFavorites } from '@/hooks/useFavorites';
+import { useFavorites } from '@/hooks/use-favorites';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';

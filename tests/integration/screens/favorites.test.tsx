@@ -1,6 +1,6 @@
 import FavoritesScreen from '@/app/(tabs)/favorites';
+import { useFavorites } from '@/hooks/use-favorites';
 import { useTheme } from '@/hooks/use-theme';
-import { useFavorites } from '@/hooks/useFavorites';
 import { fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
 

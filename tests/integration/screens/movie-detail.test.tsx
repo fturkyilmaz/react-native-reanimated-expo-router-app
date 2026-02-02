@@ -1,5 +1,5 @@
 import MovieDetailScreen from '@/app/(movies)/[id]';
-import { useFavorites } from '@/hooks/useFavorites';
+import { useFavorites } from '@/hooks/use-favorites';
 import { fireEvent, render } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 import React from 'react';

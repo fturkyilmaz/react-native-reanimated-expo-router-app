@@ -1,7 +1,7 @@
 import { MovieCard } from '@/components/movie-card';
 import { Skeleton } from '@/components/skeleton';
+import { useMovies } from '@/hooks/use-movies';
 import { useTheme } from '@/hooks/use-theme';
-import { useMovies } from '@/hooks/useMovies';
 import { useAuthStore } from '@/store/authStore';
 import { Stack } from 'expo-router';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';

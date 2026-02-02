@@ -1,6 +1,6 @@
 import HomeScreen from '@/app/(tabs)/index';
+import { useMovies } from '@/hooks/use-movies';
 import { useTheme } from '@/hooks/use-theme';
-import { useMovies } from '@/hooks/useMovies';
 import { useAuthStore } from '@/store/authStore';
 import { fireEvent, render } from '@testing-library/react-native';
 import React from 'react';
