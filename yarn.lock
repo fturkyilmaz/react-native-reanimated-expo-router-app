@@ -2453,6 +2453,11 @@
   dependencies:
     merge-options "^3.0.4"
 
+"@react-native-community/netinfo@^11.5.1":
+  version "11.5.1"
+  resolved "https://registry.yarnpkg.com/@react-native-community/netinfo/-/netinfo-11.5.1.tgz#540691480a6718bb1d8d9ce3a3f4db144ddd471b"
+  integrity sha512-ZiLvVoNW6fIOZqU99Jdm+dfwv2T76AHifKtEDydPQOkzKg/xLIkSrOEMUigkmlNQu4MeCgFJlrapscbRzU+bKg==
+
 "@react-native-firebase/analytics@^21.0.0":
   version "21.14.0"
   resolved "https://registry.yarnpkg.com/@react-native-firebase/analytics/-/analytics-21.14.0.tgz#f3ece5f2f49e6728e7890484d9ae7eee68c0c0a1"

@@ -106,5 +106,11 @@
     "languages": {
         "tr": "Türkçe",
         "en": "English"
+    },
+    "offline": {
+        "title": "İnternet Bağlantısı Yok",
+        "message": "Lütfen ağ ayarlarınızı kontrol edin ve tekrar deneyin.",
+        "retry": "Tekrar Dene",
+        "banner": "İnternet bağlantısı yok"
     }
 }

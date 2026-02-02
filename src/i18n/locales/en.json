@@ -106,5 +106,11 @@
     "languages": {
         "tr": "Turkish",
         "en": "English"
+    },
+    "offline": {
+        "title": "No Internet Connection",
+        "message": "Please check your network settings and try again.",
+        "retry": "Retry",
+        "banner": "No internet connection"
     }
 }

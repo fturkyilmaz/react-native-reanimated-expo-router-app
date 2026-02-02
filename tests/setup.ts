@@ -253,6 +253,10 @@ jest.mock("@tanstack/react-query", () => ({
     setQueryData: jest.fn(),
     getQueryData: jest.fn(),
   })),
+  onlineManager: {
+    setEventListener: jest.fn(),
+    isOnline: jest.fn(() => true),
+  },
 }));
 
 // Mock zustand persist middleware
