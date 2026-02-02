@@ -31,26 +31,23 @@ export function AuthTransition({
     useEffect(() => {
         if (!isVisible) return;
 
-        // Reset shared values before starting animation
-        containerOpacity.value = 0;
-        scale.value = 0;
-        textOpacity.value = 0;
+        // Background fade in
+        containerOpacity.value = withTiming(1, { duration: 300 });
 
-        // Small delay to ensure reset is applied
-        containerOpacity.value = withTiming(1, { duration: 200 });
-
+        // Logo scale bounce
         scale.value = withSequence(
-            withSpring(1.2, { damping: 14, stiffness: 200 }),
-            withSpring(1, { damping: 16, stiffness: 200 }),
+            withSpring(1.2, { damping: 12 }),
+            withSpring(1, { damping: 14 }),
             withDelay(
-                1000,
-                withTiming(20, { duration: 400 }, () => {
+                1800,
+                withTiming(20, { duration: 700 }, () => {
                     runOnJS(onAnimationComplete)();
                 })
             )
         );
 
-        textOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
+        // Text fade in
+        textOpacity.value = withDelay(300, withTiming(1, { duration: 600 }));
     }, [isVisible]);
 
     const containerStyle = useAnimatedStyle(() => ({
@@ -69,7 +66,7 @@ export function AuthTransition({
     if (!isVisible) return null;
 
     return (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <View style={StyleSheet.absoluteFill}>
             <Animated.View style={[styles.container, containerStyle]}>
                 <Animated.View style={scaleStyle}>
                     <LottieView source={require('@/assets/animations/success.json')} autoPlay loop={false} style={styles.lottie} />

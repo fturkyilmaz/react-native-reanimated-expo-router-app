@@ -13,19 +13,17 @@ import { StatusBar } from 'expo-status-bar';
 import { I18nextProvider } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import '../i18n';
 
 function RootLayoutNav() {
-  const authStore = useAuthStore();
+  const { user, isTransitioning, completeTransition } = useAuthStore();
 
-  console.log(authStore.isTransitioning, authStore.user);
 
   return (
     <View style={styles.container}>
       <AuthTransition
-        isVisible={authStore.isTransitioning}
-        onAnimationComplete={authStore.completeTransition}
-        userName={authStore.user?.name || ''}
+        isVisible={isTransitioning}
+        onAnimationComplete={completeTransition}
+        userName={user?.name || ''}
       />
 
       <StatusBar style="light" />

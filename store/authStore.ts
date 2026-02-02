@@ -61,6 +61,7 @@ export const useAuthStore = create<AuthState>()(
                     await new Promise(resolve => setTimeout(resolve, 1000));
 
                     if (email === 'test@test.com' && password === '123456') {
+                        set({ isTransitioning: true });
                         const user = {
                             id: '1',
                             email,
@@ -69,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
                         };
                         await secureStorage.setSecureItem(StorageKey.AUTH_TOKEN, user.token);
                         await secureStorage.setObject(StorageKey.USER_DATA, user, true);
-                        set({ user, isAuthenticated: true, isLoading: false, isTransitioning: true });
+                        set({ user, isAuthenticated: true, isLoading: false });
 
                     } else {
                         throw new Error('Geçersiz e-posta veya şifre');
@@ -83,7 +84,7 @@ export const useAuthStore = create<AuthState>()(
             logout: () => {
                 secureStorage.deleteSecureItem(StorageKey.AUTH_TOKEN);
                 secureStorage.deleteSecureItem(StorageKey.USER_DATA);
-                set({ user: null, isAuthenticated: false, error: null, isBiometricEnabled: false, biometricType: 'none', lastAuthenticatedAt: null });
+                set({ user: null, isAuthenticated: false, error: null, isBiometricEnabled: false, biometricType: 'none', lastAuthenticatedAt: null, isTransitioning: false });
             },
 
             register: async (email: string, password: string, name: string) => {

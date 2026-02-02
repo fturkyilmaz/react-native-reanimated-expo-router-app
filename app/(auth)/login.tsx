@@ -28,11 +28,7 @@ export default function LoginScreen() {
         },
     });
 
-    useEffect(() => {
-        checkBiometricSupport().then((support) => {
-            setShowBiometricButton(support.isAvailable && support.isEnrolled);
-        });
-    }, [checkBiometricSupport]);
+
 
     const onSubmit = async (data: LoginFormData) => {
         try {
@@ -94,6 +90,12 @@ export default function LoginScreen() {
             ]
         );
     };
+
+    useEffect(() => {
+        checkBiometricSupport().then((support) => {
+            setShowBiometricButton(support.isAvailable && support.isEnrolled);
+        });
+    }, [checkBiometricSupport]);
 
     return (
         <KeyboardAvoidingView
