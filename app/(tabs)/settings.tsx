@@ -210,7 +210,6 @@ export default function SettingsScreen() {
                     styles.profileCard,
                     {
                         backgroundColor: theme.card,
-                        shadowColor: theme.shadow
                     }
                 ]}>
                     <View style={styles.avatarContainer}>
@@ -410,10 +409,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
         padding: 20,
         borderRadius: 20,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 3,
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
     },
     avatarContainer: {
         position: 'relative',

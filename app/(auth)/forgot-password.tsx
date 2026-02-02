@@ -326,18 +326,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 8,
-        shadowColor: '#E50914',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        elevation: 5,
+        boxShadow: '0 4px 12px rgba(229, 9, 20, 0.3)',
     },
     buttonDisabled: {
         opacity: 0.7,
     },
     buttonInactive: {
         backgroundColor: '#ccc',
-        shadowOpacity: 0,
     },
     buttonText: {
         color: 'white',

@@ -322,11 +322,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#E50914',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: '0 4px 8px rgba(229, 9, 20, 0.3)',
     },
     buttonDisabled: {
         opacity: 0.7,

@@ -6,7 +6,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     Extrapolate,
     FadeInUp,
@@ -15,7 +15,6 @@ import Animated, {
     useSharedValue
 } from 'react-native-reanimated';
 
-const { width, height } = Dimensions.get('window');
 const AnimatedImage = Animated.createAnimatedComponent(Image);
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
@@ -260,8 +259,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     posterContainer: {
-        height: height * 0.65,
-        width: width,
+        height: '65%',
+        width: '100%',
         position: 'relative',
     },
     poster: {
@@ -270,8 +269,9 @@ const styles = StyleSheet.create({
         resizeMode: 'cover',
     },
     video: {
-        width: Dimensions.get('window').width - 40,
-        height: 250
+        width: '100%',
+        height: 250,
+        borderRadius: 12,
     },
     gradient: {
         position: 'absolute',

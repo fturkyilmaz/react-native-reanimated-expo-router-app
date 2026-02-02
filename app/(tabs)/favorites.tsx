@@ -5,7 +5,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import {
-    Dimensions,
     FlatList,
     ImageBackground,
     Pressable,
@@ -20,7 +19,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const { width } = Dimensions.get('window');
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function FavoritesScreen() {
@@ -129,7 +127,6 @@ export default function FavoritesScreen() {
                                 styles.card,
                                 {
                                     backgroundColor: theme.card,
-                                    shadowColor: theme.shadow
                                 }
                             ]}
                             onPress={() => navigateToDetail(item.id)}
@@ -212,18 +209,16 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     cardContainer: {
-        width: (width - 48) / 2,
+        flex: 1,
         marginBottom: 16,
+        marginHorizontal: 4,
     },
     card: {
         width: '100%',
         aspectRatio: 2 / 3,
         borderRadius: 16,
         overflow: 'hidden',
-        elevation: 3,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
     },
     poster: {
         width: '100%',
@@ -280,11 +275,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 3,
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
     },
 
     // Boş state stilleri
@@ -315,11 +306,7 @@ const styles = StyleSheet.create({
         height: 30,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#E50914',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
+        boxShadow: '0 4px 8px rgba(229, 9, 20, 0.3)',
     },
     emptyTitle: {
         fontSize: 28,
@@ -339,11 +326,7 @@ const styles = StyleSheet.create({
         height: 56,
         borderRadius: 28,
         overflow: 'hidden',
-        elevation: 4,
-        shadowColor: '#E50914',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
+        boxShadow: '0 4px 12px rgba(229, 9, 20, 0.25)',
     },
     gradientButton: {
         flex: 1,
