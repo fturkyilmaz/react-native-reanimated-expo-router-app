@@ -1,9 +1,9 @@
 import { useTheme } from '@/hooks/use-theme';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
 import i18n from '@/i18n';
+import { SecureStorage } from '@/security';
 import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -110,7 +110,8 @@ export default function SettingsScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await AsyncStorage.clear();
+                            const storage = SecureStorage.getInstance();
+                            await storage.clearAll();
                             Alert.alert(t('common.success'), t('settings.cacheCleared'));
                         } catch (error) {
                             Alert.alert(t('common.error'), t('common.errorOccured'));

@@ -31,18 +31,6 @@ jest.mock("expo-secure-store", () => ({
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WhenUnlockedThisDeviceOnly',
 }));
 
-// Mock @react-native-async-storage/async-storage
-jest.mock("@react-native-async-storage/async-storage", () => ({
-  setItem: jest.fn(),
-  getItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-  getAllKeys: jest.fn(),
-  multiGet: jest.fn(),
-  multiSet: jest.fn(),
-  multiRemove: jest.fn(),
-}));
-
 // Mock expo-image
 jest.mock("expo-image", () => ({
   Image: jest.fn(({ source, ...props }) => ({

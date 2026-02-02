@@ -1,7 +1,7 @@
 import SettingsScreen from '@/app/(tabs)/settings';
 import { useTheme } from '@/hooks/use-theme';
+import { SecureStorage } from '@/security';
 import { useAuthStore } from '@/store/authStore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { Alert } from 'react-native';
@@ -9,7 +9,13 @@ import { Alert } from 'react-native';
 // Mock hooks and modules
 jest.mock('@/store/authStore');
 jest.mock('@/hooks/use-theme');
-jest.mock('@react-native-async-storage/async-storage');
+jest.mock('@/security');
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(),
+  setItemAsync: jest.fn(),
+  deleteItemAsync: jest.fn(),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WhenUnlockedThisDeviceOnly',
+}));
 jest.mock('react-native/Libraries/Alert/Alert', () => ({
   alert: jest.fn(),
 }));
@@ -123,7 +129,10 @@ describe('SettingsScreen Integration', () => {
   });
 
   it('clears cache on confirm', async () => {
-    (AsyncStorage.clear as jest.Mock).mockResolvedValueOnce(undefined);
+    const mockClearAll = jest.fn().mockResolvedValueOnce({ success: true });
+    (SecureStorage.getInstance as jest.Mock).mockReturnValue({
+      clearAll: mockClearAll,
+    });
     (Alert.alert as jest.Mock).mockImplementation((title, message, buttons) => {
       const clearButton = buttons.find((b: any) => b.text === 'Temizle');
       if (clearButton && clearButton.onPress) {
@@ -137,7 +146,7 @@ describe('SettingsScreen Integration', () => {
     fireEvent.press(clearCacheButton);
 
     await waitFor(() => {
-      expect(AsyncStorage.clear).toHaveBeenCalled();
+      expect(mockClearAll).toHaveBeenCalled();
     });
   });
 

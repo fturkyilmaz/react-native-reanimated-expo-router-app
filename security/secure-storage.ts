@@ -1,11 +1,10 @@
 /**
  * Secure Storage Module
  * 
- * Provides secure storage for sensitive data with automatic security auditing.
- * Uses expo-secure-store for sensitive data and AsyncStorage for non-sensitive data.
+ * Provides secure storage for all data using expo-secure-store.
+ * All data is stored securely on the device.
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 
 /**
@@ -150,7 +149,10 @@ export class SecureStorage {
      */
     async setItem(key: StorageKey, value: string): Promise<StorageResult> {
         try {
-            await AsyncStorage.setItem(key, value);
+            await SecureStore.setItemAsync(key, value, {
+                keychainService: 'com.cinesearch.storage',
+                keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+            });
 
             return {
                 success: true,
@@ -237,7 +239,7 @@ export class SecureStorage {
      */
     async getItem(key: StorageKey): Promise<StorageResult> {
         try {
-            const value = await AsyncStorage.getItem(key);
+            const value = await SecureStore.getItemAsync(key);
 
             return {
                 success: true,
@@ -318,7 +320,7 @@ export class SecureStorage {
      */
     async deleteItem(key: StorageKey): Promise<StorageResult> {
         try {
-            await AsyncStorage.removeItem(key);
+            await SecureStore.deleteItemAsync(key);
 
             return {
                 success: true,
@@ -350,23 +352,15 @@ export class SecureStorage {
         this.auditLog = [];
 
         try {
-            // Audit AsyncStorage
-            const asyncKeys = await AsyncStorage.getAllKeys();
-
-            for (const key of asyncKeys) {
-                const value = await AsyncStorage.getItem(key);
-                await this.analyzeStorageItem(key, value || '', false);
-            }
-
-            // Audit SecureStore (we can't list keys, but we can check known sensitive keys)
-            for (const key of this.sensitiveKeys) {
+            // Audit all known keys using SecureStore (now all data is stored securely)
+            for (const key of Object.values(StorageKey)) {
                 try {
                     const value = await SecureStore.getItemAsync(key);
                     if (value !== null) {
                         await this.analyzeStorageItem(key, value, true);
                     }
                 } catch {
-                    // Key doesn't exist in secure storage
+                    // Key doesn't exist
                 }
             }
 
@@ -448,11 +442,8 @@ export class SecureStorage {
      */
     async clearAll(): Promise<StorageResult> {
         try {
-            // Clear AsyncStorage
-            await AsyncStorage.clear();
-
-            // Clear SecureStore (known keys only)
-            for (const key of this.sensitiveKeys) {
+            // Clear all SecureStore items (known keys)
+            for (const key of Object.values(StorageKey)) {
                 try {
                     await SecureStore.deleteItemAsync(key);
                 } catch {
@@ -478,15 +469,9 @@ export class SecureStorage {
     async clearSensitiveData(): Promise<StorageResult> {
         try {
             for (const key of this.sensitiveKeys) {
-                // Try to delete from both storages
+                // Try to delete from secure storage
                 try {
                     await SecureStore.deleteItemAsync(key);
-                } catch {
-                    // Ignore errors
-                }
-
-                try {
-                    await AsyncStorage.removeItem(key);
                 } catch {
                     // Ignore errors
                 }
@@ -511,19 +496,9 @@ export class SecureStorage {
         asyncStorage: { keys: number; size: number };
         secureStorage: { keys: number };
     }> {
-        const asyncKeys = await AsyncStorage.getAllKeys();
-        let asyncSize = 0;
-
-        for (const key of asyncKeys) {
-            const value = await AsyncStorage.getItem(key);
-            if (value) {
-                asyncSize += value.length;
-            }
-        }
-
-        // Count secure storage items (known keys only)
+        // All data is now in SecureStore
         let secureCount = 0;
-        for (const key of this.sensitiveKeys) {
+        for (const key of Object.values(StorageKey)) {
             try {
                 const value = await SecureStore.getItemAsync(key);
                 if (value !== null) {
@@ -535,13 +510,8 @@ export class SecureStorage {
         }
 
         return {
-            asyncStorage: {
-                keys: asyncKeys.length,
-                size: asyncSize,
-            },
-            secureStorage: {
-                keys: secureCount,
-            },
+            asyncStorage: { keys: 0, size: 0 },
+            secureStorage: { keys: secureCount },
         };
     }
 }

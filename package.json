@@ -40,7 +40,6 @@
     "@opentelemetry/sdk-trace-base": "^1.26.0",
     "@opentelemetry/sdk-trace-web": "^1.26.0",
     "@opentelemetry/semantic-conventions": "^1.27.0",
-    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-firebase/analytics": "^21.0.0",
     "@react-native-firebase/app": "^21.0.0",
     "@react-native-firebase/remote-config": "^21.0.0",

@@ -1,8 +1,16 @@
 import { FavoritesProvider, useFavorites } from '@/hooks/useFavorites';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import * as SecureStore from 'expo-secure-store';
 import React from 'react';
 import { mockMovies } from '../../__mocks__/mockData';
+
+// Mock expo-secure-store
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(),
+  setItemAsync: jest.fn(),
+  deleteItemAsync: jest.fn(),
+  WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WhenUnlockedThisDeviceOnly',
+}));
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <FavoritesProvider>{children}</FavoritesProvider>
@@ -11,12 +19,12 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 describe('useFavorites', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(null);
+    (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
   });
 
   it('throws error when used outside provider', () => {
     // Suppress console.error for this test
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
     expect(() => {
       renderHook(() => useFavorites());
@@ -35,7 +43,7 @@ describe('useFavorites', () => {
 
   it('loads favorites from storage on mount', async () => {
     const storedFavorites = [mockMovies[0], mockMovies[1]];
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+    (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(
       JSON.stringify(storedFavorites)
     );
 
@@ -56,7 +64,7 @@ describe('useFavorites', () => {
 
     expect(result.current.favorites).toHaveLength(1);
     expect(result.current.favorites[0].id).toBe(mockMovies[0].id);
-    expect(AsyncStorage.setItem).toHaveBeenCalled();
+    expect(SecureStore.setItemAsync).toHaveBeenCalled();
   });
 
   it('does not add duplicate favorites', async () => {
@@ -124,8 +132,8 @@ describe('useFavorites', () => {
   });
 
   it('handles storage error on load gracefully', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    (AsyncStorage.getItem as jest.Mock).mockRejectedValue(new Error('Storage error'));
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+    (SecureStore.getItemAsync as jest.Mock).mockRejectedValue(new Error('Storage error'));
 
     const { result } = renderHook(() => useFavorites(), { wrapper });
 
@@ -137,8 +145,8 @@ describe('useFavorites', () => {
   });
 
   it('handles storage error on save gracefully', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    (AsyncStorage.setItem as jest.Mock).mockRejectedValue(new Error('Storage error'));
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+    (SecureStore.setItemAsync as jest.Mock).mockRejectedValue(new Error('Storage error'));
 
     const { result } = renderHook(() => useFavorites(), { wrapper });
 

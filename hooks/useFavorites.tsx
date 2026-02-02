@@ -1,5 +1,5 @@
 import { Movie } from '@/config/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 interface FavoritesContextType {
@@ -20,7 +20,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        const stored = await SecureStore.getItemAsync(STORAGE_KEY);
         if (stored) {
           setFavorites(JSON.parse(stored));
         }
@@ -32,7 +32,10 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
 
   const saveFavorites = async (newFavorites: Movie[]) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newFavorites));
+      await SecureStore.setItemAsync(STORAGE_KEY, JSON.stringify(newFavorites), {
+        keychainService: 'com.cinesearch.favorites',
+        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+      });
       setFavorites(newFavorites);
     } catch (error) {
       console.error('Favori kaydetme hatası:', error);

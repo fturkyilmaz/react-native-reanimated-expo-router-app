@@ -1,6 +1,6 @@
 import { BiometricType } from '@/hooks/useBiometricAuth';
 import { SecureStorage, StorageKey } from '@/security';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -139,7 +139,34 @@ export const useAuthStore = create<AuthState>()(
         }),
         {
             name: 'auth-storage',
-            storage: createJSONStorage(() => AsyncStorage),
+            storage: createJSONStorage(() => ({
+                getItem: async (name: string): Promise<string | null> => {
+                    try {
+                        const value = await SecureStore.getItemAsync(name);
+                        return value;
+                    } catch {
+                        console.error(`[AuthStore] Failed to get item: ${name}`);
+                        return null;
+                    }
+                },
+                setItem: async (name: string, value: string): Promise<void> => {
+                    try {
+                        await SecureStore.setItemAsync(name, value, {
+                            keychainService: 'com.cinesearch.auth',
+                            keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+                        });
+                    } catch {
+                        console.error(`[AuthStore] Failed to set item: ${name}`);
+                    }
+                },
+                removeItem: async (name: string): Promise<void> => {
+                    try {
+                        await SecureStore.deleteItemAsync(name);
+                    } catch {
+                        console.error(`[AuthStore] Failed to remove item: ${name}`);
+                    }
+                },
+            })),
             partialize: (state) => ({
                 user: state.user,
                 isAuthenticated: state.isAuthenticated,
