@@ -28,8 +28,11 @@ export default function SettingsScreen() {
     const [notifications, setNotifications] = useState(true);
     const [emailUpdates, setEmailUpdates] = useState(false);
     const [autoPlay, setAutoPlay] = useState(true);
-    const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
     const [biometricSupported, setBiometricSupported] = useState(false);
+    const [, setForceUpdate] = useState(0);
+
+    // Always get the current language from i18n directly
+    const selectedLanguage = i18n.language === 'tr' ? 'Türkçe' : 'English';
 
     useEffect(() => {
         checkBiometricSupport().then((support) => {
@@ -37,10 +40,16 @@ export default function SettingsScreen() {
         });
     }, [checkBiometricSupport]);
 
-    const changeLanguage = (lang: 'tr' | 'en') => {
-        i18n.changeLanguage(lang);
-        setSelectedLanguage(lang === 'tr' ? t('languages.tr') : t('languages.en'));
-    };
+    // Force re-render when language changes
+    useEffect(() => {
+        const handleLanguageChange = () => {
+            setForceUpdate(prev => prev + 1);
+        };
+        i18n.on('languageChanged', handleLanguageChange);
+        return () => {
+            i18n.off('languageChanged', handleLanguageChange);
+        };
+    }, []);
 
     const handleLogout = () => {
         Alert.alert(t('auth.logout'), t('auth.logoutConfirm'),
@@ -139,6 +148,7 @@ export default function SettingsScreen() {
                 }
             ]}
             onPress={onPress}
+            hitSlop={8}
         >
             <View style={[styles.settingIcon, { backgroundColor: theme.primaryLight }]}>
                 <Ionicons name={icon} size={22} color={theme.primary} />
@@ -292,7 +302,10 @@ export default function SettingsScreen() {
                         icon="language-outline"
                         title={t('settings.language')}
                         subtitle={selectedLanguage}
-                        onPress={() => changeLanguage(selectedLanguage === 'Türkçe' ? 'en' : 'tr')}
+                        onPress={() => {
+                            console.log('Language pressed, navigating...');
+                            router.navigate('/language-sheet');
+                        }}
                     />
                     <SettingToggle
                         icon="notifications-outline"
