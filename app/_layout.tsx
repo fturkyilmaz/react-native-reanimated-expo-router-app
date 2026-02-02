@@ -1,13 +1,11 @@
 import { AuthTransition } from '@/components/auth-transition';
 import { ErrorBoundary } from '@/components/error-boundary';
-import { DeepLinkProvider } from '@/deep-linking';
+import DeepLinkProvider from '@/deep-linking';
 import { AuthProvider } from '@/hooks/useAuth';
 import { FavoritesProvider } from '@/hooks/useFavorites';
 import i18n from '@/i18n';
 import { OpenTelemetryProvider } from '@/otel/provider';
 import { QueryProvider } from '@/providers/query-provider';
-import type { SecurityCheckResult } from '@/security';
-import { SecurityProvider } from '@/security';
 import { SentryProvider } from '@/sentry/provider';
 import { useAuthStore } from '@/store/authStore';
 import { Stack } from 'expo-router';
@@ -20,6 +18,7 @@ import '../i18n';
 function RootLayoutNav() {
   const authStore = useAuthStore();
 
+  console.log(authStore.isTransitioning, authStore.user);
 
   return (
     <View style={styles.container}>
@@ -41,9 +40,10 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <SentryProvider dsn={process.env.EXPO_PUBLIC_SENTRY_DSN}>
-      <OpenTelemetryProvider>
-        <SecurityProvider
+    <GestureHandlerRootView style={styles.container}>
+      <SentryProvider dsn={process.env.EXPO_PUBLIC_SENTRY_DSN}>
+        <OpenTelemetryProvider>
+          {/* <SecurityProvider
           blockOnCompromised={!__DEV__}
           runStorageAudit={__DEV__}
           onSecurityCheck={(result: SecurityCheckResult) => {
@@ -51,25 +51,24 @@ export default function RootLayout() {
               console.warn('[Security] Device compromised:', result.riskLevel, result.checks);
             }
           }}
-        >
+        > */}
           <DeepLinkProvider>
             <I18nextProvider i18n={i18n}>
               <QueryProvider>
-                <GestureHandlerRootView style={styles.container}>
-                  <ErrorBoundary>
-                    <AuthProvider>
-                      <FavoritesProvider>
-                        <RootLayoutNav />
-                      </FavoritesProvider>
-                    </AuthProvider>
-                  </ErrorBoundary>
-                </GestureHandlerRootView>
+                <ErrorBoundary>
+                  <AuthProvider>
+                    <FavoritesProvider>
+                      <RootLayoutNav />
+                    </FavoritesProvider>
+                  </AuthProvider>
+                </ErrorBoundary>
               </QueryProvider>
             </I18nextProvider>
           </DeepLinkProvider>
-        </SecurityProvider>
-      </OpenTelemetryProvider>
-    </SentryProvider>
+          {/* </SecurityProvider> */}
+        </OpenTelemetryProvider>
+      </SentryProvider>
+    </GestureHandlerRootView>
   );
 }
 

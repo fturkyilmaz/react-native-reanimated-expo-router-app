@@ -31,6 +31,12 @@ export function AuthTransition({
     useEffect(() => {
         if (!isVisible) return;
 
+        // Reset shared values before starting animation
+        containerOpacity.value = 0;
+        scale.value = 0;
+        textOpacity.value = 0;
+
+        // Small delay to ensure reset is applied
         containerOpacity.value = withTiming(1, { duration: 200 });
 
         scale.value = withSequence(

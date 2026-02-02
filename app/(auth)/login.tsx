@@ -14,7 +14,7 @@ export default function LoginScreen() {
     const { login, isLoading, error, clearError, isBiometricEnabled, enableBiometric } = useAuthStore();
     const { t } = useTranslation();
     const { isAvailable, isEnrolled, biometricType, authenticate, getBiometricTypeName, checkBiometricSupport } = useBiometricAuth();
-    const [showBiometricButton, setShowBiometricButton] = useState(false);
+    const [showBiometricButton, setShowBiometricButton] = useState(true);
 
     const {
         control,
@@ -28,11 +28,8 @@ export default function LoginScreen() {
         },
     });
 
-    // Biyometrik desteğini kontrol et
     useEffect(() => {
         checkBiometricSupport().then((support) => {
-            // Biyometrik butonu göster: Cihaz destekliyorsa ve kayıtlı biyometrik varsa
-            // (isBiometricEnabled kontrolü kaldırıldı - test için her zaman göster)
             setShowBiometricButton(support.isAvailable && support.isEnrolled);
         });
     }, [checkBiometricSupport]);

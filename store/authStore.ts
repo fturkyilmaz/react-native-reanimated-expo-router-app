@@ -58,10 +58,8 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true, error: null });
 
                 try {
-                    // Simulate API call
                     await new Promise(resolve => setTimeout(resolve, 1000));
 
-                    // Validation
                     if (email === 'test@test.com' && password === '123456') {
                         const user = {
                             id: '1',
@@ -77,7 +75,7 @@ export const useAuthStore = create<AuthState>()(
                         throw new Error('Geçersiz e-posta veya şifre');
                     }
                 } catch (error: any) {
-                    set({ error: error.message, isLoading: false });
+                    set({ error: error.message, isLoading: false, isTransitioning: false });
                     throw error;
                 }
             },

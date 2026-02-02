@@ -14,32 +14,32 @@ import * as SecureStore from 'expo-secure-store';
  */
 export enum StorageKey {
     // Authentication
-    AUTH_TOKEN = '@cinesearch:auth_token',
-    REFRESH_TOKEN = '@cinesearch:refresh_token',
-    USER_DATA = '@cinesearch:user_data',
-    SESSION_ID = '@cinesearch:session_id',
+    AUTH_TOKEN = 'cinesearch.auth_token',
+    REFRESH_TOKEN = 'cinesearch.refresh_token',
+    USER_DATA = 'cinesearch.user_data',
+    SESSION_ID = 'cinesearch.session_id',
 
     // Security
-    BIOMETRIC_ENABLED = '@cinesearch:biometric_enabled',
-    PIN_CODE = '@cinesearch:pin_code',
-    SECURITY_SETTINGS = '@cinesearch:security_settings',
+    BIOMETRIC_ENABLED = 'cinesearch.biometric_enabled',
+    PIN_CODE = 'cinesearch.pin_code',
+    SECURITY_SETTINGS = 'cinesearch.security_settings',
 
     // Preferences
-    THEME_PREFERENCE = '@cinesearch:theme_preference',
-    LANGUAGE = '@cinesearch:language',
-    NOTIFICATIONS_ENABLED = '@cinesearch:notifications_enabled',
+    THEME_PREFERENCE = 'cinesearch.theme_preference',
+    LANGUAGE = 'cinesearch.language',
+    NOTIFICATIONS_ENABLED = 'cinesearch.notifications_enabled',
 
     // Analytics
-    ANALYTICS_CONSENT = '@cinesearch:analytics_consent',
-    ANALYTICS_USER_ID = '@cinesearch:analytics_user_id',
+    ANALYTICS_CONSENT = 'cinesearch.analytics_consent',
+    ANALYTICS_USER_ID = 'cinesearch.analytics_user_id',
 
     // Feature Flags
-    FEATURE_FLAGS = '@cinesearch:feature_flags',
+    FEATURE_FLAGS = 'cinesearch.feature_flags',
 
     // Cache
-    MOVIES_CACHE = '@cinesearch:movies_cache',
-    FAVORITES_CACHE = '@cinesearch:favorites_cache',
-    SEARCH_HISTORY = '@cinesearch:search_history',
+    MOVIES_CACHE = 'cinesearch.movies_cache',
+    FAVORITES_CACHE = 'cinesearch.favorites_cache',
+    SEARCH_HISTORY = 'cinesearch.search_history',
 }
 
 /**

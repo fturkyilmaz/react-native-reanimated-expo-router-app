@@ -24,7 +24,7 @@ export default function SettingsScreen() {
     const { user, logout, isBiometricEnabled, enableBiometric, disableBiometric } = useAuthStore();
     const { isDarkMode, toggleTheme, theme } = useTheme();
     const { t } = useTranslation();
-    const { isAvailable, isEnrolled, biometricType, authenticate, getBiometricTypeName, checkBiometricSupport } = useBiometricAuth();
+    const { biometricType, authenticate, checkBiometricSupport } = useBiometricAuth();
     const [notifications, setNotifications] = useState(true);
     const [emailUpdates, setEmailUpdates] = useState(false);
     const [autoPlay, setAutoPlay] = useState(true);
