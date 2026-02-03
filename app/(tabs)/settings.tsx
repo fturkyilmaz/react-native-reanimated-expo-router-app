@@ -111,17 +111,17 @@ export default function SettingsScreen() {
     };
 
     const handleClearCache = async () => {
-        Alert.alert(t('settings.clearCache'), t('settings.clearCacheConfirm'),
+        Alert.alert(t('settings.clearCache'), t('settings.clearCacheAlertMessage'),
             [
                 { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: t('common.clear'),
+                    text: t('common.delete'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             const storage = SecureStorage.getInstance();
                             await storage.clearAll();
-                            Alert.alert(t('common.success'), t('settings.cacheCleared'));
+                            Alert.alert(t('common.success'), t('settings.clearCacheSuccess'));
                         } catch (error) {
                             Alert.alert(t('common.error'), t('common.errorOccured'));
                         }

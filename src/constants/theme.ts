@@ -20,8 +20,11 @@ export const Colors = {
     primary: "#E50914",
     primaryLight: "#FFF3F3",
     success: "#22C55E",
+    successLight: "#DCFCE7",
     warning: "#F59E0B",
+    warningLight: "#FEF3C7",
     error: "#EF4444",
+    errorLight: "#FEE2E2",
 
     // Misc
     shadow: "#000000",
@@ -46,8 +49,11 @@ export const Colors = {
     primary: "#E50914",
     primaryLight: "#2a1a1a",
     success: "#22C55E",
+    successLight: "#1a2f1a",
     warning: "#F59E0B",
+    warningLight: "#2a251a",
     error: "#EF4444",
+    errorLight: "#2a1a1a",
 
     // Misc
     shadow: "#000000",

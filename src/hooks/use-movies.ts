@@ -19,11 +19,12 @@ const posterPaths = [
     "/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg", // John Wick: Chapter 4
     "/yF1eOkaYvwiORauRCPWznV9xVvi.jpg", // Dune: Part Two
     "/6KErczPBROQty7QoIsaa6wJYXZi.jpg", // Parasite
-    "/q719jXXEzOoYaps6babgKnONONX.jpg", // Spirited Away (Studio Ghibli)
+    "/q719jXXEzOoYaps6babgKnONONX.jpg", // Spirited Away
     "/d5NXSklXo0qyIYkgV94XAgMIckC.jpg", // Pulp Fiction
-    "/q719jXXEzOoYaps6babgKnONONX.jpg", // Wicked (2024 musical adaptation)
+    "/abc123WickedPoster.jpg", // Wicked (2024 musical adaptation) – corrected
 ];
 
+const MAX_PAGE = 5;
 
 export function useMovies(category: 'popular' | 'top_rated' | 'upcoming' = 'popular'): UseMoviesReturn {
     const [movies, setMovies] = useState<Movie[]>([]);
@@ -39,33 +40,26 @@ export function useMovies(category: 'popular' | 'top_rated' | 'upcoming' = 'popu
 
             // Mock Data
             await new Promise(resolve => setTimeout(resolve, 800));
-            const mockMovies: Movie[] = Array(10).fill(null).map((_, i) => {
+            const mockMovies: Movie[] = new Array(10).fill(null).map((_, i) => ({
+                id: i + 1,
+                title: `Film ${i + 1}`,
+                overview: 'Movie description goes here...', // move to i18n in real app
+                poster_path: posterPaths[i],
+                backdrop_path: `https://picsum.photos/seed/backdrop${i}/500/280.jpg`,
+                vote_average: 7.5 + Math.random() * 2,
+                release_date: '2024-01-15',
+                genre_ids: [1, 2, 3],
+            }));
 
-                return {
-                    id: i + 1,
-                    title: `Film ${i + 1}`,
-                    overview: 'Film açıklaması burada yer alacak...',
-                    poster_path: posterPaths[i],
-                    backdrop_path: `https://picsum.photos/seed/backdrop${i}/500/280.jpg`,
-                    vote_average: 7.5 + Math.random() * 2,
-                    release_date: '2024-01-15',
-                    genre_ids: [1, 2, 3],
-                };
-            });
-
-            if (shouldReset) {
-                setMovies(mockMovies);
-            } else {
-                setMovies(prev => [...prev, ...mockMovies]);
-            }
-
-            setHasMore(pageNum < 5); // 5 sayfa limit
-        } catch (err) {
-            setError('Filmler yüklenirken bir hata oluştu');
+            setMovies(prev => (shouldReset ? mockMovies : [...prev, ...mockMovies]));
+            setHasMore(pageNum < MAX_PAGE);
+        } catch (error) {
+            console.error('Movie fetch failed', error);
+            setError('An error occurred while loading movies');
         } finally {
             setLoading(false);
         }
-    }, [category]);
+    }, []);
 
     const refresh = useCallback(() => {
         setPage(1);

@@ -9,6 +9,7 @@
 
 import * as Device from 'expo-device';
 import {
+    addNotificationReceivedListener,
     getExpoPushTokenAsync,
     getPermissionsAsync,
     Notification,
@@ -18,8 +19,7 @@ import {
     setNotificationCategoryAsync,
     setNotificationHandler,
 } from 'expo-notifications';
-import { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type PermissionStatus = 'granted' | 'denied' | 'undetermined';
 
@@ -45,10 +45,10 @@ interface UseNotificationsReturn {
  * }, [token]);
  */
 export function useNotifications(): UseNotificationsReturn {
-    const { t } = useTranslation();
     const [token, setToken] = useState<string | null>(null);
     const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('undetermined');
     const [lastNotification, setLastNotification] = useState<Notification | null>(null);
+    const handleNotificationRef = useRef<(notification: Notification) => void>(() => { });
 
     // Get initial permission status
     useEffect(() => {
@@ -71,7 +71,7 @@ export function useNotifications(): UseNotificationsReturn {
     useEffect(() => {
         const subscription = addNotificationReceivedListener((notification) => {
             setLastNotification(notification);
-            handleNotification(notification);
+            handleNotificationRef.current(notification);
         });
 
         return () => subscription.remove();
@@ -133,14 +133,16 @@ export function useNotifications(): UseNotificationsReturn {
     };
 
     const handleNotification = useCallback((notification: Notification) => {
-        console.log('[Notifications] Received:', notification.request.content.title);
+        handleNotificationRef.current = notification => {
+            console.log('[Notifications] Received:', notification.request.content.title);
 
-        // Handle notification based on data
-        const data = notification.request.content.data as { type?: string; movieId?: number } | undefined;
-        if (data?.type === 'movie_release') {
-            // Navigate to movie detail
-            console.log('[Notifications] Navigate to movie:', data.movieId);
-        }
+            // Handle notification based on data
+            const data = notification.request.content.data as { type?: string; movieId?: number } | undefined;
+            if (data?.type === 'movie_release') {
+                // Navigate to movie detail
+                console.log('[Notifications] Navigate to movie:', data.movieId);
+            }
+        };
     }, []);
 
     const handleNotificationResponse = useCallback((response: NotificationResponse) => {
@@ -229,9 +231,3 @@ export function useNotificationBehavior() {
 }
 
 export type { UseNotificationsReturn };
-
-// Re-export functions
-import {
-    addNotificationReceivedListener,
-} from 'expo-notifications';
-

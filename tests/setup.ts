@@ -382,6 +382,13 @@ jest.mock("react-native/Libraries/Alert/Alert", () => ({
   alert: jest.fn(),
 }));
 
+// Mock StyleSheet
+jest.mock("react-native/Libraries/StyleSheet/StyleSheet", () => ({
+  create: jest.fn((styles) => styles),
+  flatten: jest.fn((style) => style),
+  hairlineWidth: 1,
+}));
+
 // Setup global fetch mock
 global.fetch = jest.fn();
 

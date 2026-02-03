@@ -4,47 +4,30 @@
  * Provides reusable animation hooks using Lottie and Reanimated.
  * 
  * Usage:
- * const { play, isPlaying } = useLottieAnimation(animationRef);
  * const { animatedStyle, start } = useFadeIn();
  */
 
 import * as Haptics from 'expo-haptics';
 import LottieView from 'lottie-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Dimensions, Easing } from 'react-native';
+import { Easing } from 'react-native';
 import {
-    interpolate,
     useAnimatedStyle,
     useSharedValue,
     withDelay,
     withSequence,
     withSpring,
-    withTiming,
+    withTiming
 } from 'react-native-reanimated';
 
 // ============= Lottie Hooks =============
 
-/**
- * Hook for managing Lottie animations
- * 
- * @example
- * const { play, reset, animationRef } = useLottieAnimation();
- * 
- * return (
- *   <LottieView
- *     ref={animationRef}
- *     source={require('@/assets/animations/success.json')}
- *     autoPlay={false}
- *     loop={false}
- *   />
- * );
- */
 export function useLottieAnimation(options?: {
     autoPlay?: boolean;
     loop?: boolean;
     speed?: number;
 }) {
-    const { autoPlay = false, loop = true, speed = 1 } = options || {};
+    const { autoPlay = false, speed = 1 } = options || {};
     const animationRef = useRef<LottieView>(null);
     const [isPlaying, setIsPlaying] = useState(autoPlay);
 
@@ -76,26 +59,16 @@ export function useLottieAnimation(options?: {
         }
     }, []);
 
-    const setProgress = useCallback((progress: number) => {
-        if (animationRef.current) {
-            animationRef.current.setProgress(progress);
-        }
-    }, []);
-
     return {
         animationRef,
         isPlaying,
         play,
         pause,
         reset,
-        setProgress,
         speed,
     };
 }
 
-/**
- * Hook for Lottie success animation with haptic feedback
- */
 export function useSuccessAnimation() {
     const { animationRef, play, reset } = useLottieAnimation({
         autoPlay: false,
@@ -110,9 +83,6 @@ export function useSuccessAnimation() {
     return { animationRef, triggerSuccess, reset };
 }
 
-/**
- * Hook for Lottie error animation with haptic feedback
- */
 export function useErrorAnimation() {
     const { animationRef, play, reset } = useLottieAnimation({
         autoPlay: false,
@@ -129,16 +99,6 @@ export function useErrorAnimation() {
 
 // ============= Reanimated Hooks =============
 
-/**
- * Hook for fade-in animation
- * 
- * @example
- * const { animatedStyle, start } = useFadeIn({ duration: 300 });
- * 
- * useEffect(() => { start(); }, []);
- * 
- * return <Animated.View style={animatedStyle} />;
- */
 export function useFadeIn(options?: { duration?: number; delay?: number }) {
     const { duration = 300, delay = 0 } = options || {};
     const opacity = useSharedValue(0);
@@ -158,9 +118,6 @@ export function useFadeIn(options?: { duration?: number; delay?: number }) {
     return { animatedStyle, start, reset, opacity };
 }
 
-/**
- * Hook for fade-out animation
- */
 export function useFadeOut(options?: { duration?: number; delay?: number }) {
     const { duration = 300, delay = 0 } = options || {};
     const opacity = useSharedValue(1);
@@ -180,9 +137,6 @@ export function useFadeOut(options?: { duration?: number; delay?: number }) {
     return { animatedStyle, start, reset, opacity };
 }
 
-/**
- * Hook for scale animation (pulse effect)
- */
 export function useScale(options?: {
     initialScale?: number;
     targetScale?: number;
@@ -209,9 +163,6 @@ export function useScale(options?: {
     return { animatedStyle, pulse, reset, scale };
 }
 
-/**
- * Hook for slide-in animation from bottom
- */
 export function useSlideIn(options?: { duration?: number; delay?: number }) {
     const { duration = 300, delay = 0 } = options || {};
     const translateY = useSharedValue(100);
@@ -231,9 +182,6 @@ export function useSlideIn(options?: { duration?: number; delay?: number }) {
     return { animatedStyle, start, reset, translateY };
 }
 
-/**
- * Hook for spring animation (bouncy effect)
- */
 export function useSpringAnimation(options?: {
     initialValue?: number;
     damping?: number;
@@ -257,9 +205,6 @@ export function useSpringAnimation(options?: {
     return { animatedStyle, trigger, reset, progress };
 }
 
-/**
- * Hook for shake animation (error feedback)
- */
 export function useShake(options?: { intensity?: number }) {
     const { intensity = 10 } = options || {};
     const translateX = useSharedValue(0);
@@ -285,26 +230,6 @@ export function useShake(options?: { intensity?: number }) {
     return { animatedStyle, shake, reset, translateX };
 }
 
-/**
- * Hook for layout animation (safe area aware)
- */
-export function useLayoutAnimation() {
-    const { width, height } = Dimensions.get('window');
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        width: interpolate(
-            width,
-            [0, 375, 414, 1024],
-            [0.9 * width, 0.85 * width, 0.8 * width, 0.6 * width]
-        ),
-    }));
-
-    return { animatedStyle, width, height };
-}
-
-/**
- * Hook for progress bar animation
- */
 export function useProgressBar(maxValue = 100) {
     const progress = useSharedValue(0);
 

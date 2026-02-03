@@ -6,7 +6,7 @@ module.exports = {
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/$1",
+    "^@/(.*)$": "<rootDir>/src/$1",
     "^@expo/(.*)$": "<rootDir>/node_modules/@expo/$1",
   },
   setupFilesAfterEnv: ["<rootDir>/tests/setup.ts"],
@@ -31,7 +31,7 @@ module.exports = {
   coverageDirectory: "<rootDir>/coverage",
   coverageReporters: ["text", "text-summary", "lcov", "html"],
   transformIgnorePatterns: [
-    "node_modules/(?!((react-native.*|@react-native.*|expo.*|@expo.*|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|@react-navigation.*|react-native-web|lottie-react-native)/))",
+    "node_modules/(?!((react-native|@react-native|expo|@expo|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|@react-navigation|react-native-web|lottie-react-native|@hookform|react-hook-form|@tanstack)/))",
   ],
   globals: {
     __DEV__: true,

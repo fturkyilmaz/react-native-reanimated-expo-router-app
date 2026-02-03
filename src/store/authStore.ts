@@ -11,6 +11,9 @@ interface User {
     id: string;
     email: string;
     name: string;
+    avatar?: string;
+    phone?: string;
+    bio?: string;
     token: string;
 }
 
@@ -32,6 +35,7 @@ interface AuthState {
     clearError: () => void;
     completeTransition: () => void;
     setPendingNavigation: (pendingNavigation: boolean) => void;
+    setUser: (user: Partial<User>) => void;
     // Biometric actions
     enableBiometric: (type: BiometricType) => Promise<void>;
     disableBiometric: () => Promise<void>;
@@ -137,6 +141,16 @@ export const useAuthStore = create<AuthState>()(
 
             updateLastAuthenticated: () => {
                 set({ lastAuthenticatedAt: Date.now() });
+            },
+
+            setUser: (updates: Partial<User>) => {
+                const currentUser = get().user;
+                if (currentUser) {
+                    const updatedUser = { ...currentUser, ...updates };
+                    set({ user: updatedUser });
+                    // Persist updated user data
+                    secureStorage.setObject(StorageKey.USER_DATA, updatedUser, true);
+                }
             },
         }),
         {

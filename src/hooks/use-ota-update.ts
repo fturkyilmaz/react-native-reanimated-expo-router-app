@@ -9,7 +9,7 @@
 
 import * as Application from 'expo-application';
 import * as Updates from 'expo-updates';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type UpdateStatus = 'idle' | 'checking' | 'downloading' | 'ready' | 'error';
 
@@ -53,40 +53,42 @@ export function useOTAUpdate(): UseOTAUpdateReturn {
     const [error, setError] = useState<string | null>(null);
 
     const currentVersion = Application.nativeApplicationVersion || '1.0.0';
+    const checkForUpdatesRef = useRef<() => Promise<void> | null>(null);
 
-    // Check for updates on mount
     useEffect(() => {
         if (!__DEV__) {
-            checkForUpdates();
+            checkForUpdatesRef.current?.();
         }
     }, []);
 
     const checkForUpdates = useCallback(async () => {
-        if (__DEV__) {
-            console.log('[OTA] Skipping update check in development mode');
-            return;
-        }
-
-        try {
-            setStatus('checking');
-            setError(null);
-
-            const update = await Updates.checkForUpdateAsync();
-
-            if (update.isAvailable) {
-                console.log('[OTA] Update available');
-                setIsUpdateAvailable(true);
-                setStatus('idle');
-            } else {
-                console.log('[OTA] No update available');
-                setIsUpdateAvailable(false);
-                setStatus('idle');
+        checkForUpdatesRef.current = async () => {
+            if (__DEV__) {
+                console.log('[OTA] Skipping update check in development mode');
+                return;
             }
-        } catch (err) {
-            console.error('[OTA] Check failed:', err);
-            setError(err instanceof Error ? err.message : 'Failed to check for updates');
-            setStatus('error');
-        }
+
+            try {
+                setStatus('checking');
+                setError(null);
+
+                const update = await Updates.checkForUpdateAsync();
+
+                if (update.isAvailable) {
+                    console.log('[OTA] Update available');
+                    setIsUpdateAvailable(true);
+                    setStatus('idle');
+                } else {
+                    console.log('[OTA] No update available');
+                    setIsUpdateAvailable(false);
+                    setStatus('idle');
+                }
+            } catch (err) {
+                console.error('[OTA] Check failed:', err);
+                setError(err instanceof Error ? err.message : 'Failed to check for updates');
+                setStatus('error');
+            }
+        };
     }, []);
 
     const applyUpdate = useCallback(async () => {

@@ -32,7 +32,7 @@ export default function TabLayout() {
       </NativeTabs.Trigger>
 
       {/* Ayarlar / Settings */}
-      <NativeTabs.Trigger name="settings">
+      <NativeTabs.Trigger name="settings" options={{}}>
         <Icon sf={{ default: 'gear', selected: 'gearshape.fill' }} />
         <Label>{t('settings.title')}</Label>
       </NativeTabs.Trigger>
