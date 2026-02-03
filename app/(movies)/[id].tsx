@@ -1,11 +1,11 @@
-import { Movie, MovieDetails } from '@/config/api';
+import { Movie, MovieDetails, Video } from '@/config/api';
 import { useFavorites } from '@/hooks/use-favorites';
 import { useWatchlist } from '@/hooks/use-watchlist';
 import { tmdbService } from '@/services/tmdb';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -31,25 +31,26 @@ export default function MovieDetail() {
     const [isLiked, setIsLiked] = useState(false);
     const [isInWL, setIsInWL] = useState(false);
     const [movieDetails, setMovieDetails] = useState<MovieDetails | null>(null);
+    const [trailer, setTrailer] = useState<Video | null>(null);
     const [loading, setLoading] = useState(true);
 
     // Parse movie from navigation params
     const movie: Movie | null = item ? JSON.parse(item as string) : null;
 
-    const videoSource = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-    const player = useVideoPlayer(videoSource, player => {
-        player.loop = true;
-        player.play();
-    });
+    // const videoSource = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+    // const player = useVideoPlayer(videoSource, player => {
+    //     player.loop = true;
+    //     player.play();
+    // });
 
-    const [isPlaying, setIsPlaying] = useState(player.playing);
+    // const [isPlaying, setIsPlaying] = useState(player.playing);
 
-    useEffect(() => {
-        const subscription = player.addListener('playingChange', (event) => {
-            setIsPlaying(event.isPlaying);
-        });
-        return () => subscription.remove();
-    }, [player]);
+    // useEffect(() => {
+    //     const subscription = player.addListener('playingChange', (event) => {
+    //         setIsPlaying(event.isPlaying);
+    //     });
+    //     return () => subscription.remove();
+    // }, [player]);
 
     useEffect(() => {
         if (movieId) {
@@ -58,21 +59,33 @@ export default function MovieDetail() {
         }
     }, [movieId, isFavorite, isInWatchlist]);
 
-    // Fetch movie details
+    // Fetch movie details and videos
     useEffect(() => {
-        const fetchDetails = async () => {
+        const fetchData = async () => {
             if (!movieId) return;
             try {
                 setLoading(true);
-                const details = await tmdbService.getMovieDetails(movieId);
+                const [details, videos] = await Promise.all([
+                    tmdbService.getMovieDetails(movieId),
+                    tmdbService.getMovieVideos(movieId)
+                ]);
                 setMovieDetails(details);
+
+                // Find the first trailer (official, YouTube)
+                const officialTrailer = videos.results.find(
+                    v => v.type === 'Trailer' && v.site === 'YouTube' && v.official
+                );
+                const anyTrailer = videos.results.find(
+                    v => v.type === 'Trailer' && v.site === 'YouTube'
+                );
+                setTrailer(officialTrailer || anyTrailer || null);
             } catch (error) {
-                console.error('Error fetching movie details:', error);
+                console.error('Error fetching data:', error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchDetails();
+        fetchData();
     }, [movieId]);
 
     const handleFavoritePress = () => {
@@ -112,9 +125,9 @@ export default function MovieDetail() {
     };
 
     const headerAnimatedStyle = useAnimatedStyle(() => ({
-        opacity: interpolate(scrollY.value, [200, 300], [0, 1]),
+        opacity: interpolate(scrollY.value, [50, 150], [0, 1]),
         transform: [{
-            translateY: interpolate(scrollY.value, [200, 300], [-20, 0])
+            translateY: interpolate(scrollY.value, [50, 150], [-10, 0])
         }]
     }));
 
@@ -286,30 +299,33 @@ export default function MovieDetail() {
                     </View>
 
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>{t('movie.cast')}</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.castScroll}>
-                            {['Leonardo DiCaprio', 'Joseph Gordon-Levitt', 'Elliot Page', 'Tom Hardy'].map((actor, index) => (
-                                <View key={index} style={styles.castCard}>
-                                    <View style={styles.castAvatar}>
-                                        <Text style={styles.castInitial}>{actor[0]}</Text>
-                                    </View>
-                                    <Text style={styles.castName} numberOfLines={2}>{actor}</Text>
+                        <Text style={styles.sectionTitle}>Fragman</Text>
+                        {trailer ? (
+                            <Pressable
+                                style={styles.trailerContainer}
+                                onPress={() => {
+                                    const youtubeUrl = `https://www.youtube.com/watch?v=${trailer.key}`;
+                                    WebBrowser.openBrowserAsync(youtubeUrl);
+                                }}
+                            >
+                                <Image
+                                    source={{ uri: tmdbService.getYouTubeThumbnail(trailer.key) }}
+                                    style={styles.trailerThumbnail}
+                                />
+                                <View style={styles.playButtonOverlay}>
+                                    <Ionicons name="play-circle" size={64} color="white" />
                                 </View>
-                            ))}
-                        </ScrollView>
+                                <View style={styles.trailerLabel}>
+                                    <Text style={styles.trailerTitle}>{trailer.name}</Text>
+                                </View>
+                            </Pressable>
+                        ) : (
+                            <View style={[styles.video, styles.noVideo]}>
+                                <Ionicons name="film" size={48} color="#666" />
+                                <Text style={styles.noVideoText}>Fragman bulunamadı</Text>
+                            </View>
+                        )}
                     </View>
-
-                    <VideoView style={styles.video} player={player} allowsPictureInPicture />
-                    <Pressable style={styles.watchButton} onPress={() => {
-                        if (isPlaying) {
-                            player.pause();
-                        } else {
-                            player.play();
-                        }
-                    }}>
-                        <Ionicons name="play" size={20} color="white" style={styles.watchIcon} />
-                        <Text style={styles.watchButtonText}>{t('movie.trailer')}</Text>
-                    </Pressable>
                 </Animated.View>
             </AnimatedScrollView>
         </View>
@@ -320,6 +336,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#141414',
+        minHeight: 900,
     },
     loadingContainer: {
         flex: 1,
@@ -331,7 +348,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     scrollContent: {
-        paddingBottom: 40,
+        paddingBottom: 500,
     },
     header: {
         position: 'absolute',
@@ -542,5 +559,52 @@ const styles = StyleSheet.create({
         color: 'black',
         fontSize: 16,
         fontWeight: '700',
+    },
+    noVideo: {
+        backgroundColor: '#1a1a1a',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 200,
+        borderRadius: 12,
+    },
+    noVideoText: {
+        color: '#666',
+        marginTop: 12,
+        fontSize: 14,
+    },
+    trailerContainer: {
+        width: '100%',
+        height: 220,
+        borderRadius: 12,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    trailerThumbnail: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
+    },
+    playButtonOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.3)',
+    },
+    trailerLabel: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 12,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+    },
+    trailerTitle: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });

@@ -19,10 +19,16 @@ export default function TabLayout() {
       }}
       tintColor={theme.primary}
     >
-      {/* Keşfet / Discover */}
+      {/* Ana Sayfa / Home */}
       <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: 'film', selected: 'film.fill' }} />
+        <Icon sf={{ default: 'house', selected: 'house.fill' }} />
         <Label>{t('home.discover')}</Label>
+      </NativeTabs.Trigger>
+
+      {/* Keşfet / Discover */}
+      <NativeTabs.Trigger name="discover">
+        <Icon sf={{ default: 'sparkles', selected: 'sparkles' }} />
+        <Label>Keşfet</Label>
       </NativeTabs.Trigger>
 
       {/* İzleme Listesi / Watchlist */}
