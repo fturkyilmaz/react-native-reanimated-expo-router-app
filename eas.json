@@ -1,0 +1,55 @@
+{
+    "cli": {
+        "version": ">= 3.0.0"
+    },
+    "build": {
+        "development": {
+            "developmentClient": true,
+            "distribution": "internal",
+            "android": {
+                "buildType": "apk"
+            },
+            "ios": {
+                "simulator": true
+            },
+            "env": {
+                "EXPO_UPDATE_URL": "https://u.expo.dev/your-project-id",
+                "EXPO_UPDATE_CHANNEL": "development"
+            }
+        },
+        "preview": {
+            "distribution": "internal",
+            "android": {
+                "buildType": "apk"
+            },
+            "ios": {
+                "simulator": true
+            },
+            "env": {
+                "EXPO_UPDATE_URL": "https://u.expo.dev/your-project-id",
+                "EXPO_UPDATE_CHANNEL": "preview"
+            }
+        },
+        "production": {
+            "android": {
+                "buildType": "app-bundle"
+            },
+            "ios": {
+                "buildType": "release"
+            },
+            "env": {
+                "EXPO_UPDATE_URL": "https://u.expo.dev/your-project-id",
+                "EXPO_UPDATE_CHANNEL": "production"
+            }
+        }
+    },
+    "submit": {
+        "production": {}
+    },
+    "updates": {
+        "url": "https://u.expo.dev/your-project-id",
+        "enabled": true,
+        "checkAutomatically": "ON_LOAD",
+        "fallbackToCacheTimeout": 0
+    }
+}
