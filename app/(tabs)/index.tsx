@@ -5,23 +5,42 @@ import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/authStore';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassView } from 'expo-glass-effect';
-import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Stack } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { FlatList, Keyboard, KeyboardAvoidingView, KeyboardEvent, Platform, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { movies, loading, error, refresh, loadMore, hasMore } = useMovies('popular');
   const { user } = useAuthStore();
   const { theme, isDarkMode } = useTheme();
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const keyboardWillShow = (event: KeyboardEvent) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    };
+    const keyboardWillHide = () => {
+      setKeyboardHeight(0);
+    };
+
+    Keyboard.addListener('keyboardWillShow', keyboardWillShow);
+    Keyboard.addListener('keyboardWillHide', keyboardWillHide);
+
+    return () => {
+      Keyboard.removeAllListeners('keyboardWillShow');
+      Keyboard.removeAllListeners('keyboardWillHide');
+    };
+  }, []);
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
       // Navigate to search tab or filter current list
       console.log('Searching for:', searchQuery);
     }
+    // Dismiss keyboard after search
+    Keyboard.dismiss();
   };
 
   const renderFooter = () => {
@@ -38,79 +57,87 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: `Merhaba, ${user?.name || 'Film Sever'}`,
-          headerLargeTitle: true,
-        }}
-      />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <Stack.Screen
+          options={{
+            headerShown: true,
+            title: `Merhaba, ${user?.name || 'Film Sever'}`,
+            headerLargeTitle: true,
+          }}
+        />
 
-      <FlatList
-        data={movies}
-        renderItem={({ item, index }) => <MovieCard movie={item} index={index} />}
-        keyExtractor={(item, index) => `${item.id}-${index}`}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl
-            refreshing={loading && movies.length === 0}
-            onRefresh={refresh}
-            tintColor={theme.primary}
-            colors={[theme.primary]}
-          />
-        }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={renderFooter}
-        ListEmptyComponent={
-          loading ? (
-            <View style={styles.skeletonGrid}>
-              {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} width={150} height={280} style={styles.skeletonCard} />
-              ))}
-            </View>
-          ) : null
-        }
-        // Performance optimizations
-        initialNumToRender={6}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        removeClippedSubviews={true}
-        showsVerticalScrollIndicator={false}
-        maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 10 }}
-      />
+        <FlatList
+          data={movies}
+          renderItem={({ item, index }) => <MovieCard movie={item} index={index} />}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={styles.list}
+          keyboardDismissMode="on-drag"
+          refreshControl={
+            <RefreshControl
+              refreshing={loading && movies.length === 0}
+              onRefresh={refresh}
+              tintColor={theme.primary}
+              colors={[theme.primary]}
+            />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
+          ListEmptyComponent={
+            loading ? (
+              <View style={styles.skeletonGrid}>
+                {[...Array(6)].map((_, i) => (
+                  <Skeleton key={i} width={150} height={280} style={styles.skeletonCard} />
+                ))}
+              </View>
+            ) : null
+          }
+          // Performance optimizations
+          initialNumToRender={6}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          removeClippedSubviews={true}
+          showsVerticalScrollIndicator={false}
+          maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 10 }}
+        />
 
-      {/* Glass Search Bar at Bottom */}
-      <GlassView
-        style={styles.searchBarContainer}
-        glassEffectStyle="regular"
-        tintColor={isDarkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.4)'}
-        isInteractive={true}
-      >
-        <View style={[styles.searchBarInner, {
-          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-        }]}>
-          <Ionicons name="search" size={20} color={theme.textSecondary} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { color: theme.text }]}
-            placeholder="Film ara..."
-            placeholderTextColor={theme.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
-            </Pressable>
-          )}
-        </View>
-      </GlassView>
-    </SafeAreaView>
+        {/* Glass Search Bar at Bottom */}
+        <GlassView
+          style={[styles.searchBarContainer, { bottom: keyboardHeight > 0 ? keyboardHeight + 20 : 90 }]}
+          glassEffectStyle="regular"
+          tintColor={isDarkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.4)'}
+          isInteractive={true}
+        >
+          <View style={[styles.searchBarInner, {
+            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+          }]}>
+            <Ionicons name="search" size={20} color={theme.textSecondary} style={styles.searchIcon} />
+            <TextInput
+              style={[styles.searchInput, { color: theme.text }]}
+              placeholder="Film ara..."
+              placeholderTextColor={theme.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+              blurOnSubmit={true}
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+              </Pressable>
+            )}
+          </View>
+        </GlassView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -127,7 +154,6 @@ const styles = StyleSheet.create({
   logoutButton: { marginRight: 16, padding: 4 },
   searchBarContainer: {
     position: 'absolute',
-    bottom: 90, // Above tabs
     left: 20,
     right: 20,
     borderRadius: 20,

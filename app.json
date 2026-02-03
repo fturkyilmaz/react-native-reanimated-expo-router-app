@@ -86,7 +86,16 @@
           "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-notifications",
+        {
+          "icon": "./src/assets/images/notification-icon.png",
+          "color": "#E50914",
+          "iosDisplayInForeground": true,
+          "androidDisplayInForeground": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
