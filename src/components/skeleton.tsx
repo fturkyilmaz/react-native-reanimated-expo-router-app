@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import Animated, {
     interpolate,
     useAnimatedStyle,
@@ -8,7 +8,13 @@ import Animated, {
     withTiming
 } from 'react-native-reanimated';
 
-export function Skeleton({ width, height, style }: { width: number; height: number; style?: any }) {
+interface SkeletonProps {
+    width: number;
+    height: number;
+    style?: StyleProp<ViewStyle>;
+}
+
+export function Skeleton({ width, height, style }: SkeletonProps) {
     const progress = useSharedValue(0);
 
     useEffect(() => {

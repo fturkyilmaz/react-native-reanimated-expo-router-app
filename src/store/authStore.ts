@@ -75,8 +75,9 @@ export const useAuthStore = create<AuthState>()(
                     } else {
                         throw new Error('Geçersiz e-posta veya şifre');
                     }
-                } catch (error: any) {
-                    set({ error: error.message, isLoading: false, isTransitioning: false });
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : 'Beklenmeyen bir hata oluştu';
+                    set({ error: errorMessage, isLoading: false, isTransitioning: false });
                     throw error;
                 }
             },
@@ -102,8 +103,9 @@ export const useAuthStore = create<AuthState>()(
                     await secureStorage.setSecureItem(StorageKey.AUTH_TOKEN, user.token);
                     await secureStorage.setObject(StorageKey.USER_DATA, user, true);
                     set({ user, isAuthenticated: true, isLoading: false, isTransitioning: true });
-                } catch (error: any) {
-                    set({ error: error.message, isLoading: false });
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : 'Kayıt olurken bir hata oluştu';
+                    set({ error: errorMessage, isLoading: false });
                     throw error;
                 }
             },

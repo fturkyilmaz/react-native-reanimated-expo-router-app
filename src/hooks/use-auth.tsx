@@ -80,8 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             } else {
                 throw new Error('Geçersiz e-posta veya şifre');
             }
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Giriş yapılırken bir hata oluştu';
+            setError(errorMessage);
             throw err;
         } finally {
             setIsLoading(false);
@@ -107,8 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             setUser(mockUser);
             setIsTransitioning(true);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Kayıt olurken bir hata oluştu';
+            setError(errorMessage);
             throw err;
         } finally {
             setIsLoading(false);

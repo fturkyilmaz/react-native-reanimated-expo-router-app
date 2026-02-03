@@ -169,18 +169,18 @@ export function NotificationProvider({
      * Handle notification response (user tapped notification)
      */
     const handleNotificationResponse = useCallback(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (response: any) => {
-            const data = response.notification.request.content.data;
+        (response: unknown) => {
+            const notificationResponse = response as { notification?: { request?: { content?: { data?: { movieId?: string; url?: string } } } } };
+            const data = notificationResponse.notification?.request?.content?.data ?? {};
 
             console.log('[NotificationProvider] Notification tapped:', data);
 
             // Navigate based on notification type
             if (data.movieId) {
-                router.push(`/(movies)/${data.movieId}`);
+                router.push({ pathname: '/(movies)/[id]', params: { id: data.movieId } });
             } else if (data.url) {
-                // Handle deep link URL
-                router.push(data.url);
+                // Handle deep link URL - use router.push with string
+                router.push(data.url as Parameters<typeof router.push>[0]);
             }
         },
         [router]
