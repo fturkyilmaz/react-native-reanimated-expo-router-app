@@ -1,6 +1,14 @@
+/**
+ * MovieCard Component
+ * Displays movie information in a card format with animation
+ */
+
+import type { Movie } from '@/config/api';
+import { COLORS, SHADOWS, SPACING, TYPOGRAPHY } from '@/core/constants/theme';
+import { haptics } from '@/core/utils/haptics';
 import { useTheme } from '@/hooks/use-theme';
 import { useRouter } from 'expo-router';
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     FadeIn,
@@ -11,25 +19,18 @@ import Animated, {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-interface Movie {
-    id: number;
-    title: string;
-    poster_path: string | null;
-    vote_average: number;
-    release_date?: string;
-}
-
 interface MovieCardProps {
     movie: Movie;
     index: number;
 }
 
-export function MovieCard({ movie, index }: MovieCardProps) {
+export const MovieCard = memo(function MovieCard({ movie, index }: MovieCardProps) {
     const router = useRouter();
-    const scale = useSharedValue(1);
     const { theme } = useTheme();
+    const scale = useSharedValue(1);
 
     const handlePress = useCallback(() => {
+        haptics.tap();
         router.push({
             pathname: '/(movies)/[id]',
             params: { id: movie.id.toString(), item: JSON.stringify(movie) },
@@ -38,12 +39,12 @@ export function MovieCard({ movie, index }: MovieCardProps) {
 
     const handlePressIn = useCallback(() => {
         'worklet';
-        scale.value = withSpring(0.95, { damping: 10 });
+        scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
     }, [scale]);
 
     const handlePressOut = useCallback(() => {
         'worklet';
-        scale.value = withSpring(1, { damping: 10 });
+        scale.value = withSpring(1, { damping: 15, stiffness: 300 });
     }, [scale]);
 
     const animatedStyle = useAnimatedStyle(() => {
@@ -59,56 +60,87 @@ export function MovieCard({ movie, index }: MovieCardProps) {
 
     return (
         <AnimatedPressable
-            entering={FadeIn.delay(index * 100).duration(500)}
-            style={[styles.card, animatedStyle, { backgroundColor: theme.card }]}
+            entering={FadeIn.delay(index * 50).duration(400)}
+            style={[
+                styles.card,
+                animatedStyle,
+                { backgroundColor: theme.card },
+            ]}
             onPress={handlePress}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
+            accessibilityRole="button"
+            accessibilityLabel={movie.title}
         >
-            <Image
-                source={{ uri: imageUrl }}
-                style={styles.poster}
-                resizeMode="cover"
-            />
+            <View style={styles.posterContainer}>
+                <Image
+                    source={{ uri: imageUrl }}
+                    style={styles.poster}
+                    resizeMode="cover"
+                />
+                <View style={styles.ratingBadge}>
+                    <Text style={styles.ratingText}>
+                        ⭐ {movie.vote_average?.toFixed(1)}
+                    </Text>
+                </View>
+            </View>
+
             <View style={styles.info}>
-                <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>{movie.title}</Text>
+                <Text
+                    style={[styles.title, { color: theme.text }]}
+                    numberOfLines={2}
+                >
+                    {movie.title}
+                </Text>
+
                 <View style={styles.meta}>
                     <Text style={[styles.year, { color: theme.textSecondary }]}>
                         {movie.release_date ? movie.release_date.split('-')[0] : '2024'}
                     </Text>
-                    <View style={styles.ratingContainer}>
-                        <Text style={[styles.rating, { color: theme.textSecondary }]}>⭐ {movie.vote_average?.toFixed(1)}</Text>
-                    </View>
                 </View>
             </View>
         </AnimatedPressable>
     );
-}
+});
 
 const styles = StyleSheet.create({
     card: {
         flex: 1,
-        margin: 8,
-        backgroundColor: 'white',
-        borderRadius: 16,
+        margin: SPACING.xs,
+        borderRadius: BORDER_RADIUS.lg,
         overflow: 'hidden',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+        ...SHADOWS.medium,
         minWidth: 150,
-        maxWidth: 200,
+        maxWidth: 180,
+    },
+    posterContainer: {
+        position: 'relative',
     },
     poster: {
         width: '100%',
         height: 220,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: COLORS.gray800,
+    },
+    ratingBadge: {
+        position: 'absolute',
+        bottom: 8,
+        right: 8,
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: BORDER_RADIUS.sm,
+    },
+    ratingText: {
+        ...TYPOGRAPHY.labelSmall,
+        color: COLORS.white,
+        fontWeight: '600',
     },
     info: {
-        padding: 12,
+        padding: SPACING.md,
     },
     title: {
-        fontSize: 14,
-        fontWeight: '700',
-        marginBottom: 8,
-        color: '#1a1a1a',
+        ...TYPOGRAPHY.labelLarge,
+        marginBottom: SPACING.xs,
         lineHeight: 20,
     },
     meta: {
@@ -117,19 +149,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     year: {
-        color: '#666',
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    ratingContainer: {
-        backgroundColor: '#FFF3F3',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-    },
-    rating: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#E50914',
+        ...TYPOGRAPHY.bodySmall,
+        color: COLORS.textSecondary,
     },
 });
+
+// Add missing constants that weren't imported
+import { BORDER_RADIUS } from '@/core/constants/theme';
+
+export default MovieCard;

@@ -20,13 +20,23 @@ jest.mock('expo-router', () => ({
   })),
 }));
 
+// Mock haptics
+jest.mock('@/core/utils/haptics', () => ({
+  haptics: {
+    tap: jest.fn(),
+  },
+}));
+
 describe('MovieCard Snapshot', () => {
   const mockMovie = {
     id: 1,
     title: 'Joker',
+    overview: 'A mentally troubled stand-up comedian embarks on a downward spiral.',
     poster_path: '/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg',
+    backdrop_path: '/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg',
     vote_average: 8.2,
     release_date: '2019-10-04',
+    genre_ids: [18, 80, 53],
   };
 
   it('renders correctly', () => {
@@ -60,9 +70,12 @@ describe('MovieCard Snapshot', () => {
     const differentMovie = {
       id: 2,
       title: 'Interstellar',
+      overview: 'A team of explorers travel through a wormhole in space.',
       poster_path: '/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
+      backdrop_path: '/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
       vote_average: 8.4,
       release_date: '2014-11-07',
+      genre_ids: [878, 12, 18],
     };
 
     const tree = renderer
