@@ -1,6 +1,10 @@
+import { useTheme } from '@/hooks/use-theme';
 import { Ionicons } from '@expo/vector-icons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -13,9 +17,6 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -26,6 +27,8 @@ type FormData = z.infer<typeof schema>;
 
 export default function ForgotPasswordScreen() {
     const router = useRouter();
+    const { t } = useTranslation();
+    const { theme, isDarkMode } = useTheme();
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
@@ -51,7 +54,7 @@ export default function ForgotPasswordScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <Stack.Screen options={{ headerShown: false }} />
 
             <KeyboardAvoidingView
@@ -61,28 +64,28 @@ export default function ForgotPasswordScreen() {
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     {/* Back Button */}
                     <Pressable style={styles.backButton} onPress={() => router.back()}>
-                        <View style={styles.backCircle}>
-                            <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
+                        <View style={[styles.backCircle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#f8f9fa' }]}>
+                            <Ionicons name="arrow-back" size={24} color={theme.text} />
                         </View>
                     </Pressable>
 
                     {/* Header Illustration */}
                     <View style={styles.illustrationContainer}>
-                        <View style={styles.iconCircle}>
-                            <Ionicons name="lock-open-outline" size={48} color="#E50914" />
+                        <View style={[styles.iconCircle, { backgroundColor: isDarkMode ? 'rgba(229, 9, 20, 0.15)' : '#FFF3F3' }]}>
+                            <Ionicons name="lock-open-outline" size={48} color={theme.primary} />
                         </View>
-                        <View style={styles.lockBadge}>
+                        <View style={[styles.lockBadge, { backgroundColor: theme.primary }]}>
                             <Ionicons name="mail" size={20} color="white" />
                         </View>
                     </View>
 
                     {/* Title Section */}
                     <View style={styles.titleContainer}>
-                        <Text style={styles.title}>Şifrenizi mi unuttunuz?</Text>
-                        <Text style={styles.subtitle}>
+                        <Text style={[styles.title, { color: theme.text }]}>{t('auth.forgotPassword')}</Text>
+                        <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
                             {isSuccess
-                                ? 'Şifre sıfırlama bağlantısını e-posta adresinize gönderdik.'
-                                : 'E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.'}
+                                ? t('auth.resetEmailSent')
+                                : t('auth.forgotPasswordMessage')}
                         </Text>
                     </View>
 
@@ -91,7 +94,7 @@ export default function ForgotPasswordScreen() {
                         <View style={styles.formContainer}>
                             {/* Email Input */}
                             <View style={styles.inputWrapper}>
-                                <Text style={styles.label}>E-posta Adresi</Text>
+                                <Text style={[styles.label, { color: theme.text }]}>{t('auth.email')}</Text>
                                 <Controller
                                     control={control}
                                     name="email"
@@ -99,18 +102,22 @@ export default function ForgotPasswordScreen() {
                                         <View
                                             style={[
                                                 styles.inputContainer,
-                                                errors.email && styles.inputError,
+                                                {
+                                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#f8f9fa',
+                                                    borderColor: errors.email ? theme.primary : 'transparent',
+                                                }
                                             ]}
                                         >
                                             <Ionicons
                                                 name="mail-outline"
                                                 size={20}
-                                                color={errors.email ? '#E50914' : '#666'}
+                                                color={errors.email ? theme.primary : theme.textSecondary}
                                                 style={styles.inputIcon}
                                             />
                                             <TextInput
-                                                style={styles.input}
-                                                placeholder="ornek@email.com"
+                                                style={[styles.input, { color: theme.text }]}
+                                                placeholder={t('auth.email')}
+                                                placeholderTextColor={theme.textSecondary}
                                                 value={value}
                                                 onBlur={onBlur}
                                                 onChangeText={onChange}
@@ -126,9 +133,9 @@ export default function ForgotPasswordScreen() {
                                     )}
                                 />
                                 {errors.email ? (
-                                    <Text style={styles.errorText}>{errors.email.message}</Text>
+                                    <Text style={[styles.errorText, { color: theme.primary }]}>{errors.email.message}</Text>
                                 ) : (
-                                    <Text style={styles.hintText}>Kayıtlı e-posta adresinizi girin</Text>
+                                    <Text style={[styles.hintText, { color: theme.textSecondary }]}>{t('auth.enterRegisteredEmail')}</Text>
                                 )}
                             </View>
 
@@ -136,8 +143,9 @@ export default function ForgotPasswordScreen() {
                             <Pressable
                                 style={[
                                     styles.resetButton,
+                                    { backgroundColor: theme.primary },
                                     isLoading && styles.buttonDisabled,
-                                    !emailValue && styles.buttonInactive,
+                                    !emailValue && { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#ccc' },
                                 ]}
                                 onPress={handleSubmit(onSubmit)}
                                 disabled={isLoading || !emailValue}
@@ -146,7 +154,7 @@ export default function ForgotPasswordScreen() {
                                     <ActivityIndicator color="white" />
                                 ) : (
                                     <>
-                                        <Text style={styles.buttonText}>Sıfırlama Bağlantısı Gönder</Text>
+                                        <Text style={styles.buttonText}>{t('auth.sendResetLink')}</Text>
                                         <Ionicons
                                             name="arrow-forward"
                                             size={20}
@@ -163,15 +171,15 @@ export default function ForgotPasswordScreen() {
                             <View style={styles.successIcon}>
                                 <Ionicons name="checkmark-circle" size={64} color="#22C55E" />
                             </View>
-                            <Text style={styles.successEmail}>{emailValue}</Text>
-                            <Text style={styles.successText}>
-                                Lütfen gelen kutunuzu ve spam klasörünü kontrol edin.
+                            <Text style={[styles.successEmail, { color: theme.text }]}>{emailValue}</Text>
+                            <Text style={[styles.successText, { color: theme.textSecondary }]}>
+                                {t('auth.checkInbox')}
                             </Text>
                             <Pressable
-                                style={styles.backToLoginButton}
+                                style={[styles.backToLoginButton, { backgroundColor: theme.text }]}
                                 onPress={() => router.replace('/(auth)/login')}
                             >
-                                <Text style={styles.backToLoginText}>Giriş Ekranına Dön</Text>
+                                <Text style={styles.backToLoginText}>{t('auth.backToLogin')}</Text>
                             </Pressable>
 
                             {/* Resend Option */}
@@ -182,17 +190,17 @@ export default function ForgotPasswordScreen() {
                                     reset();
                                 }}
                             >
-                                <Text style={styles.resendText}>Farklı bir e-posta dene</Text>
+                                <Text style={[styles.resendText, { color: theme.primary }]}>{t('auth.tryDifferentEmail')}</Text>
                             </Pressable>
                         </View>
                     )}
 
                     {/* Help Section */}
                     {!isSuccess && (
-                        <View style={styles.helpContainer}>
-                            <Text style={styles.helpText}>Yardım mı lazım?</Text>
+                        <View style={[styles.helpContainer, { borderTopColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#f0f0f0' }]}>
+                            <Text style={[styles.helpText, { color: theme.textSecondary }]}>{t('auth.needHelp')}</Text>
                             <Pressable onPress={() => router.push('/(auth)/login')}>
-                                <Text style={styles.helpLink}>Giriş yap</Text>
+                                <Text style={[styles.helpLink, { color: theme.primary }]}>{t('auth.login')}</Text>
                             </Pressable>
                         </View>
                     )}
@@ -202,11 +210,9 @@ export default function ForgotPasswordScreen() {
     );
 }
 
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     keyboardView: {
         flex: 1,
@@ -223,7 +229,6 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: '#f8f9fa',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -236,7 +241,6 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: '#FFF3F3',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -247,11 +251,10 @@ const styles = StyleSheet.create({
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: '#E50914',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 3,
-        borderColor: '#fff',
+        borderColor: 'transparent',
     },
     titleContainer: {
         marginBottom: 32,
@@ -259,13 +262,11 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#1a1a1a',
         marginBottom: 12,
         textAlign: 'center',
     },
     subtitle: {
         fontSize: 16,
-        color: '#666',
         textAlign: 'center',
         lineHeight: 24,
         paddingHorizontal: 20,
@@ -279,22 +280,18 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#1a1a1a',
         marginBottom: 8,
         paddingLeft: 4,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f8f9fa',
         borderRadius: 16,
         paddingHorizontal: 16,
         height: 56,
         borderWidth: 2,
-        borderColor: 'transparent',
     },
     inputError: {
-        borderColor: '#E50914',
         backgroundColor: '#FFF3F3',
     },
     inputIcon: {
@@ -303,30 +300,25 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 16,
-        color: '#1a1a1a',
     },
     errorText: {
-        color: '#E50914',
         fontSize: 13,
         marginTop: 8,
         marginLeft: 4,
         fontWeight: '500',
     },
     hintText: {
-        color: '#999',
         fontSize: 13,
         marginTop: 8,
         marginLeft: 4,
     },
     resetButton: {
-        backgroundColor: '#E50914',
         height: 56,
         borderRadius: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 8,
-        boxShadow: '0 4px 12px rgba(229, 9, 20, 0.3)',
     },
     buttonDisabled: {
         opacity: 0.7,
@@ -352,21 +344,18 @@ const styles = StyleSheet.create({
     successEmail: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#1a1a1a',
         marginBottom: 12,
         paddingHorizontal: 20,
         textAlign: 'center',
     },
     successText: {
         fontSize: 14,
-        color: '#666',
         textAlign: 'center',
         marginBottom: 32,
         lineHeight: 22,
         paddingHorizontal: 20,
     },
     backToLoginButton: {
-        backgroundColor: '#1a1a1a',
         height: 56,
         borderRadius: 16,
         alignItems: 'center',
@@ -383,7 +372,6 @@ const styles = StyleSheet.create({
         padding: 12,
     },
     resendText: {
-        color: '#E50914',
         fontSize: 14,
         fontWeight: '600',
     },
@@ -394,15 +382,12 @@ const styles = StyleSheet.create({
         marginTop: 32,
         paddingTop: 32,
         borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
     },
     helpText: {
-        color: '#666',
         fontSize: 14,
         marginRight: 4,
     },
     helpLink: {
-        color: '#E50914',
         fontSize: 14,
         fontWeight: '600',
     },

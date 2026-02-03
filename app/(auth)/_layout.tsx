@@ -1,6 +1,16 @@
+import { useTheme } from '@/hooks/use-theme';
 import { Stack } from 'expo-router';
+import { useMemo } from 'react';
 
 export default function AuthLayout() {
+    const { theme, isDarkMode } = useTheme();
+
+    const headerStyle = useMemo(() => ({
+        backgroundColor: isDarkMode ? '#1a1a1a' : '#ffffff',
+        borderBottomWidth: 0,
+        shadowOpacity: 0,
+    }), [isDarkMode]);
+
     return (
         <Stack
             screenOptions={{
@@ -8,7 +18,8 @@ export default function AuthLayout() {
                 headerTransparent: true,
                 headerTitle: '',
                 headerBackTitle: 'Geri',
-                headerTintColor: '#E50914',
+                headerStyle,
+                headerTintColor: theme.primary,
             }}
         >
             <Stack.Screen name="login" options={{ headerShown: false }} />

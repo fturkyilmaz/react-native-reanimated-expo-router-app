@@ -1,4 +1,5 @@
 import { useAuth } from '@/hooks/use-auth';
+import { useTheme } from '@/hooks/use-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -6,9 +7,12 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollVie
 import { RegisterFormData, registerSchema } from '@/schemas/auth';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 export default function RegisterScreen() {
     const { register, isLoading } = useAuth();
+    const { t } = useTranslation();
+    const { theme, isDarkMode } = useTheme();
 
     const {
         control,
@@ -35,16 +39,16 @@ export default function RegisterScreen() {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.background }]}
         >
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <View style={styles.iconContainer}>
-                        <Ionicons name="person-add" size={40} color="#E50914" />
+                    <View style={[styles.iconContainer, { backgroundColor: isDarkMode ? 'rgba(229, 9, 20, 0.15)' : '#FFF3F3' }]}>
+                        <Ionicons name="person-add" size={40} color={theme.primary} />
                     </View>
-                    <Text style={styles.title}>Hesap Oluştur</Text>
-                    <Text style={styles.subtitle}>Film dünyasına adım atın</Text>
+                    <Text style={[styles.title, { color: theme.text }]}>{t('auth.register')}</Text>
+                    <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{t('auth.discoverMovies')}</Text>
                 </View>
 
                 {/* Form */}
@@ -54,11 +58,18 @@ export default function RegisterScreen() {
                         control={control}
                         name="name"
                         render={({ field: { onChange, value } }) => (
-                            <View style={styles.inputContainer}>
-                                <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
+                            <View style={[
+                                styles.inputContainer,
+                                {
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FAFAFA',
+                                    borderColor: errors.name ? theme.primary : (isDarkMode ? 'rgba(255,255,255,0.1)' : '#E0E0E0'),
+                                }
+                            ]}>
+                                <Ionicons name="person-outline" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                                 <TextInput
-                                    style={[styles.input, errors.name && styles.inputError]}
-                                    placeholder="Ad Soyad"
+                                    style={[styles.input, { color: theme.text }, errors.name && { borderColor: theme.primary }]}
+                                    placeholder={t('auth.name')}
+                                    placeholderTextColor={theme.textSecondary}
                                     value={value}
                                     onChangeText={onChange}
                                     autoCapitalize="words"
@@ -67,18 +78,25 @@ export default function RegisterScreen() {
                             </View>
                         )}
                     />
-                    {errors.name && <Text style={styles.errorText}>{errors.name.message}</Text>}
+                    {errors.name && <Text style={[styles.errorText, { color: theme.primary }]}>{errors.name.message}</Text>}
 
                     {/* Email */}
                     <Controller
                         control={control}
                         name="email"
                         render={({ field: { onChange, value } }) => (
-                            <View style={styles.inputContainer}>
-                                <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+                            <View style={[
+                                styles.inputContainer,
+                                {
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FAFAFA',
+                                    borderColor: errors.email ? theme.primary : (isDarkMode ? 'rgba(255,255,255,0.1)' : '#E0E0E0'),
+                                }
+                            ]}>
+                                <Ionicons name="mail-outline" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                                 <TextInput
-                                    style={[styles.input, errors.email && styles.inputError]}
-                                    placeholder="E-posta adresi"
+                                    style={[styles.input, { color: theme.text }, errors.email && { borderColor: theme.primary }]}
+                                    placeholder={t('auth.email')}
+                                    placeholderTextColor={theme.textSecondary}
                                     value={value}
                                     onChangeText={onChange}
                                     keyboardType="email-address"
@@ -88,18 +106,25 @@ export default function RegisterScreen() {
                             </View>
                         )}
                     />
-                    {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
+                    {errors.email && <Text style={[styles.errorText, { color: theme.primary }]}>{errors.email.message}</Text>}
 
                     {/* Password */}
                     <Controller
                         control={control}
                         name="password"
                         render={({ field: { onChange, value } }) => (
-                            <View style={styles.inputContainer}>
-                                <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+                            <View style={[
+                                styles.inputContainer,
+                                {
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FAFAFA',
+                                    borderColor: errors.password ? theme.primary : (isDarkMode ? 'rgba(255,255,255,0.1)' : '#E0E0E0'),
+                                }
+                            ]}>
+                                <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                                 <TextInput
-                                    style={[styles.input, errors.password && styles.inputError]}
-                                    placeholder="Şifre"
+                                    style={[styles.input, { color: theme.text }, errors.password && { borderColor: theme.primary }]}
+                                    placeholder={t('auth.password')}
+                                    placeholderTextColor={theme.textSecondary}
                                     value={value}
                                     onChangeText={onChange}
                                     secureTextEntry
@@ -108,18 +133,25 @@ export default function RegisterScreen() {
                             </View>
                         )}
                     />
-                    {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
+                    {errors.password && <Text style={[styles.errorText, { color: theme.primary }]}>{errors.password.message}</Text>}
 
                     {/* Confirm Password */}
                     <Controller
                         control={control}
                         name="confirmPassword"
                         render={({ field: { onChange, value } }) => (
-                            <View style={styles.inputContainer}>
-                                <Ionicons name="shield-checkmark-outline" size={20} color="#666" style={styles.inputIcon} />
+                            <View style={[
+                                styles.inputContainer,
+                                {
+                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#FAFAFA',
+                                    borderColor: errors.confirmPassword ? theme.primary : (isDarkMode ? 'rgba(255,255,255,0.1)' : '#E0E0E0'),
+                                }
+                            ]}>
+                                <Ionicons name="shield-checkmark-outline" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                                 <TextInput
-                                    style={[styles.input, errors.confirmPassword && styles.inputError]}
-                                    placeholder="Şifreyi Onayla"
+                                    style={[styles.input, { color: theme.text }, errors.confirmPassword && { borderColor: theme.primary }]}
+                                    placeholder={t('auth.confirmPassword')}
+                                    placeholderTextColor={theme.textSecondary}
                                     value={value}
                                     onChangeText={onChange}
                                     secureTextEntry
@@ -128,11 +160,11 @@ export default function RegisterScreen() {
                             </View>
                         )}
                     />
-                    {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>}
+                    {errors.confirmPassword && <Text style={[styles.errorText, { color: theme.primary }]}>{errors.confirmPassword.message}</Text>}
 
                     {/* Register Button */}
                     <Pressable
-                        style={[styles.button, isLoading && styles.buttonDisabled]}
+                        style={[styles.button, { backgroundColor: theme.primary }, isLoading && styles.buttonDisabled]}
                         onPress={handleSubmit(onSubmit)}
                         disabled={isLoading}
                     >
@@ -140,7 +172,7 @@ export default function RegisterScreen() {
                             <ActivityIndicator color="white" />
                         ) : (
                             <>
-                                <Text style={styles.buttonText}>Kayıt Ol</Text>
+                                <Text style={styles.buttonText}>{t('auth.register')}</Text>
                                 <Ionicons name="arrow-forward" size={20} color="white" style={styles.buttonIcon} />
                             </>
                         )}
@@ -148,20 +180,20 @@ export default function RegisterScreen() {
 
                     {/* Divider */}
                     <View style={styles.divider}>
-                        <View style={styles.dividerLine} />
-                        <Text style={styles.dividerText}>veya</Text>
-                        <View style={styles.dividerLine} />
+                        <View style={[styles.dividerLine, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E0E0E0' }]} />
+                        <Text style={[styles.dividerText, { color: theme.textSecondary }]}>{t('common.or')}</Text>
+                        <View style={[styles.dividerLine, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#E0E0E0' }]} />
                     </View>
 
                     {/* Social Register */}
                     <View style={styles.socialContainer}>
-                        <Pressable style={styles.socialButton}>
+                        <Pressable style={[styles.socialButton, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F5F5F5' }]}>
                             <Ionicons name="logo-google" size={24} color="#DB4437" />
                         </Pressable>
-                        <Pressable style={styles.socialButton}>
-                            <Ionicons name="logo-apple" size={24} color="#000" />
+                        <Pressable style={[styles.socialButton, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F5F5F5' }]}>
+                            <Ionicons name="logo-apple" size={24} color={isDarkMode ? '#fff' : '#000'} />
                         </Pressable>
-                        <Pressable style={styles.socialButton}>
+                        <Pressable style={[styles.socialButton, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F5F5F5' }]}>
                             <Ionicons name="logo-facebook" size={24} color="#4267B2" />
                         </Pressable>
                     </View>
@@ -169,10 +201,10 @@ export default function RegisterScreen() {
 
                 {/* Footer */}
                 <View style={styles.footer}>
-                    <Text style={styles.footerText}>Zaten hesabınız var mı? </Text>
+                    <Text style={[styles.footerText, { color: theme.textSecondary }]}>{t('auth.hasAccount')} </Text>
                     <Link href="/(auth)/login" asChild>
                         <Pressable>
-                            <Text style={styles.footerLink}>Giriş Yap</Text>
+                            <Text style={[styles.footerLink, { color: theme.primary }]}>{t('auth.login')}</Text>
                         </Pressable>
                     </Link>
                 </View>
@@ -181,11 +213,9 @@ export default function RegisterScreen() {
     );
 }
 
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
     },
     scrollContent: {
         flexGrow: 1,
@@ -200,7 +230,6 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: '#FFF3F3',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
@@ -208,26 +237,23 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#1a1a1a',
         marginBottom: 8,
     },
     subtitle: {
         fontSize: 16,
-        color: '#666',
     },
     form: {
         width: '100%',
+        gap: 12,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E0E0E0',
         borderRadius: 12,
         marginBottom: 4,
         paddingHorizontal: 16,
         height: 56,
-        backgroundColor: '#FAFAFA',
     },
     inputIcon: {
         marginRight: 12,
@@ -235,26 +261,22 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 16,
-        color: '#1a1a1a',
     },
     inputError: {
         borderColor: '#FF3B30',
     },
     errorText: {
-        color: '#FF3B30',
         fontSize: 12,
         marginBottom: 12,
         marginLeft: 4,
     },
     button: {
-        backgroundColor: '#E50914',
         height: 56,
         borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 8,
-        boxShadow: '0 4px 8px rgba(229, 9, 20, 0.3)',
     },
     buttonDisabled: {
         opacity: 0.7,
@@ -275,11 +297,9 @@ const styles = StyleSheet.create({
     dividerLine: {
         flex: 1,
         height: 1,
-        backgroundColor: '#E0E0E0',
     },
     dividerText: {
         marginHorizontal: 16,
-        color: '#666',
         fontSize: 14,
     },
     socialContainer: {
@@ -291,11 +311,10 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 12,
-        backgroundColor: '#F5F5F5',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E0E0E0',
+        borderColor: 'transparent',
     },
     footer: {
         flexDirection: 'row',
@@ -303,11 +322,9 @@ const styles = StyleSheet.create({
         marginTop: 32,
     },
     footerText: {
-        color: '#666',
         fontSize: 14,
     },
     footerLink: {
-        color: '#E50914',
         fontSize: 14,
         fontWeight: '600',
     },
