@@ -49,12 +49,15 @@ export function initializeOpenTelemetry(config?: Partial<OtelConfig>): void {
         provider.register();
 
         // Instrumentasyonları başlat (React Native'de FetchInstrumentation sorunlu)
-        // Sadece production'da ve web ortamında etkinleştir
-        if (typeof window !== 'undefined' && window.performance && window.performance.clearResourceTimings) {
-            const instrumentations = createInstrumentations();
-            instrumentations.forEach((instrumentation) => {
-                instrumentation.enable();
-            });
+        // Sadece web ortamında etkinleştir
+        if (typeof window !== 'undefined' && 'performance' in window) {
+            const perf = window.performance as Performance;
+            if (typeof perf.clearResourceTimings === 'function') {
+                const instrumentations = createInstrumentations();
+                instrumentations.forEach((instrumentation) => {
+                    instrumentation.enable();
+                });
+            }
         } else {
             console.log('[OpenTelemetry] Fetch instrumentation skipped (not supported in this environment)');
         }

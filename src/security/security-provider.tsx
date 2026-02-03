@@ -26,6 +26,16 @@ import { SecureStorage, StorageAudit } from './secure-storage';
 import { SSLPinningManager } from './ssl-pinning';
 
 /**
+ * Check if device is running on emulator
+ */
+function isEmulator(securityResult: SecurityCheckResult | null): boolean {
+    const emulatorCheck = securityResult?.checks.find(
+        check => check.type === SecurityCheckType.EMULATOR
+    );
+    return emulatorCheck?.detected ?? false;
+}
+
+/**
  * Security context state
  */
 export interface SecurityContextState {
@@ -166,56 +176,17 @@ export function SecurityProvider({
         }
     }, [runStorageAudit, isInitialized, auditStorage]);
 
+    // Emulator never blocks, even in production
+    const isEmulatorDevice = isEmulator(securityResult);
+
     const isBlocked =
         !__DEV__ &&
+        !isEmulatorDevice &&
         blockOnCompromised &&
         securityResult?.isCompromised &&
         securityResult.riskLevel === 'critical';
 
-    if (isChecking) {
-        if (loadingComponent) return <>{loadingComponent}</>;
-        return (
-            <View style={styles.container}>
-                <ActivityIndicator size="large" color="#007AFF" />
-                <Text style={styles.loadingText}>
-                    {t('security.checking', 'Checking device security...')}
-                </Text>
-            </View>
-        );
-    }
-
-    if (isBlocked) {
-        if (blockedComponent) return <>{blockedComponent}</>;
-        const rootDetected = securityResult?.checks.find(
-            check => check.type === SecurityCheckType.ROOT_DETECTION && check.detected
-        );
-        const jailbreakDetected = securityResult?.checks.find(
-            check => check.type === SecurityCheckType.JAILBREAK_DETECTION && check.detected
-        );
-
-        return (
-            <View style={styles.container}>
-                <Text style={styles.warningIcon}>⚠️</Text>
-                <Text style={styles.warningTitle}>
-                    {t('security.blockedTitle', 'Security Check Failed')}
-                </Text>
-                <Text style={styles.warningMessage}>
-                    {rootDetected
-                        ? t('security.rootDetected', 'Root access detected on this device.')
-                        : jailbreakDetected
-                            ? t('security.jailbreakDetected', 'Jailbreak detected on this device.')
-                            : t('security.deviceCompromised', 'This device appears to be compromised.')}
-                </Text>
-                <Text style={styles.warningSubtext}>
-                    {t(
-                        'security.blockedSubtext',
-                        'For security reasons, this app cannot run on compromised devices.'
-                    )}
-                </Text>
-            </View>
-        );
-    }
-
+    // Context value tanımı - her durumda lazım
     const contextValue: SecurityContextState = {
         isInitialized,
         isCompromised: securityResult?.isCompromised ?? false,
@@ -228,6 +199,66 @@ export function SecurityProvider({
         clearSensitiveData,
     };
 
+    // isBlocked kontrolü - bu durumda tam blokaj yap
+    if (isBlocked) {
+        if (blockedComponent) return <>{blockedComponent}</>;
+        const rootDetected = securityResult?.checks.find(
+            check => check.type === SecurityCheckType.ROOT_DETECTION && check.detected
+        );
+        const jailbreakDetected = securityResult?.checks.find(
+            check => check.type === SecurityCheckType.JAILBREAK_DETECTION && check.detected
+        );
+
+        return (
+            <SecurityContext.Provider value={contextValue}>
+                <View style={styles.container}>
+                    <Text style={styles.warningIcon}>⚠️</Text>
+                    <Text style={styles.warningTitle}>
+                        {t('security.blockedTitle', 'Security Check Failed')}
+                    </Text>
+                    <Text style={styles.warningMessage}>
+                        {rootDetected
+                            ? t('security.rootDetected', 'Root access detected on this device.')
+                            : jailbreakDetected
+                                ? t('security.jailbreakDetected', 'Jailbreak detected on this device.')
+                                : t('security.deviceCompromised', 'This device appears to be compromised.')}
+                    </Text>
+                    <Text style={styles.warningSubtext}>
+                        {t(
+                            'security.blockedSubtext',
+                            'For security reasons, this app cannot run on compromised devices.'
+                        )}
+                    </Text>
+                </View>
+            </SecurityContext.Provider>
+        );
+    }
+
+    // Non-blocking loading: children'ı render et, sadece indicator göster
+    if (isChecking) {
+        if (loadingComponent) {
+            return (
+                <SecurityContext.Provider value={contextValue}>
+                    {loadingComponent}
+                    {children}
+                </SecurityContext.Provider>
+            );
+        }
+        return (
+            <SecurityContext.Provider value={contextValue}>
+                <View style={styles.loadingOverlay}>
+                    <View style={styles.loadingIndicator}>
+                        <ActivityIndicator size="small" color="#007AFF" />
+                        <Text style={styles.loadingText} numberOfLines={1}>
+                            {t('security.checking', 'Security...')}
+                        </Text>
+                    </View>
+                </View>
+                {children}
+            </SecurityContext.Provider>
+        );
+    }
+
     return (
         <SecurityContext.Provider value={contextValue}>
             {children}
@@ -237,7 +268,25 @@ export function SecurityProvider({
 
 const styles = StyleSheet.create({
     container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5', padding: 20 },
-    loadingText: { marginTop: 16, fontSize: 16, color: '#666' },
+    loadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 9999,
+    },
+    loadingIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+        marginTop: 60,
+        alignSelf: 'center',
+    },
+    loadingText: { marginLeft: 8, fontSize: 14, color: '#fff' },
     warningIcon: { fontSize: 64, marginBottom: 16 },
     warningTitle: { fontSize: 24, fontWeight: 'bold', color: '#d32f2f', marginBottom: 12, textAlign: 'center' },
     warningMessage: { fontSize: 16, color: '#333', textAlign: 'center', marginBottom: 8 },

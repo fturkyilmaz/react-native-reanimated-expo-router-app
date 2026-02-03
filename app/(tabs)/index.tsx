@@ -50,11 +50,17 @@ export default function HomeScreen() {
       <FlatList
         data={movies}
         renderItem={({ item, index }) => <MovieCard movie={item} index={index} />}
-        keyExtractor={(item, index) => item.id.toString() + index}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
         numColumns={2}
+        columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={loading && movies.length === 0} onRefresh={refresh} />
+          <RefreshControl
+            refreshing={loading && movies.length === 0}
+            onRefresh={refresh}
+            tintColor={theme.primary}
+            colors={[theme.primary]}
+          />
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
@@ -68,6 +74,13 @@ export default function HomeScreen() {
             </View>
           ) : null
         }
+        // Performance optimizations
+        initialNumToRender={6}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        removeClippedSubviews={true}
+        showsVerticalScrollIndicator={false}
+        maintainVisibleContentPosition={{ minIndexForVisible: 0, autoscrollToTopThreshold: 10 }}
       />
 
       {/* Glass Search Bar at Bottom */}
@@ -104,6 +117,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   list: { padding: 8, paddingBottom: 100 },
+  columnWrapper: { justifyContent: 'space-between', paddingHorizontal: 8 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   error: { color: 'red', textAlign: 'center' },
   skeletonGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 16 },
