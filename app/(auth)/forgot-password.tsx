@@ -61,7 +61,11 @@ export default function ForgotPasswordScreen() {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
             >
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <ScrollView
+                    contentInsetAdjustmentBehavior="automatic"
+                    contentContainerStyle={[styles.scrollContent, { padding: 24, gap: 24 }]}
+                    showsVerticalScrollIndicator={false}
+                >
                     {/* Back Button */}
                     <Pressable style={styles.backButton} onPress={() => router.back()}>
                         <View style={[styles.backCircle, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#f8f9fa' }]}>
@@ -91,7 +95,7 @@ export default function ForgotPasswordScreen() {
 
                     {!isSuccess ? (
                         // Form Section
-                        <View style={styles.formContainer}>
+                        <View style={[styles.formContainer, { gap: 16 }]}>
                             {/* Email Input */}
                             <View style={styles.inputWrapper}>
                                 <Text style={[styles.label, { color: theme.text }]}>{t('auth.email')}</Text>
@@ -219,11 +223,10 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
-        padding: 24,
         paddingTop: Platform.OS === 'ios' ? 20 : 40,
     },
     backButton: {
-        marginBottom: 32,
+        marginBottom: 8,
     },
     backCircle: {
         width: 44,
@@ -234,8 +237,6 @@ const styles = StyleSheet.create({
     },
     illustrationContainer: {
         alignSelf: 'center',
-        marginBottom: 32,
-        position: 'relative',
     },
     iconCircle: {
         width: 100,
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
         borderColor: 'transparent',
     },
     titleContainer: {
-        marginBottom: 32,
+        marginBottom: 8,
     },
     title: {
         fontSize: 28,
@@ -275,7 +276,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     inputWrapper: {
-        marginBottom: 24,
+        width: '100%',
     },
     label: {
         fontSize: 14,
@@ -290,9 +291,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         height: 56,
         borderWidth: 2,
-    },
-    inputError: {
-        backgroundColor: '#FFF3F3',
     },
     inputIcon: {
         marginRight: 12,
@@ -318,13 +316,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 8,
     },
     buttonDisabled: {
         opacity: 0.7,
-    },
-    buttonInactive: {
-        backgroundColor: '#ccc',
     },
     buttonText: {
         color: 'white',
@@ -379,7 +373,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 32,
+        marginTop: 16,
         paddingTop: 32,
         borderTopWidth: 1,
     },

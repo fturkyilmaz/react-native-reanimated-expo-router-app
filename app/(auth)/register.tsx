@@ -41,7 +41,11 @@ export default function RegisterScreen() {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={[styles.container, { backgroundColor: theme.background }]}
         >
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                contentInsetAdjustmentBehavior="automatic"
+                contentContainerStyle={[styles.scrollContent, { padding: 24, gap: 24 }]}
+                showsVerticalScrollIndicator={false}
+            >
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={[styles.iconContainer, { backgroundColor: isDarkMode ? 'rgba(229, 9, 20, 0.15)' : '#FFF3F3' }]}>
@@ -52,7 +56,7 @@ export default function RegisterScreen() {
                 </View>
 
                 {/* Form */}
-                <View style={styles.form}>
+                <View style={[styles.form, { gap: 12 }]}>
                     {/* Name */}
                     <Controller
                         control={control}
@@ -219,12 +223,10 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
-        padding: 24,
         justifyContent: 'center',
     },
     header: {
         alignItems: 'center',
-        marginBottom: 32,
     },
     iconContainer: {
         width: 80,
@@ -244,14 +246,12 @@ const styles = StyleSheet.create({
     },
     form: {
         width: '100%',
-        gap: 12,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
         borderRadius: 12,
-        marginBottom: 4,
         paddingHorizontal: 16,
         height: 56,
     },
@@ -262,12 +262,9 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 16,
     },
-    inputError: {
-        borderColor: '#FF3B30',
-    },
     errorText: {
         fontSize: 12,
-        marginBottom: 12,
+        marginBottom: 8,
         marginLeft: 4,
     },
     button: {
@@ -276,7 +273,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 8,
     },
     buttonDisabled: {
         opacity: 0.7,
@@ -292,7 +288,6 @@ const styles = StyleSheet.create({
     divider: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 24,
     },
     dividerLine: {
         flex: 1,
@@ -319,7 +314,7 @@ const styles = StyleSheet.create({
     footer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        marginTop: 32,
+        marginTop: 16,
     },
     footerText: {
         fontSize: 14,
