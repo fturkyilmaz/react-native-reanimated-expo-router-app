@@ -25,6 +25,12 @@ export default function TabLayout() {
         <Label>{t('home.discover')}</Label>
       </NativeTabs.Trigger>
 
+      {/* İzleme Listesi / Watchlist */}
+      <NativeTabs.Trigger name="watchlist">
+        <Icon sf={{ default: 'bookmark', selected: 'bookmark.fill' }} />
+        <Label>{t('watchlist.title')}</Label>
+      </NativeTabs.Trigger>
+
       {/* Favoriler / Favorites */}
       <NativeTabs.Trigger name="favorites">
         <Icon sf={{ default: 'heart', selected: 'heart.fill' }} />

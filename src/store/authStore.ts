@@ -21,6 +21,7 @@ interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
+    isHydrated: boolean; // Track if persist has restored
     isTransitioning: boolean;
     error: string | null;
     pendingNavigation: boolean;
@@ -40,6 +41,7 @@ interface AuthState {
     enableBiometric: (type: BiometricType) => Promise<void>;
     disableBiometric: () => Promise<void>;
     updateLastAuthenticated: () => void;
+    setHydrated: (hydrated: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -48,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
             user: null,
             isAuthenticated: false,
             isLoading: false,
+            isHydrated: false,
             pendingNavigation: false,
             isTransitioning: false,
             error: null,
@@ -143,6 +146,8 @@ export const useAuthStore = create<AuthState>()(
                 set({ lastAuthenticatedAt: Date.now() });
             },
 
+            setHydrated: (hydrated: boolean) => set({ isHydrated: hydrated }),
+
             setUser: (updates: Partial<User>) => {
                 const currentUser = get().user;
                 if (currentUser) {
@@ -190,6 +195,11 @@ export const useAuthStore = create<AuthState>()(
                 biometricType: state.biometricType,
                 lastAuthenticatedAt: state.lastAuthenticatedAt,
             }),
+            onRehydrateStorage: () => (state) => {
+                if (state) {
+                    state.setHydrated(true);
+                }
+            },
         }
     )
 );

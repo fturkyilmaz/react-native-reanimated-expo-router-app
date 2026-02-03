@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 import {
+    Dimensions,
     FlatList,
     ImageBackground,
     Pressable,
@@ -18,6 +19,9 @@ import Animated, {
     Layout
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width - 32;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -120,7 +124,7 @@ export default function FavoritesScreen() {
                         entering={FadeInUp.delay(index * 80).duration(400)}
                         exiting={FadeOut.duration(200)}
                         layout={Layout.springify()}
-                        style={styles.cardContainer}
+                        style={styles.cardWrapper}
                     >
                         <AnimatedPressable
                             style={[
@@ -135,14 +139,14 @@ export default function FavoritesScreen() {
                             <ImageBackground
                                 source={{
                                     uri: item.poster_path
-                                        ? item.poster_path
+                                        ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
                                         : `https://picsum.photos/seed/movie${item.id}/300/450`
                                 }}
                                 style={styles.poster}
                                 imageStyle={styles.posterImage}
                             >
                                 <LinearGradient
-                                    colors={['transparent', 'rgba(0,0,0,0.7)']}
+                                    colors={['transparent', 'rgba(0,0,0,0.8)']}
                                     style={styles.posterGradient}
                                 />
 
@@ -152,7 +156,7 @@ export default function FavoritesScreen() {
                                     </Text>
                                     <View style={styles.ratingContainer}>
                                         <Ionicons name="star" size={14} color="#FFD700" />
-                                        <Text style={styles.rating}>{item.vote_average}</Text>
+                                        <Text style={styles.rating}>{item.vote_average?.toFixed(1)}</Text>
                                     </View>
                                 </View>
 
@@ -177,8 +181,6 @@ export default function FavoritesScreen() {
                         </AnimatedPressable>
                     </Animated.View>
                 )}
-                numColumns={2}
-                columnWrapperStyle={styles.columnWrapper}
             />
         </SafeAreaView>
     );
@@ -205,20 +207,14 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
     },
-    columnWrapper: {
-        justifyContent: 'space-between',
-    },
-    cardContainer: {
-        flex: 1,
+    cardWrapper: {
         marginBottom: 16,
-        marginHorizontal: 4,
     },
     card: {
-        width: '100%',
-        aspectRatio: 2 / 3,
+        width: CARD_WIDTH,
+        height: 200,
         borderRadius: 16,
         overflow: 'hidden',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
     },
     poster: {
         width: '100%',
@@ -233,12 +229,12 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        height: '60%',
+        height: '70%',
         borderBottomLeftRadius: 16,
         borderBottomRightRadius: 16,
     },
     cardContent: {
-        padding: 12,
+        padding: 16,
         position: 'absolute',
         bottom: 0,
         left: 0,
@@ -246,9 +242,9 @@ const styles = StyleSheet.create({
     },
     movieTitle: {
         color: 'white',
-        fontSize: 15,
+        fontSize: 18,
         fontWeight: '700',
-        marginBottom: 4,
+        marginBottom: 6,
         textShadowColor: 'rgba(0,0,0,0.5)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 2,
@@ -260,22 +256,21 @@ const styles = StyleSheet.create({
     },
     rating: {
         color: 'white',
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: '600',
     },
     removeButton: {
         position: 'absolute',
-        top: 8,
-        right: 8,
+        top: 12,
+        right: 12,
         zIndex: 10,
     },
     removeCircle: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
     },
 
     // Boş state stilleri
@@ -306,7 +301,6 @@ const styles = StyleSheet.create({
         height: 30,
         justifyContent: 'center',
         alignItems: 'center',
-        boxShadow: '0 4px 8px rgba(229, 9, 20, 0.3)',
     },
     emptyTitle: {
         fontSize: 28,
@@ -326,7 +320,6 @@ const styles = StyleSheet.create({
         height: 56,
         borderRadius: 28,
         overflow: 'hidden',
-        boxShadow: '0 4px 12px rgba(229, 9, 20, 0.25)',
     },
     gradientButton: {
         flex: 1,

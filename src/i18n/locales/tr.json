@@ -89,6 +89,14 @@
         "explore": "Keşfetmeye Başla",
         "movieCount": "{{count}} film favorilerinizde"
     },
+    "watchlist": {
+        "title": "İzleme Listesi",
+        "emptyTitle": "Henüz İzleme Listesi Yok",
+        "emptySubtitle": "Sonra izlemek istediğiniz filmleri kaydedin",
+        "browseMovies": "Filmleri Keşfet",
+        "clearAll": "Tümünü Temizle",
+        "movieCount": "{{count}} film izleme listenizde"
+    },
     "authTransition": {
         "welcome": "Hoşgeldin {{name}}! 🎬",
         "subText": "Film dünyası seni bekliyor..."

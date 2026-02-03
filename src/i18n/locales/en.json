@@ -89,6 +89,14 @@
         "explore": "Start Exploring",
         "movieCount": "{{count}} movies in your favorites"
     },
+    "watchlist": {
+        "title": "Watchlist",
+        "emptyTitle": "No Watchlist Yet",
+        "emptySubtitle": "Save movies you want to watch later",
+        "browseMovies": "Browse Movies",
+        "clearAll": "Clear All",
+        "movieCount": "{{count}} movies in your watchlist"
+    },
     "settings": {
         "title": "Settings",
         "account": "ACCOUNT",

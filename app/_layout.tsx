@@ -7,6 +7,7 @@ import DeepLinkProvider from '@/deep-linking';
 import { AuthProvider } from '@/hooks/use-auth';
 import { FavoritesProvider } from '@/hooks/use-favorites';
 import { useNetworkStatus } from '@/hooks/use-network-status';
+import { WatchlistProvider } from '@/hooks/use-watchlist';
 import i18n from '@/i18n';
 import { OpenTelemetryProvider } from '@/otel/provider';
 import { QueryProvider } from '@/providers/query-provider';
@@ -19,12 +20,18 @@ import { I18nextProvider } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import SplashScreen from './splash-screen';
 
 function RootLayoutNav() {
-  const { user, isTransitioning, completeTransition } = useAuthStore();
+  const { user, isTransitioning, completeTransition, isAuthenticated, isHydrated } = useAuthStore();
 
   // Initialize network status monitoring (inside QueryProvider)
   useNetworkStatus();
+
+  // Show splash screen while hydrating
+  if (!isHydrated) {
+    return <SplashScreen />;
+  }
 
   return (
     <>
@@ -69,9 +76,11 @@ export default function RootLayout() {
                     <ErrorBoundary>
                       <AuthProvider>
                         <FavoritesProvider>
-                          <SocialAuthProvider>
-                            <RootLayoutNav />
-                          </SocialAuthProvider>
+                          <WatchlistProvider>
+                            <SocialAuthProvider>
+                              <RootLayoutNav />
+                            </SocialAuthProvider>
+                          </WatchlistProvider>
                         </FavoritesProvider>
                       </AuthProvider>
                     </ErrorBoundary>

@@ -1,5 +1,7 @@
-import { Movie } from '@/config/api';
+import { Movie, MovieDetails } from '@/config/api';
 import { useFavorites } from '@/hooks/use-favorites';
+import { useWatchlist } from '@/hooks/use-watchlist';
+import { tmdbService } from '@/services/tmdb';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -22,11 +24,17 @@ export default function MovieDetail() {
     const { t } = useTranslation();
     const { id, item } = useLocalSearchParams();
     const { toggleFavorite, isFavorite } = useFavorites();
+    const { toggleWatchlist, isInWatchlist } = useWatchlist();
     const router = useRouter();
     const scrollY = useSharedValue(0);
     const movieId = parseInt(id as string);
     const [isLiked, setIsLiked] = useState(false);
-    const movie = item ? JSON.parse(item as string) : null;
+    const [isInWL, setIsInWL] = useState(false);
+    const [movieDetails, setMovieDetails] = useState<MovieDetails | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    // Parse movie from navigation params
+    const movie: Movie | null = item ? JSON.parse(item as string) : null;
 
     const videoSource = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
     const player = useVideoPlayer(videoSource, player => {
@@ -44,8 +52,28 @@ export default function MovieDetail() {
     }, [player]);
 
     useEffect(() => {
-        setIsLiked(isFavorite(movieId));
-    }, [movieId, isFavorite]);
+        if (movieId) {
+            setIsLiked(isFavorite(movieId));
+            setIsInWL(isInWatchlist(movieId));
+        }
+    }, [movieId, isFavorite, isInWatchlist]);
+
+    // Fetch movie details
+    useEffect(() => {
+        const fetchDetails = async () => {
+            if (!movieId) return;
+            try {
+                setLoading(true);
+                const details = await tmdbService.getMovieDetails(movieId);
+                setMovieDetails(details);
+            } catch (error) {
+                console.error('Error fetching movie details:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDetails();
+    }, [movieId]);
 
     const handleFavoritePress = () => {
         if (!movie) return;
@@ -65,7 +93,24 @@ export default function MovieDetail() {
         setIsLiked(!isLiked);
     };
 
-    // Yazı sadece poster kaybolmaya başlayınca görünsün
+    const handleWatchlistPress = () => {
+        if (!movie) return;
+
+        const movieNew: Movie = {
+            id: movieId,
+            title: movie.title,
+            poster_path: movie.poster_path,
+            vote_average: movie.vote_average,
+            overview: movie.overview || '',
+            backdrop_path: movie.backdrop_path || null,
+            release_date: movie.release_date || '',
+            genre_ids: movie.genre_ids || [],
+        };
+
+        toggleWatchlist(movieNew);
+        setIsInWL(!isInWL);
+    };
+
     const headerAnimatedStyle = useAnimatedStyle(() => ({
         opacity: interpolate(scrollY.value, [200, 300], [0, 1]),
         transform: [{
@@ -73,7 +118,6 @@ export default function MovieDetail() {
         }]
     }));
 
-    // Poster parallax ve shrink efekti
     const imageAnimatedStyle = useAnimatedStyle(() => ({
         transform: [
             {
@@ -86,7 +130,6 @@ export default function MovieDetail() {
         opacity: interpolate(scrollY.value, [0, 200, 300], [1, 0.8, 0])
     }));
 
-    // Content yukarıdan fade in
     const contentAnimatedStyle = useAnimatedStyle(() => ({
         opacity: interpolate(scrollY.value, [0, 100], [1, 1]),
         transform: [{
@@ -94,25 +137,63 @@ export default function MovieDetail() {
         }]
     }));
 
-    const posterPaths = [
-        "/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg", // Joker (2019)
-        "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", // Interstellar
-        "/rSPw7tgCH9c6NqICZef4kZjFOQ5.jpg", // The Godfather
-        "/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg", // Avatar: The Way of Water
-        "/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg", // John Wick: Chapter 4
-        "/yF1eOkaYvwiORauRCPWznV9xVvi.jpg", // Dune: Part Two
-        "/fCayJrkfRaCRCTh8GqN30f8oyQF.jpg", // Fight Club
-        "/6KErczPBROQty7QoIsaa6wJYXZi.jpg", // Parasite
-        "/q719jXXEzOoYaps6babgKnONONX.jpg", // Spirited Away (Studio Ghibli)
-        "/d5NXSklXo0qyIYkgV94XAgMIckC.jpg", // Pulp Fiction
-    ];
+    // Get image URL from movie or fallback
+    const imageUrl = movie?.poster_path
+        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+        : movieDetails?.poster_path
+            ? `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}`
+            : 'https://via.placeholder.com/500x750?text=No+Image';
 
-    const imageUrl = `https://image.tmdb.org/t/p/w500${posterPaths[movieId]}`;
+    // Get backdrop URL
+    const backdropUrl = movie?.backdrop_path
+        ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}`
+        : movieDetails?.backdrop_path
+            ? `https://image.tmdb.org/t/p/original${movieDetails.backdrop_path}`
+            : null;
+
+    // Get year from release date
+    const year = movie?.release_date
+        ? movie.release_date.split('-')[0]
+        : movieDetails?.release_date
+            ? movieDetails.release_date.split('-')[0]
+            : '2024';
+
+    // Get runtime
+    const runtime = movieDetails?.runtime
+        ? `${Math.floor(movieDetails.runtime / 60)}s ${movieDetails.runtime % 60}dk`
+        : '2s 0dk';
+
+    // Get rating
+    const rating = movie?.vote_average
+        ? movie.vote_average.toFixed(1)
+        : movieDetails?.vote_average
+            ? movieDetails.vote_average.toFixed(1)
+            : '0.0';
+
+    // Get title
+    const title = movie?.title || movieDetails?.title || 'Film';
+
+    // Get overview
+    const overview = movie?.overview || movieDetails?.overview || '';
+
+    // Get genres
+    const genres = movieDetails?.genres || [];
+
+    if (loading && !movieDetails) {
+        return (
+            <View style={styles.container}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Yükleniyor...</Text>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false }} />
-            {/* Header (scroll edince görünür) */}
+
             <Animated.View style={[styles.header, headerAnimatedStyle]}>
                 <Text style={styles.headerTitle} numberOfLines={1}>{t('movie.details')}</Text>
             </Animated.View>
@@ -125,21 +206,18 @@ export default function MovieDetail() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
             >
-                {/* Poster Container */}
                 <View style={styles.posterContainer}>
                     <AnimatedImage
-                        source={{ uri: imageUrl }}
+                        source={{ uri: backdropUrl || imageUrl }}
                         style={[styles.poster, imageAnimatedStyle]}
                         defaultSource={require('@/assets/images/placeholder.png')}
                     />
 
-                    {/* Gradient Overlay */}
                     <LinearGradient
                         colors={['transparent', 'rgba(0,0,0,0.8)', '#141414']}
                         style={styles.gradient}
                     />
 
-                    {/* Floating Back Button */}
                     <Pressable
                         style={styles.backButton}
                         onPress={() => router.back()}
@@ -149,7 +227,6 @@ export default function MovieDetail() {
                         </View>
                     </Pressable>
 
-                    {/* Floating Favorite Button - ÜSTTE */}
                     <Pressable
                         style={[styles.favoriteButton, { top: 50, right: 20 }]}
                         onPress={handleFavoritePress}
@@ -162,29 +239,41 @@ export default function MovieDetail() {
                             />
                         </View>
                     </Pressable>
+
+                    <Pressable
+                        style={[styles.watchlistButton, { top: 100, right: 20 }]}
+                        onPress={handleWatchlistPress}
+                    >
+                        <View style={[styles.watchlistButtonCircle, isInWL && styles.watchlistActive]}>
+                            <Ionicons
+                                name={isInWL ? "bookmark" : "bookmark-outline"}
+                                size={24}
+                                color={isInWL ? "#E50914" : "white"}
+                            />
+                        </View>
+                    </Pressable>
                 </View>
 
-                {/* Content */}
                 <Animated.View
                     entering={FadeInUp.delay(300).duration(800).springify()}
                     style={[styles.content, contentAnimatedStyle]}
                 >
-                    <Text style={styles.title}>Inception</Text>
+                    <Text style={styles.title}>{title}</Text>
 
                     <View style={styles.metaContainer}>
-                        <Text style={styles.year}>2010</Text>
+                        <Text style={styles.year}>{year}</Text>
                         <Text style={styles.dot}>•</Text>
-                        <Text style={styles.duration}>2s 28dk</Text>
+                        <Text style={styles.duration}>{runtime}</Text>
                         <Text style={styles.dot}>•</Text>
                         <View style={styles.ratingBadge}>
-                            <Text style={styles.rating}>⭐ 8.8</Text>
+                            <Text style={styles.rating}>⭐ {rating}</Text>
                         </View>
                     </View>
 
                     <View style={styles.genreContainer}>
-                        {['Bilim Kurgu', 'Aksiyon', 'Gerilim'].map((genre, index) => (
+                        {genres.slice(0, 3).map((genre, index) => (
                             <View key={index} style={styles.genreBadge}>
-                                <Text style={styles.genreText}>{genre}</Text>
+                                <Text style={styles.genreText}>{genre.name}</Text>
                             </View>
                         ))}
                     </View>
@@ -192,10 +281,7 @@ export default function MovieDetail() {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>{t('movie.summary')}</Text>
                         <Text style={styles.description}>
-                            Dom Cobb çok yetenekli bir hırsızdır. Uzmanlık alanı, zihnin en savunmasız olduğu rüya görme anında,
-                            bilinçaltının derinliklerindeki değerli sırları çekip çıkarmak ve onları çalmaktır.{'\n\n'}
-                            Cobb'un bu nadir yeteneği, onu kurumsal casusluğun tehlikeli yeni dünyasında aranan bir oyuncu yapmıştır.
-                            Aynı zamanda, uluslararası bir kaçak durumuna düşürüp, bütün sevdiği şeyleri kaybetmesine sebep olmuştur.
+                            {overview || 'Bu film için bir açıklama bulunmuyor.'}
                         </Text>
                     </View>
 
@@ -234,6 +320,15 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#141414',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        color: 'white',
+        fontSize: 16,
     },
     scrollContent: {
         paddingBottom: 40,
@@ -307,6 +402,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     favoriteActive: {
+        backgroundColor: 'white',
+    },
+    watchlistButton: {
+        position: 'absolute',
+        zIndex: 10,
+    },
+    watchlistButtonCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    watchlistActive: {
         backgroundColor: 'white',
     },
     content: {
