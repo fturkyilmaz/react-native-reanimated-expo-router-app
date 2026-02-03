@@ -303,8 +303,7 @@ export default function SettingsScreen() {
                         title={t('settings.language')}
                         subtitle={selectedLanguage}
                         onPress={() => {
-                            console.log('Language pressed, navigating...');
-                            router.navigate('/language-sheet');
+                            router.push('/language-sheet');
                         }}
                     />
                     <SettingToggle

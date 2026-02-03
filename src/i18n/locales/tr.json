@@ -6,6 +6,7 @@
         "retry": "Tekrar Dene",
         "save": "Kaydet",
         "cancel": "İptal",
+        "confirm": "Onayla",
         "delete": "Sil",
         "edit": "Düzenle",
         "close": "Kapat",
@@ -102,6 +103,10 @@
         "privacyPolicy": "Gizlilik Politikası",
         "about": "Hakkında",
         "version": "Sürüm {{version}}"
+    },
+    "language": {
+        "title": "Dil",
+        "selectLanguage": "Tercih ettiğiniz dili seçin"
     },
     "languages": {
         "tr": "Türkçe",
