@@ -1,83 +1,95 @@
-import { subscribeToNetworkChanges } from '@/utils/offline-manager';
-import { useEffect, useState } from 'react';
+/**
+ * Offline Banner Component
+ * 
+ * Displays a banner when the device is offline and shows
+ * pending mutation count if there are any.
+ */
+
+import { useOfflineBanner } from '@/hooks/use-network-status';
+import { useTheme } from '@/hooks/use-theme';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, View } from 'react-native';
-import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
-} from 'react-native-reanimated';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-export function OfflineBanner() {
-    const [isOffline, setIsOffline] = useState(false);
+interface OfflineBannerProps {
+    onRetry?: () => void;
+}
+
+export function OfflineBanner({ onRetry }: OfflineBannerProps) {
     const { t } = useTranslation();
-    const translateY = useSharedValue(-60);
+    const { colors } = useTheme();
+    const { showBanner, offlineCount, hasPendingMutations } = useOfflineBanner();
 
-    useEffect(() => {
-        // Check initial state
-        const unsubscribe = subscribeToNetworkChanges((online) => {
-            runOnJS(setIsOffline)(!online);
-        });
+    const handlePress = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onRetry?.();
+    };
 
-        return () => {
-            unsubscribe();
-        };
-    }, []);
-
-    const bannerStyle = useAnimatedStyle(() => ({
-        transform: [{ translateY: translateY.value }],
-    }));
-
-    useEffect(() => {
-        if (isOffline) {
-            translateY.value = withTiming(0, { duration: 300 });
-        } else {
-            translateY.value = withTiming(-60, { duration: 300 });
-        }
-    }, [isOffline]);
-
-    if (!isOffline) return null;
+    if (!showBanner) {
+        return null;
+    }
 
     return (
-        <Animated.View style={[styles.container, bannerStyle]}>
+        <Pressable
+            style={[styles.container, { backgroundColor: colors.warning }]}
+            onPress={handlePress}
+            accessibilityLabel={t('offline.bannerLabel')}
+            accessibilityHint={t('offline.bannerHint')}
+        >
             <View style={styles.content}>
-                <Text style={styles.icon}>📡</Text>
-                <Text style={styles.text}>{t('offline.banner')}</Text>
+                <Ionicons
+                    name="cloud-offline-outline"
+                    size={20}
+                    color={colors.background}
+                />
+                <View style={styles.textContainer}>
+                    <Text style={[styles.title, { color: colors.background }]}>
+                        {t('offline.title')}
+                    </Text>
+                    {hasPendingMutations && (
+                        <Text style={[styles.subtitle, { color: colors.background }]}>
+                            {t('offline.pendingMutations', { count: offlineCount })}
+                        </Text>
+                    )}
+                </View>
+                {onRetry && (
+                    <Ionicons
+                        name="refresh"
+                        size={20}
+                        color={colors.background}
+                        style={styles.icon}
+                    />
+                )}
             </View>
-        </Animated.View>
+        </Pressable>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999,
-        backgroundColor: '#FF6B6B',
-        paddingTop: 45, // Status bar height
-        paddingBottom: 12,
         paddingHorizontal: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 5,
+        paddingVertical: 10,
     },
     content: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
     },
-    icon: {
-        fontSize: 16,
-        marginRight: 8,
+    textContainer: {
+        flex: 1,
+        marginLeft: 12,
     },
-    text: {
-        color: '#fff',
+    title: {
         fontSize: 14,
         fontWeight: '600',
+    },
+    subtitle: {
+        fontSize: 12,
+        opacity: 0.9,
+        marginTop: 2,
+    },
+    icon: {
+        marginLeft: 8,
     },
 });

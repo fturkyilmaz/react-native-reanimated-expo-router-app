@@ -1,10 +1,12 @@
 import { SocialAuthProvider } from '@/auth';
 import { AuthTransition } from '@/components/auth-transition';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { OfflineBanner } from '@/components/offline-banner';
 import { COLORS } from '@/core/constants/theme';
 import DeepLinkProvider from '@/deep-linking';
 import { AuthProvider } from '@/hooks/use-auth';
 import { FavoritesProvider } from '@/hooks/use-favorites';
+import { useNetworkStatus } from '@/hooks/use-network-status';
 import i18n from '@/i18n';
 import { OpenTelemetryProvider } from '@/otel/provider';
 import { QueryProvider } from '@/providers/query-provider';
@@ -20,6 +22,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 function RootLayoutNav() {
   const { user, isTransitioning, completeTransition } = useAuthStore();
 
+  // Initialize network status monitoring (inside QueryProvider)
+  useNetworkStatus();
+
   return (
     <>
       <AuthTransition
@@ -27,6 +32,7 @@ function RootLayoutNav() {
         onAnimationComplete={completeTransition}
         userName={user?.name || ''}
       />
+      <OfflineBanner />
 
       <StatusBar style="light" />
       <Stack screenOptions={{ animation: 'slide_from_right' }}>

@@ -14,8 +14,8 @@ import type { SocialAuthConfig, SocialAuthError, SocialAuthResult, SocialProvide
 // import * as AppleAuthentication from 'expo-apple-authentication';
 // import * as Facebook from 'expo-facebook';
 
-const AUTH_STORAGE_KEY = '@social_auth_tokens';
-const USER_STORAGE_KEY = '@social_auth_user';
+const AUTH_STORAGE_KEY = 'social_auth_tokens';
+const USER_STORAGE_KEY = 'social_auth_user';
 
 /**
  * Generate a random string for state parameter

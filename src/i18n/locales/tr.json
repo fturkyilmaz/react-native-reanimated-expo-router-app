@@ -125,6 +125,9 @@
         "title": "İnternet Bağlantısı Yok",
         "message": "Lütfen ağ ayarlarınızı kontrol edin ve tekrar deneyin.",
         "retry": "Tekrar Dene",
-        "banner": "İnternet bağlantısı yok"
+        "banner": "İnternet bağlantısı yok",
+        "bannerLabel": "Çevrimdışı bildirimi",
+        "bannerHint": "Bağlantıyı tekrar denemek için çift dokunun",
+        "pendingMutations": "{{count}} değişiklik çevrimiçi olduğunuzda senkronize edilecek"
     }
 }
