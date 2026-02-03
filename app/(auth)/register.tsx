@@ -1,18 +1,19 @@
+import { useSocialAuth } from '@/auth/social-provider';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/hooks/use-theme';
-import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-
 import { RegisterFormData, registerSchema } from '@/schemas/auth';
+import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Link, useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function RegisterScreen() {
     const { register, isLoading } = useAuth();
     const { t } = useTranslation();
     const { theme, isDarkMode } = useTheme();
+    const { signIn: socialSignIn, isSigningIn: isSocialSigningIn } = useSocialAuth();
 
     const {
         control,
@@ -35,6 +36,17 @@ export default function RegisterScreen() {
             console.error('Register error:', error);
         }
     };
+
+    const handleSocialSignIn = async (provider: 'google' | 'apple' | 'facebook') => {
+        const result = await socialSignIn(provider);
+        if (result.success && result.user) {
+            // Social login başarılı, kullanıcıyı yönlendir
+            router.replace('/(tabs)');
+        }
+    };
+
+    const router = useRouter();
+    const isLoadingAny = isLoading || isSocialSigningIn;
 
     return (
         <KeyboardAvoidingView
@@ -77,7 +89,7 @@ export default function RegisterScreen() {
                                     value={value}
                                     onChangeText={onChange}
                                     autoCapitalize="words"
-                                    editable={!isLoading}
+                                    editable={!isLoadingAny}
                                 />
                             </View>
                         )}
@@ -105,7 +117,7 @@ export default function RegisterScreen() {
                                     onChangeText={onChange}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
-                                    editable={!isLoading}
+                                    editable={!isLoadingAny}
                                 />
                             </View>
                         )}
@@ -132,7 +144,7 @@ export default function RegisterScreen() {
                                     value={value}
                                     onChangeText={onChange}
                                     secureTextEntry
-                                    editable={!isLoading}
+                                    editable={!isLoadingAny}
                                 />
                             </View>
                         )}
@@ -159,7 +171,7 @@ export default function RegisterScreen() {
                                     value={value}
                                     onChangeText={onChange}
                                     secureTextEntry
-                                    editable={!isLoading}
+                                    editable={!isLoadingAny}
                                 />
                             </View>
                         )}
@@ -168,11 +180,11 @@ export default function RegisterScreen() {
 
                     {/* Register Button */}
                     <Pressable
-                        style={[styles.button, { backgroundColor: theme.primary }, isLoading && styles.buttonDisabled]}
+                        style={[styles.button, { backgroundColor: theme.primary }, isLoadingAny && styles.buttonDisabled]}
                         onPress={handleSubmit(onSubmit)}
-                        disabled={isLoading}
+                        disabled={isLoadingAny}
                     >
-                        {isLoading ? (
+                        {isLoadingAny ? (
                             <ActivityIndicator color="white" />
                         ) : (
                             <>
@@ -191,13 +203,30 @@ export default function RegisterScreen() {
 
                     {/* Social Register */}
                     <View style={styles.socialContainer}>
-                        <Pressable style={[styles.socialButton, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F5F5F5' }]}>
+                        {/* Google */}
+                        <Pressable
+                            style={[styles.socialButton, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F5F5F5' }]}
+                            onPress={() => handleSocialSignIn('google')}
+                            disabled={isSocialSigningIn}
+                        >
                             <Ionicons name="logo-google" size={24} color="#DB4437" />
                         </Pressable>
-                        <Pressable style={[styles.socialButton, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F5F5F5' }]}>
+
+                        {/* Apple */}
+                        <Pressable
+                            style={[styles.socialButton, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F5F5F5' }]}
+                            onPress={() => handleSocialSignIn('apple')}
+                            disabled={isSocialSigningIn}
+                        >
                             <Ionicons name="logo-apple" size={24} color={isDarkMode ? '#fff' : '#000'} />
                         </Pressable>
-                        <Pressable style={[styles.socialButton, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F5F5F5' }]}>
+
+                        {/* Facebook */}
+                        <Pressable
+                            style={[styles.socialButton, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : '#F5F5F5' }]}
+                            onPress={() => handleSocialSignIn('facebook')}
+                            disabled={isSocialSigningIn}
+                        >
                             <Ionicons name="logo-facebook" size={24} color="#4267B2" />
                         </Pressable>
                     </View>

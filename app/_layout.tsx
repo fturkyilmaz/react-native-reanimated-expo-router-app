@@ -1,3 +1,4 @@
+import { SocialAuthProvider } from '@/auth';
 import { AuthTransition } from '@/components/auth-transition';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { COLORS } from '@/core/constants/theme';
@@ -59,7 +60,9 @@ export default function RootLayout() {
                   <ErrorBoundary>
                     <AuthProvider>
                       <FavoritesProvider>
-                        <RootLayoutNav />
+                        <SocialAuthProvider>
+                          <RootLayoutNav />
+                        </SocialAuthProvider>
                       </FavoritesProvider>
                     </AuthProvider>
                   </ErrorBoundary>
