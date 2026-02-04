@@ -243,6 +243,7 @@ export default function MovieDetail() {
                     <Pressable
                         style={[styles.favoriteButton, { top: 50, right: 20 }]}
                         onPress={handleFavoritePress}
+                        hitSlop={20}
                     >
                         <View style={[styles.favoriteButtonCircle, isLiked && styles.favoriteActive]}>
                             <Ionicons

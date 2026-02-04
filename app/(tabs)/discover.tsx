@@ -3,8 +3,9 @@ import { Movie } from '@/config/api';
 import { useTheme } from '@/hooks/use-theme';
 import { useGenreList, useNowPlayingMovies, useSearchMovies, useTopRatedMovies, useUpcomingMovies } from '@/hooks/useMoviesQuery';
 import { Ionicons } from '@expo/vector-icons';
+import { GlassView } from 'expo-glass-effect';
 import { Stack } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Dimensions, FlatList, Keyboard, KeyboardAvoidingView, KeyboardEvent, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -162,49 +163,6 @@ export default function DiscoverScreen() {
         });
     };
 
-    const renderTabItem = ({ item, index }: { item: typeof TAB_CONFIG[number]; index: number }) => (
-        <Pressable
-            style={[
-                styles.tabButton,
-                activeTab === item.key && styles.tabButtonActive,
-            ]}
-            onPress={() => {
-                setActiveTab(item.key as TabType);
-                if (searchQuery) clearSearch();
-            }}
-        >
-            <Ionicons
-                name={item.icon as any}
-                size={16}
-                color={activeTab === item.key ? 'white' : theme.textSecondary}
-                style={styles.tabIcon}
-            />
-            <Text style={[
-                styles.tabText,
-                activeTab === item.key && styles.tabTextActive,
-            ]}>
-                {item.label}
-            </Text>
-        </Pressable>
-    );
-
-    const renderGenreItem = ({ item }: { item: { id: number; name: string } }) => (
-        <Pressable
-            style={[
-                styles.genreChip,
-                selectedGenre === item.id && styles.genreChipActive,
-            ]}
-            onPress={() => setSelectedGenre(selectedGenre === item.id ? null : item.id)}
-        >
-            <Text style={[
-                styles.genreText,
-                selectedGenre === item.id && styles.genreTextActive,
-            ]}>
-                {item.name}
-            </Text>
-        </Pressable>
-    );
-
     const renderMovieItem = ({ item, index }: { item: Movie; index: number }) => (
         <View style={styles.cardWrapper}>
             <MovieCard movie={item} index={index} onPress={() => handleMoviePress(item)} />
@@ -221,10 +179,10 @@ export default function DiscoverScreen() {
     const loading = isLoading();
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background, paddingTop: Platform.OS === 'ios' ? 0 : 20 }]}>
             <Stack.Screen
                 options={{
-                    headerShown: true,
+                    headerShown: Platform.OS === 'ios',
                     title: 'Keşfet',
                     headerLargeTitle: true,
                 }}
@@ -299,28 +257,58 @@ export default function DiscoverScreen() {
                 style={{ flex: 1 }}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
-                {/* Search Bar */}
+                {/* Search Bar - GlassView on iOS, normal on Android */}
                 <View style={styles.searchBarWrapper}>
-                    <View style={[styles.searchBarInner, {
-                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                    }]}>
-                        <Ionicons name="search" size={20} color={theme.textSecondary} style={styles.searchIcon} />
-                        <TextInput
-                            style={[styles.searchInput, { color: theme.text }]}
-                            placeholder="Film ara..."
-                            placeholderTextColor={theme.textSecondary}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            onSubmitEditing={handleSearch}
-                            returnKeyType="search"
-                            blurOnSubmit={true}
-                        />
-                        {searchQuery.length > 0 ? (
-                            <Pressable onPress={clearSearch}>
-                                <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
-                            </Pressable>
-                        ) : null}
-                    </View>
+                    {Platform.OS === 'ios' ? (
+                        <GlassView
+                            style={styles.searchBarContainer}
+                            glassEffectStyle="regular"
+                            tintColor={isDarkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.4)'}
+                            isInteractive={true}
+                        >
+                            <View style={[styles.searchBarInner, {
+                                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            }]}>
+                                <Ionicons name="search" size={20} color={theme.textSecondary} style={styles.searchIcon} />
+                                <TextInput
+                                    style={[styles.searchInput, { color: theme.text }]}
+                                    placeholder="Film ara..."
+                                    placeholderTextColor={theme.textSecondary}
+                                    value={searchQuery}
+                                    onChangeText={setSearchQuery}
+                                    onSubmitEditing={handleSearch}
+                                    returnKeyType="search"
+                                    blurOnSubmit={true}
+                                />
+                                {searchQuery.length > 0 ? (
+                                    <Pressable onPress={clearSearch}>
+                                        <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+                                    </Pressable>
+                                ) : null}
+                            </View>
+                        </GlassView>
+                    ) : (
+                        <View style={[styles.searchBarInnerAndroid, {
+                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                        }]}>
+                            <Ionicons name="search" size={20} color={theme.textSecondary} style={styles.searchIcon} />
+                            <TextInput
+                                style={[styles.searchInput, { color: theme.text }]}
+                                placeholder="Film ara..."
+                                placeholderTextColor={theme.textSecondary}
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                onSubmitEditing={handleSearch}
+                                returnKeyType="search"
+                                blurOnSubmit={true}
+                            />
+                            {searchQuery.length > 0 ? (
+                                <Pressable onPress={clearSearch}>
+                                    <Ionicons name="close-circle" size={20} color={theme.textSecondary} />
+                                </Pressable>
+                            ) : null}
+                        </View>
+                    )}
                 </View>
 
                 <FlatList
@@ -448,12 +436,30 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingBottom: 8,
     },
+    searchBarContainer: {
+        borderRadius: 20,
+        padding: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 5,
+    },
     searchBarInner: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingVertical: 12,
         borderRadius: 16,
+    },
+    searchBarInnerAndroid: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 16,
+        marginHorizontal: 12,
+        marginVertical: 8,
     },
     searchIcon: {
         marginRight: 10,

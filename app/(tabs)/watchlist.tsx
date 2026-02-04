@@ -63,6 +63,7 @@ export default function WatchlistScreen() {
 
             <FlatList
                 data={watchlist}
+                numColumns={2}
                 keyExtractor={(item) => item.id.toString()}
                 contentContainerStyle={styles.list}
                 showsVerticalScrollIndicator={false}

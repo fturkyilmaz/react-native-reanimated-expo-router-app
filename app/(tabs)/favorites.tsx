@@ -8,6 +8,7 @@ import {
     Dimensions,
     FlatList,
     ImageBackground,
+    Platform,
     Pressable,
     StyleSheet,
     Text,
@@ -90,7 +91,7 @@ export default function FavoritesScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <Stack.Screen
                 options={{
-                    headerShown: true,
+                    headerShown: Platform.OS === 'ios',
                     title: 'Favorilerim',
                     headerStyle: { backgroundColor: theme.card },
                     headerTintColor: theme.text,
