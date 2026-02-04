@@ -21,6 +21,10 @@ describe('useAuth', () => {
     (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('throws error when used outside provider', () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
@@ -96,12 +100,28 @@ describe('useAuth', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    await expect(
-      result.current.login('wrong@email.com', 'wrongpassword')
-    ).rejects.toThrow('Geçersiz e-posta veya şifre');
+    jest.useFakeTimers();
+    let thrown: Error | null = null;
+    let loginPromise: Promise<void>;
+    act(() => {
+      loginPromise = result.current.login('wrong@email.com', 'wrongpassword');
+    });
 
-    expect(result.current.user).toBeNull();
-    expect(result.current.error).toBe('Geçersiz e-posta veya şifre');
+    await act(async () => {
+      try {
+        jest.advanceTimersByTime(800);
+        await loginPromise;
+      } catch (err) {
+        thrown = err as Error;
+      }
+    });
+
+    expect(thrown?.message).toBe('Geçersiz e-posta veya şifre');
+
+    await waitFor(() => {
+      expect(result.current.user).toBeNull();
+      expect(result.current.error).toBe('Geçersiz e-posta veya şifre');
+    });
   });
 
   it('logs out successfully', async () => {
@@ -153,12 +173,22 @@ describe('useAuth', () => {
 
     // Trigger an error
     try {
-      await result.current.login('wrong@email.com', 'wrongpassword');
+      jest.useFakeTimers();
+      let loginPromise: Promise<void>;
+      act(() => {
+        loginPromise = result.current.login('wrong@email.com', 'wrongpassword');
+      });
+      await act(async () => {
+        jest.advanceTimersByTime(800);
+        await loginPromise;
+      });
     } catch (e) {
       // Expected
     }
 
-    expect(result.current.error).not.toBeNull();
+    await waitFor(() => {
+      expect(result.current.error).not.toBeNull();
+    });
 
     // Error will be cleared on next login attempt
     await act(async () => {
@@ -200,14 +230,21 @@ describe('useAuth', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    const loginPromise = act(async () => {
-      await result.current.login('test@test.com', '123456');
+    jest.useFakeTimers();
+    let loginPromise: Promise<void>;
+
+    act(() => {
+      loginPromise = result.current.login('test@test.com', '123456');
     });
 
     expect(result.current.isLoading).toBe(true);
 
-    await loginPromise;
+    await act(async () => {
+      jest.advanceTimersByTime(800);
+      await loginPromise;
+    });
 
     expect(result.current.isLoading).toBe(false);
+    jest.useRealTimers();
   });
 });

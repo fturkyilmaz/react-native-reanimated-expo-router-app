@@ -54,6 +54,7 @@ describe('NotificationService', () => {
                 }
             );
             expect(result.status).toBe('ok');
+            expect(result.id).toBe('notification-123');
         });
 
         it('should handle network errors', async () => {
@@ -117,22 +118,20 @@ describe('NotificationService', () => {
                 '2024-01-15'
             );
 
-            expect(fetch).toHaveBeenCalledWith(
-                expect.any(String),
-                expect.objectContaining({
-                    body: JSON.stringify(
-                        expect.objectContaining({
-                            title: '🎬 New Movie Released',
-                            body: 'Inception is now available!',
-                            data: {
-                                type: 'movie_release',
-                                movieId: '123',
-                            },
-                            priority: 'high',
-                        })
-                    ),
-                })
-            );
+            const [, options] = (fetch as jest.Mock).mock.calls[0];
+            const parsedBody = JSON.parse(options.body);
+
+            expect(parsedBody).toMatchObject({
+                to: 'ExpoPushToken[xxx]',
+                title: '🎬 New Movie Released',
+                body: 'Inception is now available!',
+                data: {
+                    type: 'movie_release',
+                    movieId: '123',
+                },
+                priority: 'high',
+                sound: 'default',
+            });
             expect(result.status).toBe('ok');
         });
     });
@@ -154,17 +153,17 @@ describe('NotificationService', () => {
                 true
             );
 
-            expect(fetch).toHaveBeenCalledWith(
-                expect.any(String),
-                expect.objectContaining({
-                    body: JSON.stringify(
-                        expect.objectContaining({
-                            title: '❤️ Added to Favorites',
-                            body: 'Inception has been added to your favorites',
-                        })
-                    ),
-                })
-            );
+            const [, options] = (fetch as jest.Mock).mock.calls[0];
+            const parsedBody = JSON.parse(options.body);
+
+            expect(parsedBody).toMatchObject({
+                to: 'ExpoPushToken[xxx]',
+                title: '❤️ Added to Favorites',
+                body: 'Inception has been added to your favorites',
+                data: {
+                    type: 'favorite_update',
+                },
+            });
             expect(result.status).toBe('ok');
         });
 
@@ -184,17 +183,17 @@ describe('NotificationService', () => {
                 false
             );
 
-            expect(fetch).toHaveBeenCalledWith(
-                expect.any(String),
-                expect.objectContaining({
-                    body: JSON.stringify(
-                        expect.objectContaining({
-                            title: '💔 Removed from Favorites',
-                            body: 'Inception has been removed from your favorites',
-                        })
-                    ),
-                })
-            );
+            const [, options] = (fetch as jest.Mock).mock.calls[0];
+            const parsedBody = JSON.parse(options.body);
+
+            expect(parsedBody).toMatchObject({
+                to: 'ExpoPushToken[xxx]',
+                title: '💔 Removed from Favorites',
+                body: 'Inception has been removed from your favorites',
+                data: {
+                    type: 'favorite_update',
+                },
+            });
             expect(result.status).toBe('ok');
         });
     });
@@ -217,21 +216,19 @@ describe('NotificationService', () => {
                 'science fiction'
             );
 
-            expect(fetch).toHaveBeenCalledWith(
-                expect.any(String),
-                expect.objectContaining({
-                    body: JSON.stringify(
-                        expect.objectContaining({
-                            title: '🔥 Recommended for You',
-                            body: 'Because you liked science fiction: Interstellar',
-                            data: {
-                                type: 'recommendation',
-                                movieId: '456',
-                            },
-                        })
-                    ),
-                })
-            );
+            const [, options] = (fetch as jest.Mock).mock.calls[0];
+            const parsedBody = JSON.parse(options.body);
+
+            expect(parsedBody).toMatchObject({
+                to: 'ExpoPushToken[xxx]',
+                title: '🔥 Recommended for You',
+                body: 'Because you liked science fiction: Interstellar',
+                data: {
+                    type: 'recommendation',
+                    movieId: '456',
+                },
+                sound: 'default',
+            });
             expect(result.status).toBe('ok');
         });
     });

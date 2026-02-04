@@ -31,7 +31,7 @@ module.exports = {
   coverageDirectory: "<rootDir>/coverage",
   coverageReporters: ["text", "text-summary", "lcov", "html"],
   transformIgnorePatterns: [
-    "node_modules/(?!((react-native|@react-native|expo|@expo|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|@react-navigation|react-native-web|lottie-react-native|@hookform|react-hook-form|@tanstack)/))",
+    "node_modules/(?!(react-native|@react-native|expo|expo-constants|expo-file-system|expo-secure-store|expo-modules-core|@expo|react-native-reanimated|react-native-gesture-handler|react-native-screens|react-native-safe-area-context|@react-navigation|react-native-web|lottie-react-native|@hookform|react-hook-form|@tanstack)/)",
   ],
   globals: {
     __DEV__: true,

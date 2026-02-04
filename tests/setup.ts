@@ -1,6 +1,24 @@
 import "@testing-library/jest-native/extend-expect";
 import "react-native-gesture-handler/jestSetup";
 
+// Mock react-native base module (ensures StyleSheet exists)
+jest.mock("react-native", () => {
+  const RN = require("react-native/jest/mock");
+  return {
+    ...RN,
+    Platform: {
+      OS: "ios",
+      select: (obj: Record<string, any>) =>
+        obj.ios ?? obj.default ?? null,
+    },
+    StyleSheet: {
+      create: jest.fn((styles) => styles),
+      flatten: jest.fn((style) => style),
+      hairlineWidth: 1,
+    },
+  };
+});
+
 // Mock react-native-reanimated
 jest.mock("react-native-reanimated", () => {
   const Reanimated = require("react-native-reanimated/mock");
@@ -351,6 +369,33 @@ jest.mock("expo-device", () => ({
   osVersion: '16.0',
 }));
 
+// Mock expo-constants
+jest.mock("expo-constants", () => ({
+  __esModule: true,
+  default: {
+    expoConfig: {
+      android: {},
+      ios: {},
+    },
+    manifest: {},
+    appOwnership: "standalone",
+    deviceName: "Test Device",
+    platform: { ios: {}, android: {} },
+    sessionId: "test-session",
+  },
+}));
+
+// Mock react-native-keyboard-controller
+jest.mock("react-native-keyboard-controller", () => ({
+  KeyboardAwareScrollView: jest.fn(({ children }) => children),
+  KeyboardToolbar: jest.fn(({ children }) => children),
+  useKeyboardAnimation: jest.fn(() => ({ height: 0, progress: 0 })),
+  KeyboardController: {
+    setInputMode: jest.fn(),
+    setDefaultMode: jest.fn(),
+  },
+}));
+
 // Mock expo-file-system
 jest.mock("expo-file-system", () => ({
   File: jest.fn().mockImplementation((path: string) => ({
@@ -387,6 +432,14 @@ jest.mock("react-native/Libraries/StyleSheet/StyleSheet", () => ({
   create: jest.fn((styles) => styles),
   flatten: jest.fn((style) => style),
   hairlineWidth: 1,
+}));
+
+// Mock security provider to avoid rendering issues in unit tests
+jest.mock("@/security/security-provider", () => ({
+  __esModule: true,
+  SecurityProvider: jest.fn(({ children }) => children),
+  useSecurity: jest.fn(() => ({})),
+  default: jest.fn(({ children }) => children),
 }));
 
 // Setup global fetch mock

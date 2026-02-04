@@ -4,10 +4,12 @@
 
 import React from 'react';
 
+jest.mock('@tanstack/react-query', () => jest.requireActual('@tanstack/react-query'));
+
 import { useMovieDetails, useMovies, useSearchMovies } from '@/features/movies/hooks/use-movies';
 import { tmdbService } from '@/services/tmdb';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 // Mock the tmdb service
 jest.mock('@/services/tmdb', () => ({
@@ -26,6 +28,7 @@ const createQueryClient = () =>
         defaultOptions: {
             queries: {
                 retry: false,
+                retryDelay: 0,
                 gcTime: 0,
             },
         },
