@@ -55,14 +55,33 @@ async function initializeSchema(db: SQLiteDatabase): Promise<void> {
       );
     `);
 
-        // Favorites table for offline favorites
+        // Favorites table for offline favorites (use a distinct name to avoid conflicts)
         await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS favorites (
+      CREATE TABLE IF NOT EXISTS offline_favorites (
         id INTEGER PRIMARY KEY,
         movie_data TEXT NOT NULL,
         added_at INTEGER NOT NULL
       );
     `);
+
+        // Migrate legacy offline favorites table (if it used the shared "favorites" name)
+        try {
+            const tableInfo = await db.getAllAsync<{ name: string }>(
+                `PRAGMA table_info(favorites)`
+            );
+            const hasLegacyFavorites = tableInfo.some((col) => col.name === 'movie_data');
+
+            if (hasLegacyFavorites) {
+                await db.execAsync(
+                    `INSERT OR REPLACE INTO offline_favorites (id, movie_data, added_at)
+           SELECT id, movie_data, added_at FROM favorites`
+                );
+                await db.execAsync(`DROP TABLE favorites`);
+                console.log('[OfflineCache] Migrated legacy favorites table to offline_favorites');
+            }
+        } catch (error) {
+            console.warn('[OfflineCache] Legacy favorites migration skipped:', error);
+        }
 
         console.log('[OfflineCache] Database schema initialized');
     } catch (error) {
@@ -323,7 +342,7 @@ export class FavoritesStore {
     async add(movie: Movie): Promise<void> {
         try {
             await this.db.runAsync(
-                `INSERT OR REPLACE INTO favorites (id, movie_data, added_at) VALUES (?, ?, ?)`,
+                `INSERT OR REPLACE INTO offline_favorites (id, movie_data, added_at) VALUES (?, ?, ?)`,
                 [movie.id, JSON.stringify(movie), Date.now()]
             );
             console.log(`[FavoritesStore] Added: ${movie.title}`);
@@ -338,7 +357,7 @@ export class FavoritesStore {
      */
     async remove(movieId: number): Promise<void> {
         try {
-            await this.db.runAsync(`DELETE FROM favorites WHERE id = ?`, [movieId]);
+            await this.db.runAsync(`DELETE FROM offline_favorites WHERE id = ?`, [movieId]);
             console.log(`[FavoritesStore] Removed: ${movieId}`);
         } catch (error) {
             console.error('[FavoritesStore] Remove failed:', error);
@@ -352,7 +371,7 @@ export class FavoritesStore {
     async getAll(): Promise<Movie[]> {
         try {
             const results = await this.db.getAllAsync<{ movie_data: string }>(
-                `SELECT movie_data FROM favorites ORDER BY added_at DESC`
+                `SELECT movie_data FROM offline_favorites ORDER BY added_at DESC`
             );
 
             return results.map((r) => JSON.parse(r.movie_data) as Movie);
@@ -368,7 +387,7 @@ export class FavoritesStore {
     async has(movieId: number): Promise<boolean> {
         try {
             const result = await this.db.getFirstAsync<{ count: number }>(
-                `SELECT COUNT(*) as count FROM favorites WHERE id = ?`,
+                `SELECT COUNT(*) as count FROM offline_favorites WHERE id = ?`,
                 [movieId]
             );
             return (result?.count ?? 0) > 0;
@@ -396,7 +415,7 @@ export class FavoritesStore {
      */
     async clear(): Promise<void> {
         try {
-            await this.db.runAsync(`DELETE FROM favorites`);
+            await this.db.runAsync(`DELETE FROM offline_favorites`);
             console.log('[FavoritesStore] Cleared all');
         } catch (error) {
             console.error('[FavoritesStore] Clear failed:', error);

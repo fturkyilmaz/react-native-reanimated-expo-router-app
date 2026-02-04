@@ -53,10 +53,15 @@ export default function MovieDetail() {
     // }, [player]);
 
     useEffect(() => {
-        if (movieId) {
-            setIsLiked(isFavorite(movieId));
-            setIsInWL(isInWatchlist(movieId));
-        }
+        const checkStatus = async () => {
+            if (movieId) {
+                const liked = await isFavorite(movieId);
+                const inWL = await isInWatchlist(movieId);
+                setIsLiked(liked);
+                setIsInWL(inWL);
+            }
+        };
+        checkStatus();
     }, [movieId, isFavorite, isInWatchlist]);
 
     // Fetch movie details and videos

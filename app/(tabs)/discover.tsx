@@ -314,7 +314,7 @@ export default function DiscoverScreen() {
                 <FlatList
                     data={movies}
                     renderItem={renderMovieItem}
-                    keyExtractor={(item, index) => `${item.id}-${index}`}
+                    keyExtractor={(item, index) => `${item?.id}-${index}`}
                     numColumns={2}
                     columnWrapperStyle={styles.columnWrapper}
                     contentContainerStyle={styles.list}
