@@ -1,10 +1,10 @@
 // @ts-nocheck
 import { Movie } from '@/config/api';
 import { initializeDatabase } from '@/db/database';
+import { useAuth } from '@/hooks/use-auth';
 import { MovieService, WatchlistService } from '@/services/local-db.service';
 import { supabaseService } from '@/services/supabase-service';
 import { syncManager, useSyncStatus } from '@/services/sync-manager';
-import { useAuthStore } from '@/store/authStore';
 import NetInfo from '@react-native-community/netinfo';
 import { useFocusEffect } from '@react-navigation/native';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
@@ -31,7 +31,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     const [isInitialized, setIsInitialized] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { isSyncing } = useSyncStatus();
-    const { user } = useAuthStore();
+    const { user } = useAuth();
 
     // Initialize database once
     useEffect(() => {

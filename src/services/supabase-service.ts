@@ -56,7 +56,7 @@ class SupabaseService {
                     backdrop_path: movie.backdrop_path,
                     release_date: movie.release_date,
                     vote_average: movie.vote_average,
-                    genre_ids: JSON.stringify(movie.genre_ids || []),
+                    genre_ids: movie.genre_ids || [],
                     updated_at: Math.floor(Date.now() / 1000),
                 }, { onConflict: 'id' });
 
@@ -79,7 +79,7 @@ class SupabaseService {
                     backdrop_path: movie.backdrop_path,
                     release_date: movie.release_date,
                     vote_average: movie.vote_average,
-                    genre_ids: JSON.stringify(movie.genre_ids || []),
+                    genre_ids: movie.genre_ids || [],
                 })
                 .select();
 
@@ -187,7 +187,7 @@ class SupabaseService {
                     backdrop_path: movie.backdrop_path,
                     release_date: movie.release_date,
                     vote_average: movie.vote_average,
-                    genre_ids: JSON.stringify(movie.genre_ids || []),
+                    genre_ids: movie.genre_ids || [],
                     updated_at: Math.floor(Date.now() / 1000),
                 }, { onConflict: 'id' });
 
@@ -206,7 +206,7 @@ class SupabaseService {
                     backdrop_path: movie.backdrop_path,
                     release_date: movie.release_date,
                     vote_average: movie.vote_average,
-                    genre_ids: JSON.stringify(movie.genre_ids || []),
+                    genre_ids: movie.genre_ids || [],
                 });
 
             if (error) {
