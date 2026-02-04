@@ -2,7 +2,9 @@
 import { Movie } from '@/config/api';
 import { initializeDatabase } from '@/db/database';
 import { MovieService, WatchlistService } from '@/services/local-db.service';
+import { supabaseService } from '@/services/supabase-service';
 import { syncManager, useSyncStatus } from '@/services/sync-manager';
+import { useAuthStore } from '@/store/authStore';
 import NetInfo from '@react-native-community/netinfo';
 import { useFocusEffect } from '@react-navigation/native';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
@@ -29,6 +31,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     const [isInitialized, setIsInitialized] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { isSyncing } = useSyncStatus();
+    const { user } = useAuthStore();
 
     // Initialize database once
     useEffect(() => {
@@ -108,8 +111,12 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
 
             await loadWatchlist();
 
-            // If offline, trigger sync when online
-            if (!isOnline) {
+            // Sync to Supabase if online and user is logged in
+            if (isOnline && user?.id) {
+                console.log('[DEBUG-Watchlist] Syncing to Supabase...');
+                const supabaseResult = await supabaseService.addToWatchlist(user.id, movie);
+                console.log('[DEBUG-Watchlist] Supabase addToWatchlist result:', supabaseResult);
+            } else if (!isOnline) {
                 console.log('[Watchlist] Offline mode - will sync when online');
             }
         } catch (err) {
@@ -147,8 +154,12 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
 
             await loadWatchlist();
 
-            // If offline, trigger sync when online
-            if (!isOnline) {
+            // Sync to Supabase if online and user is logged in
+            if (isOnline && user?.id) {
+                console.log('[DEBUG-Watchlist] Syncing remove to Supabase...');
+                const supabaseResult = await supabaseService.removeFromWatchlist(user.id, movieId);
+                console.log('[DEBUG-Watchlist] Supabase removeFromWatchlist result:', supabaseResult);
+            } else if (!isOnline) {
                 console.log('[Watchlist] Offline mode - will sync when online');
             }
         } catch (err) {

@@ -44,7 +44,30 @@ class SupabaseService {
         }
 
         try {
-            console.log('[SupabaseService] Attempting insert to Supabase...');
+            // First, insert/update movie in movies table
+            console.log('[SupabaseService] Inserting movie into movies table...');
+            const { error: movieError } = await this.client
+                .from('movies')
+                .upsert({
+                    id: movie.id,
+                    title: movie.title,
+                    overview: movie.overview,
+                    poster_path: movie.poster_path,
+                    backdrop_path: movie.backdrop_path,
+                    release_date: movie.release_date,
+                    vote_average: movie.vote_average,
+                    genre_ids: JSON.stringify(movie.genre_ids || []),
+                    updated_at: Math.floor(Date.now() / 1000),
+                }, { onConflict: 'id' });
+
+            if (movieError) {
+                console.error('[SupabaseService] Error inserting movie:', movieError);
+                // Continue anyway - movie might already exist
+            } else {
+                console.log('[SupabaseService] Movie inserted/updated successfully');
+            }
+
+            console.log('[SupabaseService] Attempting insert to Supabase favorites...');
             const { data, error } = await this.client
                 .from('favorites')
                 .insert({
@@ -152,6 +175,26 @@ class SupabaseService {
         }
 
         try {
+            // First, insert/update movie in movies table
+            console.log('[SupabaseService] addToWatchlist: Inserting movie into movies table...');
+            const { error: movieError } = await this.client
+                .from('movies')
+                .upsert({
+                    id: movie.id,
+                    title: movie.title,
+                    overview: movie.overview,
+                    poster_path: movie.poster_path,
+                    backdrop_path: movie.backdrop_path,
+                    release_date: movie.release_date,
+                    vote_average: movie.vote_average,
+                    genre_ids: JSON.stringify(movie.genre_ids || []),
+                    updated_at: Math.floor(Date.now() / 1000),
+                }, { onConflict: 'id' });
+
+            if (movieError) {
+                console.error('[SupabaseService] Error inserting movie to watchlist:', movieError);
+            }
+
             const { error } = await this.client
                 .from('watchlist')
                 .insert({
@@ -170,6 +213,7 @@ class SupabaseService {
                 console.error('[SupabaseService] Error adding to watchlist:', error);
                 return false;
             }
+            console.log('[SupabaseService] Watchlist added successfully!');
             return true;
         } catch (e) {
             console.error('[SupabaseService] Error adding to watchlist:', e);
