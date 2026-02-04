@@ -27,7 +27,8 @@ export default function MovieDetail() {
     const { toggleWatchlist, isInWatchlist } = useWatchlist();
     const router = useRouter();
     const scrollY = useSharedValue(0);
-    const movieId = parseInt(id as string);
+    const parsedId = Array.isArray(id) ? id[0] : id;
+    const movieId = parseInt(parsedId as string, 10);
     const [isLiked, setIsLiked] = useState(false);
     const [isInWL, setIsInWL] = useState(false);
     const [movieDetails, setMovieDetails] = useState<MovieDetails | null>(null);
@@ -54,15 +55,16 @@ export default function MovieDetail() {
 
     useEffect(() => {
         const checkStatus = async () => {
-            if (movieId) {
-                const liked = await isFavorite(movieId);
-                const inWL = await isInWatchlist(movieId);
+            const effectiveId = Number.isNaN(movieId) ? movie?.id ?? movieDetails?.id : movieId;
+            if (effectiveId) {
+                const liked = await isFavorite(effectiveId);
+                const inWL = await isInWatchlist(effectiveId);
                 setIsLiked(liked);
                 setIsInWL(inWL);
             }
         };
         checkStatus();
-    }, [movieId, isFavorite, isInWatchlist]);
+    }, [movieId, movie?.id, movieDetails?.id, isFavorite, isInWatchlist]);
 
     // Fetch movie details and videos
     useEffect(() => {
@@ -93,37 +95,42 @@ export default function MovieDetail() {
         fetchData();
     }, [movieId]);
 
-    const handleFavoritePress = () => {
-        if (!movie) return;
+    const buildMoviePayload = (): Movie | null => {
+        const source = movie || movieDetails;
+        if (!source) return null;
+        const effectiveId = Number.isNaN(movieId) ? source.id : movieId;
+        if (!effectiveId) return null;
 
-        const movieNew: Movie = {
-            id: movieId,
-            title: movie.title,
-            poster_path: movie.poster_path,
-            vote_average: movie.vote_average,
-            overview: movie.overview || '',
-            backdrop_path: movie.backdrop_path || null,
-            release_date: movie.release_date || '',
-            genre_ids: movie.genre_ids || [],
+        return {
+            id: effectiveId,
+            title: source.title,
+            poster_path: source.poster_path,
+            vote_average: source.vote_average,
+            overview: source.overview || '',
+            backdrop_path: source.backdrop_path || null,
+            release_date: source.release_date || '',
+            genre_ids: 'genre_ids' in source ? source.genre_ids || [] : [],
         };
+    };
 
+    const handleFavoritePress = () => {
+        const movieNew = buildMoviePayload();
+        if (!movieNew) {
+            console.warn('[MovieDetail] Movie data not ready for favorite');
+            return;
+        }
+
+        console.log(movieNew);
         toggleFavorite(movieNew);
         setIsLiked(!isLiked);
     };
 
     const handleWatchlistPress = () => {
-        if (!movie) return;
-
-        const movieNew: Movie = {
-            id: movieId,
-            title: movie.title,
-            poster_path: movie.poster_path,
-            vote_average: movie.vote_average,
-            overview: movie.overview || '',
-            backdrop_path: movie.backdrop_path || null,
-            release_date: movie.release_date || '',
-            genre_ids: movie.genre_ids || [],
-        };
+        const movieNew = buildMoviePayload();
+        if (!movieNew) {
+            console.warn('[MovieDetail] Movie data not ready for watchlist');
+            return;
+        }
 
         toggleWatchlist(movieNew);
         setIsInWL(!isInWL);
@@ -291,7 +298,7 @@ export default function MovieDetail() {
 
                     <View style={styles.genreContainer}>
                         {genres.slice(0, 3).map((genre, index) => (
-                            <View key={index} style={styles.genreBadge}>
+                            <View key={genre.id} style={styles.genreBadge}>
                                 <Text style={styles.genreText}>{genre.name}</Text>
                             </View>
                         ))}

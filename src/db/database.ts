@@ -2,7 +2,7 @@
 import { Platform } from 'react-native';
 
 // Dynamic import to avoid SSR issues
-let SQLite: any = null;
+let SQLiteModule: any = null;
 
 const DB_NAME = 'cinesearch.db';
 
@@ -13,12 +13,19 @@ let useSyncAPI = false;
 // Database version for migrations
 export const CURRENT_DB_VERSION = 1;
 
-// Load SQLite module
+// Load SQLite module - expo-sqlite exports functions as named exports
 const loadSQLite = async () => {
-  if (SQLite) return SQLite;
+  if (SQLiteModule) return SQLiteModule;
   try {
-    SQLite = require('expo-sqlite');
-    return SQLite;
+    const expoSQLite = require('expo-sqlite');
+    // Newer versions of expo-sqlite export functions as named exports
+    SQLiteModule = {
+      openDatabase: expoSQLite.openDatabaseAsync || expoSQLite.openDatabaseSync || expoSQLite.openDatabase,
+      openDatabaseSync: expoSQLite.openDatabaseSync,
+      openDatabaseAsync: expoSQLite.openDatabaseAsync,
+    };
+    console.log('[SQLite] Loaded module, available APIs:', Object.keys(expoSQLite));
+    return SQLiteModule;
   } catch (e) {
     console.error('Failed to load SQLite module:', e);
     return null;
@@ -33,11 +40,90 @@ export const getDatabase = async (): Promise<any> => {
   if (!sqlite) return null;
 
   try {
-    // Try sync API first (openDatabaseSync) - preferred for React Native
+    // Prefer sync API when available (avoids missing transaction in async API)
     if (typeof sqlite.openDatabaseSync === 'function') {
       db = sqlite.openDatabaseSync(DB_NAME);
       useSyncAPI = true;
       console.log('[SQLite] Using sync API (openDatabaseSync)');
+
+      // Polyfill transaction for code paths expecting it
+      if (typeof db.transaction !== 'function' && typeof db.execSync === 'function') {
+        db.transaction = (callback: any) => {
+          const tx = {
+            executeSql: (sql: string, params: any[] = [], onSuccess?: any, onError?: any) => {
+              try {
+                const interpolated = sql.replace(/\?/g, () => {
+                  const value = params.shift();
+                  if (value === null || value === undefined) return 'NULL';
+                  if (typeof value === 'number') return `${value}`;
+                  return `'${String(value).replace(/'/g, "''")}'`;
+                });
+                const result = db.execSync(interpolated);
+                const first = Array.isArray(result) ? result[0] : result;
+                const rawRows = first?.rows ?? [];
+                const rowsArray = Array.isArray(rawRows) ? rawRows : [];
+                const isWrite = /^\s*(insert|update|delete)/i.test(sql);
+                const normalized = {
+                  ...first,
+                  insertId: isWrite ? 1 : first?.insertId,
+                  rowsAffected: isWrite ? 1 : first?.rowsAffected,
+                  rows: {
+                    length: rowsArray.length,
+                    item: (i: number) => rowsArray[i],
+                  },
+                };
+                onSuccess && onSuccess(tx, normalized);
+              } catch (e) {
+                if (onError) {
+                  onError(tx, e);
+                }
+              }
+            },
+          };
+          callback(tx);
+        };
+      }
+    } else if (typeof sqlite.openDatabaseAsync === 'function') {
+      db = await sqlite.openDatabaseAsync(DB_NAME);
+      useSyncAPI = false;
+      console.log('[SQLite] Using async API (openDatabaseAsync)');
+
+      if (typeof db.transaction !== 'function' && typeof db.execAsync === 'function') {
+        db.transaction = (callback: any) => {
+          const tx = {
+            executeSql: async (sql: string, params: any[] = [], onSuccess?: any, onError?: any) => {
+              try {
+                const interpolated = sql.replace(/\?/g, () => {
+                  const value = params.shift();
+                  if (value === null || value === undefined) return 'NULL';
+                  if (typeof value === 'number') return `${value}`;
+                  return `'${String(value).replace(/'/g, "''")}'`;
+                });
+                const result = await db.execAsync(interpolated);
+                const first = Array.isArray(result) ? result[0] : result;
+                const rawRows = first?.rows ?? [];
+                const rowsArray = Array.isArray(rawRows) ? rawRows : [];
+                const isWrite = /^\s*(insert|update|delete)/i.test(sql);
+                const normalized = {
+                  ...first,
+                  insertId: isWrite ? 1 : first?.insertId,
+                  rowsAffected: isWrite ? 1 : first?.rowsAffected,
+                  rows: {
+                    length: rowsArray.length,
+                    item: (i: number) => rowsArray[i],
+                  },
+                };
+                onSuccess && onSuccess(tx, normalized);
+              } catch (e) {
+                if (onError) {
+                  onError(tx, e);
+                }
+              }
+            },
+          };
+          callback(tx);
+        };
+      }
     } else if (typeof sqlite.openDatabase === 'function') {
       db = sqlite.openDatabase(DB_NAME);
       useSyncAPI = false;
@@ -46,7 +132,7 @@ export const getDatabase = async (): Promise<any> => {
       console.warn('[SQLite] Not supported on web');
       return null;
     } else {
-      console.error('[SQLite] No SQLite API found:', Object.keys(sqlite));
+      console.error('[SQLite] No SQLite API found');
       return null;
     }
     return db;
@@ -72,206 +158,198 @@ export const getDatabaseVersion = async (): Promise<number> => {
     }
     return 0;
   } else {
-    return new Promise((resolve) => {
-      try {
+    try {
+      if (typeof database.getFirstAsync === 'function') {
+        const row = await database.getFirstAsync('PRAGMA user_version;');
+        return row?.user_version ?? 0;
+      }
+      if (typeof database.execAsync === 'function') {
+        const result = await database.execAsync('PRAGMA user_version;');
+        if (result && result[0]?.rows?.length) {
+          return result[0].rows[0].user_version ?? 0;
+        }
+      }
+      return await new Promise((resolve) => {
         database.transaction((tx: any) => {
           tx.executeSql(
             'PRAGMA user_version;',
             [],
-            (_: any, result: any) => {
-              const rows = result.rows;
-              if (rows.length > 0) {
-                resolve(rows.item(0).user_version);
+            (_, result) => {
+              if (result.rows.length > 0) {
+                resolve(result.rows.item(0).user_version);
               } else {
                 resolve(0);
               }
             },
-            () => {
+            (_, error) => {
+              console.error('[SQLite] Error getting version:', error);
               resolve(0);
               return true;
             }
           );
         });
-      } catch {
-        resolve(0);
-      }
-    });
+      });
+    } catch (e) {
+      console.error('[SQLite] Error getting version (async):', e);
+      return 0;
+    }
   }
 };
 
-// Initialize database with migrations
-export const initializeDatabase = async (): Promise<boolean> => {
-  if (isInitialized) return true;
-
-  const currentVersion = await getDatabaseVersion();
+// Initialize database with schema
+export const initializeDatabase = async (): Promise<void> => {
   const database = await getDatabase();
-
   if (!database) {
-    console.error('[SQLite] Database not available');
-    return false;
+    console.error('[SQLite] Cannot initialize - database not available');
+    return;
   }
 
-  // Drop existing tables to start fresh (for development)
-  // In production, you'd want proper migration logic
-  const dropTables = `
-    DROP TABLE IF EXISTS movies;
-    DROP TABLE IF EXISTS favorites;
-    DROP TABLE IF EXISTS watchlist;
-    DROP TABLE IF EXISTS sync_queue;
-    DROP TABLE IF EXISTS users;
-  `;
-
-  // Create tables
-  const createTables = `
-    CREATE TABLE IF NOT EXISTS movies (
-      id INTEGER PRIMARY KEY,
-      title TEXT NOT NULL,
-      overview TEXT,
-      poster_path TEXT,
-      backdrop_path TEXT,
-      release_date TEXT,
-      vote_average REAL,
-      genre_ids TEXT,
-      created_at INTEGER DEFAULT (strftime('%s', 'now')),
-      updated_at INTEGER DEFAULT (strftime('%s', 'now'))
-    );
-    
-    CREATE TABLE IF NOT EXISTS favorites (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      movie_id INTEGER NOT NULL,
-      user_id TEXT,
-      created_at INTEGER DEFAULT (strftime('%s', 'now')),
-      synced INTEGER DEFAULT 0,
-      FOREIGN KEY (movie_id) REFERENCES movies(id)
-    );
-    
-    CREATE TABLE IF NOT EXISTS watchlist (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      movie_id INTEGER NOT NULL,
-      user_id TEXT,
-      added_at INTEGER DEFAULT (strftime('%s', 'now')),
-      synced INTEGER DEFAULT 0,
-      FOREIGN KEY (movie_id) REFERENCES movies(id)
-    );
-    
-    CREATE TABLE IF NOT EXISTS sync_queue (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      table_name TEXT NOT NULL,
-      record_id INTEGER NOT NULL,
-      action TEXT NOT NULL,
-      created_at INTEGER DEFAULT (strftime('%s', 'now')),
-      retry_count INTEGER DEFAULT 0
-    );
-    
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      email TEXT NOT NULL,
-      name TEXT,
-      avatar_url TEXT,
-      token TEXT,
-      created_at INTEGER DEFAULT (strftime('%s', 'now')),
-      updated_at INTEGER DEFAULT (strftime('%s', 'now'))
-    );
-  `;
-
-  const dropStatements = dropTables.split(';').filter(s => s.trim());
-  const createStatements = createTables.split(';').filter(s => s.trim());
-
-  // Use Sync API
-  if (useSyncAPI) {
-    console.log('[SQLite] Running migrations with sync API');
-    try {
-      // Drop existing tables (to start fresh with correct schema)
-      for (const statement of dropStatements) {
-        try {
-          database.execSync(statement.trim());
-        } catch (e) {
-          // Ignore errors
-        }
-      }
-
-      // Create tables
-      for (const statement of createStatements) {
-        database.execSync(statement.trim());
-      }
-
-      if (currentVersion === 0) {
-        database.execSync(`PRAGMA user_version = ${CURRENT_DB_VERSION};`);
-      }
-
-      isInitialized = true;
-      console.log('[SQLite] Migrations completed (sync)');
-      return true;
-    } catch (error) {
-      console.error('[SQLite] Migration error (sync):', error);
-      return false;
-    }
+  if (isInitialized) {
+    console.log('[SQLite] Database already initialized');
+    return;
   }
-  // Use Async API
-  else {
-    console.log('[SQLite] Running migrations with async API');
-    return new Promise((resolve, reject) => {
-      try {
-        database.transaction((tx: any) => {
-          // Drop existing tables
-          for (const statement of dropStatements) {
-            tx.executeSql(statement.trim(), [], () => { }, (err: any) => true);
-          }
 
-          // Create tables
-          for (const statement of createStatements) {
-            tx.executeSql(statement.trim(), [], () => { }, (err: any) => {
-              console.error('[SQLite] Create table error:', err);
-              return true;
-            });
-          }
-
-          if (currentVersion === 0) {
-            tx.executeSql(
-              `PRAGMA user_version = ${CURRENT_DB_VERSION};`,
-              [],
-              () => { },
-              () => true
-            );
-          }
-        },
-          (error: any) => {
-            console.error('[SQLite] Migration error (async):', error);
-            reject(error);
-          },
-          () => {
-            isInitialized = true;
-            console.log('[SQLite] Migrations completed (async)');
-            resolve(true);
-          });
-      } catch (error) {
-        reject(error);
-      }
-    });
-  }
-};
-
-export const deleteDatabase = async (): Promise<void> => {
-  try {
-    const sqlite = await loadSQLite();
-    if (sqlite && typeof sqlite.deleteDatabase === 'function') {
-      sqlite.deleteDatabase(DB_NAME);
-    }
-    db = null;
-    isInitialized = false;
-    useSyncAPI = false;
-  } catch (e) {
-    console.error('[SQLite] Failed to delete database:', e);
-  }
-};
-
-// Database info for debugging
-export const getDatabaseInfo = async (): Promise<{ name: string; version: number; initialized: boolean; api: string }> => {
   const version = await getDatabaseVersion();
-  return {
-    name: DB_NAME,
-    version,
-    initialized: isInitialized,
-    api: useSyncAPI ? 'sync' : 'async',
-  };
+  console.log('[SQLite] Current database version:', version);
+
+  try {
+    if (useSyncAPI) {
+      database.execSync(`
+        PRAGMA user_version = ${CURRENT_DB_VERSION};
+        
+        CREATE TABLE IF NOT EXISTS movies (
+          id INTEGER PRIMARY KEY,
+          title TEXT NOT NULL,
+          overview TEXT,
+          poster_path TEXT,
+          backdrop_path TEXT,
+          release_date TEXT,
+          vote_average REAL DEFAULT 0,
+          genre_ids TEXT,
+          updated_at INTEGER
+        );
+
+        CREATE TABLE IF NOT EXISTS favorites (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          movie_id INTEGER NOT NULL,
+          user_id TEXT NOT NULL DEFAULT 'local',
+          synced INTEGER DEFAULT 1,
+          created_at INTEGER,
+          UNIQUE(movie_id, user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS watchlist (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          movie_id INTEGER NOT NULL,
+          user_id TEXT NOT NULL DEFAULT 'local',
+          synced INTEGER DEFAULT 1,
+          created_at INTEGER,
+          UNIQUE(movie_id, user_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS sync_queue (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          type TEXT NOT NULL,
+          movie_id INTEGER NOT NULL,
+          operation TEXT NOT NULL,
+          created_at INTEGER
+        );
+
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT NOT NULL,
+          name TEXT NOT NULL,
+          avatar TEXT,
+          phone TEXT,
+          bio TEXT,
+          token TEXT NOT NULL,
+          updated_at INTEGER
+        );
+      `);
+      console.log('[SQLite] Migrations completed (sync)');
+    } else {
+      const statements = [
+        `PRAGMA user_version = ${CURRENT_DB_VERSION};`,
+        `CREATE TABLE IF NOT EXISTS movies (
+          id INTEGER PRIMARY KEY,
+          title TEXT NOT NULL,
+          overview TEXT,
+          poster_path TEXT,
+          backdrop_path TEXT,
+          release_date TEXT,
+          vote_average REAL DEFAULT 0,
+          genre_ids TEXT,
+          updated_at INTEGER
+        );`,
+        `CREATE TABLE IF NOT EXISTS favorites (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          movie_id INTEGER NOT NULL,
+          user_id TEXT NOT NULL DEFAULT 'local',
+          synced INTEGER DEFAULT 1,
+          created_at INTEGER,
+          UNIQUE(movie_id, user_id)
+        );`,
+        `CREATE TABLE IF NOT EXISTS watchlist (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          movie_id INTEGER NOT NULL,
+          user_id TEXT NOT NULL DEFAULT 'local',
+          synced INTEGER DEFAULT 1,
+          created_at INTEGER,
+          UNIQUE(movie_id, user_id)
+        );`,
+        `CREATE TABLE IF NOT EXISTS sync_queue (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          type TEXT NOT NULL,
+          movie_id INTEGER NOT NULL,
+          operation TEXT NOT NULL,
+          created_at INTEGER
+        );`,
+        `CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT NOT NULL,
+          name TEXT NOT NULL,
+          avatar TEXT,
+          phone TEXT,
+          bio TEXT,
+          token TEXT NOT NULL,
+          updated_at INTEGER
+        )`,
+      ];
+
+      if (typeof database.execAsync === 'function') {
+        for (const stmt of statements) {
+          await database.execAsync(stmt);
+        }
+        console.log('[SQLite] Migrations completed (execAsync)');
+        isInitialized = true;
+        return;
+      }
+
+      return new Promise((resolve) => {
+        database.transaction((tx: any) => {
+          statements.forEach((stmt) => tx.executeSql(stmt));
+        }, (error: any) => {
+          console.error('[SQLite] Transaction error:', error);
+          isInitialized = false;
+          resolve();
+        }, () => {
+          console.log('[SQLite] Migrations completed');
+          isInitialized = true;
+          resolve();
+        });
+      });
+    }
+    isInitialized = true;
+  } catch (e) {
+    console.error('[SQLite] Migration error:', e);
+    isInitialized = false;
+  }
+};
+
+// Reset database (useful for testing)
+export const resetDatabase = async (): Promise<void> => {
+  db = null;
+  isInitialized = false;
+  SQLiteModule = null;
+  console.log('[SQLite] Database reset');
 };

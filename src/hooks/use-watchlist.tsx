@@ -17,6 +17,8 @@ interface WatchlistContextType {
     syncWatchlist: () => Promise<void>;
     isSyncing: boolean;
     isOnline: boolean;
+    error: string | null;
+    clearError: () => void;
 }
 
 const WatchlistContext = createContext<WatchlistContextType | null>(null);
@@ -25,6 +27,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     const [watchlist, setWatchlist] = useState<Movie[]>([]);
     const [isOnline, setIsOnline] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const { isSyncing } = useSyncStatus();
 
     // Initialize database once
@@ -77,26 +80,82 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     };
 
     const addToWatchlist = async (movie: Movie) => {
-        if (!isInitialized) return;
+        setError(null);
+
+        // Wait for database initialization
+        if (!isInitialized) {
+            try {
+                await initializeDatabase();
+                setIsInitialized(true);
+            } catch (err) {
+                const errorMessage = 'Veritabanı başlatılamadı';
+                console.error('Database initialization failed:', err);
+                setError(errorMessage);
+                throw new Error(errorMessage);
+            }
+        }
 
         try {
-            // Ensure movie is saved
+            // Ensure movie is saved with complete data
             await MovieService.upsert(movie);
-            await WatchlistService.add(movie.id);
+            const success = await WatchlistService.add(movie.id, 'local', isOnline);
+
+            if (!success) {
+                const errorMessage = 'İzleme listesine eklenemedi';
+                setError(errorMessage);
+                throw new Error(errorMessage);
+            }
+
             await loadWatchlist();
-        } catch (error) {
-            console.error('Error adding to watchlist:', error);
+
+            // If offline, trigger sync when online
+            if (!isOnline) {
+                console.log('[Watchlist] Offline mode - will sync when online');
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'İzleme listesine eklenirken hata oluştu';
+            console.error('Error adding to watchlist:', err);
+            setError(errorMessage);
+            throw err;
         }
     };
 
     const removeFromWatchlist = async (movieId: number) => {
-        if (!isInitialized) return;
+        setError(null);
+
+        // Wait for database initialization
+        if (!isInitialized) {
+            try {
+                await initializeDatabase();
+                setIsInitialized(true);
+            } catch (err) {
+                const errorMessage = 'Veritabanı başlatılamadı';
+                console.error('Database initialization failed:', err);
+                setError(errorMessage);
+                throw new Error(errorMessage);
+            }
+        }
 
         try {
-            await WatchlistService.remove(movieId);
+            const success = await WatchlistService.remove(movieId, isOnline);
+
+            if (!success) {
+                const errorMessage = 'İzleme listesinden kaldırılamadı';
+                setError(errorMessage);
+                throw new Error(errorMessage);
+            }
+
             await loadWatchlist();
-        } catch (error) {
-            console.error('Error removing from watchlist:', error);
+
+            // If offline, trigger sync when online
+            if (!isOnline) {
+                console.log('[Watchlist] Offline mode - will sync when online');
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'İzleme listesinden kaldırılırken hata oluştu';
+            console.error('Error removing from watchlist:', err);
+            setError(errorMessage);
+            throw err;
         }
     };
 
@@ -112,7 +171,18 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     };
 
     const toggleWatchlist = async (movie: Movie) => {
-        if (!isInitialized) return;
+        // Ensure DB is initialized before toggling
+        if (!isInitialized) {
+            try {
+                await initializeDatabase();
+                setIsInitialized(true);
+            } catch (err) {
+                const errorMessage = 'Veritabanı başlatılamadı';
+                console.error('Database initialization failed:', err);
+                setError(errorMessage);
+                return;
+            }
+        }
 
         try {
             const alreadyInWatchlist = await WatchlistService.isInWatchlist(movie.id);
@@ -154,6 +224,8 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const clearError = () => setError(null);
+
     return (
         <WatchlistContext.Provider
             value={{
@@ -166,6 +238,8 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
                 syncWatchlist,
                 isSyncing,
                 isOnline,
+                error,
+                clearError,
             }}
         >
             {children}

@@ -1,8 +1,8 @@
 // @ts-nocheck
 import { BiometricType } from '@/hooks/useBiometricAuth';
 import { SecureStorage, StorageKey } from '@/security';
-import { supabaseAuth } from '@/services/supabase-auth';
 import { UserService } from '@/services/local-db.service';
+import { supabaseAuth } from '@/services/supabase-auth';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -70,15 +70,20 @@ export const useAuthStore = create<AuthState>()(
                         if (result.error) {
                             throw new Error(result.error);
                         }
+
+                        console.log('[DEBUG-AuthStore] Login success, user:', result.user);
                         if (result.user) {
+
                             // Save to SQLite
                             await UserService.upsert({
                                 id: result.user.id,
                                 email: result.user.email,
                                 name: result.user.name,
-                                avatar_url: result.user.avatar,
+                                avatar: result.user.avatar,
                                 token: result.user.token,
                             });
+
+                            console.log('[DEBUG-AuthStore] Result success, user:', result);
 
                             set({
                                 user: result.user,
@@ -166,8 +171,6 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true, error: null });
 
                 try {
-                    const { supabaseAuth } = await import('@/services/supabase-auth');
-
                     if (supabaseAuth.isConfigured()) {
                         const result = await supabaseAuth.signUp(email, password, name);
                         if (result.error) {
@@ -179,7 +182,7 @@ export const useAuthStore = create<AuthState>()(
                                 id: result.user.id,
                                 email: result.user.email,
                                 name: result.user.name,
-                                avatar_url: result.user.avatar,
+                                avatar: result.user.avatar,
                                 token: result.user.token,
                             });
 
@@ -310,7 +313,7 @@ export const useAuthStore = create<AuthState>()(
                                     id: sqliteUser.id,
                                     email: sqliteUser.email,
                                     name: sqliteUser.name || '',
-                                    avatar: sqliteUser.avatar_url || undefined,
+                                    avatar: sqliteUser.avatar || undefined,
                                     token: sqliteUser.token || '',
                                 });
                             }
