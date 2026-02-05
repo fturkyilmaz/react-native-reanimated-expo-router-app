@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { createClient, isSupabaseConfigured } from '@/supabase/client';
 
-// Supabase Service Class
 class SupabaseService {
     private client: any = null;
 
@@ -19,82 +18,229 @@ class SupabaseService {
         }
     }
 
-    // Check if Supabase is configured
     public isConfigured(): boolean {
         const configured = isSupabaseConfigured();
         console.log('[SupabaseService] isConfigured called:', configured);
         return configured;
     }
 
-    // Add movie to favorites
-    async addFavorite(userId: string, movie: any): Promise<boolean> {
+    // Try to get authenticated user id from client (supports v1/v2 clients)
+    private async getAuthenticatedUserId(): Promise<string | null> {
+        try {
+            if (!this.client) return null;
+
+            // Supabase v2
+            if (typeof this.client.auth?.getUser === 'function') {
+                const res = await this.client.auth.getUser();
+                const user = res?.data?.user ?? null;
+                return user?.id ?? null;
+            }
+
+            // Supabase v1
+            if (typeof this.client.auth?.user === 'function') {
+                const user = this.client.auth.user();
+                return user?.id ?? null;
+            }
+
+            return null;
+        } catch (e) {
+            console.warn('[SupabaseService] getAuthenticatedUserId error:', e);
+            return null;
+        }
+    }
+
+    /**
+     * Normalize a value that may be:
+     * - epoch seconds (number or numeric string)
+     * - ISO/date string
+     * Returns ISO 8601 string (suitable for Postgres timestamp/timestamptz) or null.
+     */
+    private normalizeToIso(d: any): string | null {
+        if (d == null) return null;
+
+        // If it's already a Date object
+        if (d instanceof Date && !isNaN(d.getTime())) {
+            return d.toISOString();
+        }
+
+        // If it's a finite number (epoch seconds)
+        if (typeof d === 'number' && Number.isFinite(d)) {
+            return new Date(Math.floor(d) * 1000).toISOString();
+        }
+
+        // If it's a numeric string like "1770275475"
+        if (typeof d === 'string' && /^\d+$/.test(d)) {
+            const n = Number(d);
+            if (!Number.isNaN(n)) {
+                return new Date(Math.floor(n) * 1000).toISOString();
+            }
+        }
+
+        // If it's a date-like string, try to parse
+        if (typeof d === 'string') {
+            const parsed = Date.parse(d);
+            if (!isNaN(parsed)) return new Date(parsed).toISOString();
+        }
+
+        // Fallback: null (avoid sending invalid value to Postgres)
+        return null;
+    }
+
+    private buildMoviePayload(movie: any) {
+        // Normalize release_date and updated_at to ISO strings to match timestamp columns
+        const releaseDateIso = this.normalizeToIso(movie?.release_date);
+        const updatedAtIso = this.normalizeToIso(movie?.updated_at ?? movie?.updatedAt ?? null);
+
+        return {
+            id: movie.id,
+            title: movie.title ?? null,
+            overview: movie.overview ?? null,
+            poster_path: movie.poster_path ?? null,
+            backdrop_path: movie.backdrop_path ?? null,
+            // send ISO strings for timestamp columns
+            release_date: releaseDateIso,
+            // If your DB expects integer epoch for updated_at, change this to Math.floor(...) accordingly.
+            updated_at: updatedAtIso,
+            vote_average: typeof movie.vote_average === 'number' ? movie.vote_average : null,
+            // Ensure genre_ids is an array (Postgres JSONB/array friendly)
+            genre_ids: Array.isArray(movie.genre_ids) ? movie.genre_ids : [],
+        };
+    }
+
+    // Add movie to favorites (robust, RLS-aware)
+    async addFavorite(userId: string | null, movie: any): Promise<boolean> {
         console.log('[SupabaseService] addFavorite called:');
         console.log('  - userId:', userId);
-        console.log('  - movie.id:', movie.id);
-        console.log('  - movie.title:', movie.title);
+        console.log('  - movie.id:', movie?.id);
+        console.log('  - movie.title:', movie?.title);
 
         if (!this.isConfigured()) {
             console.log('[SupabaseService] Not configured, skipping');
             return false;
         }
-
         if (!this.client) {
             console.error('[SupabaseService] Client is null');
             return false;
         }
+        if (!movie?.id) {
+            console.error('[SupabaseService] Invalid movie payload, missing id');
+            return false;
+        }
 
-        try {
-            // First, insert/update movie in movies table
-            console.log('[SupabaseService] Inserting movie into movies table...');
-            const { error: movieError } = await this.client
-                .from('movies')
-                .upsert({
-                    id: movie.id,
-                    title: movie.title,
-                    overview: movie.overview,
-                    poster_path: movie.poster_path,
-                    backdrop_path: movie.backdrop_path,
-                    release_date: movie.release_date,
-                    vote_average: movie.vote_average,
-                    genre_ids: movie.genre_ids || [],
-                    updated_at: Math.floor(Date.now() / 1000),
-                }, { onConflict: 'id' });
-
-            if (movieError) {
-                console.error('[SupabaseService] Error inserting movie:', movieError);
-                // Continue anyway - movie might already exist
-            } else {
-                console.log('[SupabaseService] Movie inserted/updated successfully');
-            }
-
-            console.log('[SupabaseService] Attempting insert to Supabase favorites...');
-            const { data, error } = await this.client
-                .from('favorites')
-                .insert({
-                    user_id: userId,
-                    movie_id: movie.id,
-                    title: movie.title,
-                    overview: movie.overview,
-                    poster_path: movie.poster_path,
-                    backdrop_path: movie.backdrop_path,
-                    release_date: movie.release_date,
-                    vote_average: movie.vote_average,
-                    genre_ids: movie.genre_ids || [],
-                })
-                .select();
-
-            console.log('[SupabaseService] Insert result:');
-            console.log('  - data:', data);
-            console.log('  - error:', error);
-
-            if (error) {
-                console.error('[SupabaseService] Error adding favorite:', error);
+        // Resolve userId: if caller passed null or placeholder, try to get authenticated user
+        let resolvedUserId = userId;
+        if (!resolvedUserId || resolvedUserId === 'local') {
+            const authId = await this.getAuthenticatedUserId();
+            if (!authId) {
+                console.error('[SupabaseService] No authenticated user id available; cannot add favorite due to RLS.');
                 return false;
             }
+            resolvedUserId = authId;
+            console.log('[SupabaseService] Resolved userId from auth:', resolvedUserId);
+        }
+
+        const moviePayload = this.buildMoviePayload(movie);
+        console.log('[SupabaseService] moviePayload (to upsert):', moviePayload);
+
+        try {
+            // 1) Upsert movie (ensure movie exists)
+            console.log('[SupabaseService] Upserting movie...');
+            const upsertResp = await this.client
+                .from('movies')
+                .upsert(moviePayload, { onConflict: 'id' })
+                .select('id');
+
+            const upsertError = (upsertResp as any).error ?? null;
+            const upsertData = (upsertResp as any).data ?? null;
+
+            if (upsertError) {
+                console.error('[SupabaseService] Error upserting movie:', upsertError);
+                // continue cautiously; we'll verify existence below
+            } else {
+                console.log('[SupabaseService] Upsert response data:', upsertData);
+            }
+
+            // 2) Verify movie exists in movies table (defensive)
+            const movieId = movie.id;
+            const movieCheckResp = await this.client
+                .from('movies')
+                .select('id')
+                .eq('id', movieId)
+                .limit(1);
+
+            const movieCheckError = (movieCheckResp as any).error ?? null;
+            const movieCheckData = (movieCheckResp as any).data ?? null;
+
+            if (movieCheckError) {
+                console.warn('[SupabaseService] Movie check error:', movieCheckError);
+                return false;
+            }
+
+            if (!movieCheckData || (Array.isArray(movieCheckData) && movieCheckData.length === 0)) {
+                console.warn('[SupabaseService] Movie not found after upsert, aborting favorite insert', {
+                    movieId,
+                    movieCheckData,
+                });
+                return false;
+            }
+
+            // 3) Insert favorite
+            console.log('[SupabaseService] Inserting favorite for user:', resolvedUserId, 'movie:', movieId);
+            const favInsert = await this.client
+                .from('favorites')
+                .insert({
+                    user_id: resolvedUserId,
+                    movie_id: movieId,
+                    title: moviePayload.title,
+                    overview: moviePayload.overview,
+                    poster_path: moviePayload.poster_path,
+                    backdrop_path: moviePayload.backdrop_path,
+                    release_date: moviePayload.release_date,
+                    vote_average: moviePayload.vote_average,
+                    genre_ids: moviePayload.genre_ids,
+                }, { onConflict: ['user_id', 'movie_id'] })
+                .select();
+
+            const favError = (favInsert as any).error ?? null;
+            const favData = (favInsert as any).data ?? null;
+
+            console.log('[SupabaseService] Favorite insert result:', { favData, favError });
+
+            if (favError) {
+                console.error('[SupabaseService] Error adding favorite:', favError);
+
+                // If FK error, try a final upsert then retry once
+                if ((favError.code === '23503' || (favError.message && favError.message.toLowerCase().includes('foreign key'))) && !upsertError) {
+                    console.log('[SupabaseService] FK error detected. Retrying movie upsert and favorite insert once more...');
+                    await this.client.from('movies').upsert(moviePayload, { onConflict: 'id' });
+                    const retryResp = await this.client.from('favorites').insert({
+                        user_id: resolvedUserId,
+                        movie_id: movieId,
+                    }).select();
+                    const retryError = (retryResp as any).error ?? null;
+                    if (retryError) {
+                        console.error('[SupabaseService] Retry failed:', retryError);
+                        return false;
+                    }
+                    console.log('[SupabaseService] Favorite added on retry');
+                    return true;
+                }
+
+                // If RLS error, log guidance
+                if (favError.code === '42501' || (favError.message && favError.message.toLowerCase().includes('row-level security'))) {
+                    console.error('[SupabaseService] RLS violation. Ensure the favorites table has an insert policy like: with check (user_id = auth.uid()) and that the client is authenticated with the same user id.');
+                }
+
+                return false;
+            }
+
             console.log('[SupabaseService] Favorite added successfully!');
             return true;
-        } catch (e) {
-            console.error('[SupabaseService] Exception adding favorite:', e);
+        } catch (e: any) {
+            console.error('[SupabaseService] Exception adding favorite:', {
+                message: e?.message ?? e,
+                stack: e?.stack,
+            });
             return false;
         }
     }
@@ -111,16 +257,24 @@ class SupabaseService {
         }
 
         try {
+            const resolvedUserId = userId === 'local' || !userId ? await this.getAuthenticatedUserId() : userId;
+            if (!resolvedUserId) {
+                console.error('[SupabaseService] No authenticated user id available; cannot remove favorite due to RLS.');
+                return false;
+            }
+
             console.log('[SupabaseService] Attempting delete from Supabase...');
-            const { data, error } = await this.client
+            const resp = await this.client
                 .from('favorites')
                 .delete()
-                .eq('user_id', userId)
-                .eq('movie_id', movieId);
+                .eq('user_id', resolvedUserId)
+                .eq('movie_id', movieId)
+                .select();
 
-            console.log('[SupabaseService] Delete result:');
-            console.log('  - data:', data);
-            console.log('  - error:', error);
+            const error = (resp as any).error ?? null;
+            const data = (resp as any).data ?? null;
+
+            console.log('[SupabaseService] Delete result:', { data, error });
 
             if (error) {
                 console.error('[SupabaseService] Error removing favorite:', error);
@@ -145,16 +299,23 @@ class SupabaseService {
         }
 
         try {
+            const resolvedUserId = userId === 'local' || !userId ? await this.getAuthenticatedUserId() : userId;
+            if (!resolvedUserId) {
+                console.warn('[SupabaseService] No authenticated user id available; returning empty favorites.');
+                return [];
+            }
+
             console.log('[SupabaseService] Fetching favorites from Supabase...');
-            const { data, error } = await this.client
+            const resp = await this.client
                 .from('favorites')
                 .select('*')
-                .eq('user_id', userId)
+                .eq('user_id', resolvedUserId)
                 .order('created_at', { ascending: false });
 
-            console.log('[SupabaseService] Get favorites result:');
-            console.log('  - count:', data?.length);
-            console.log('  - error:', error);
+            const error = (resp as any).error ?? null;
+            const data = (resp as any).data ?? null;
+
+            console.log('[SupabaseService] Get favorites result:', { count: data?.length ?? 0, error });
 
             if (error) {
                 console.error('[SupabaseService] Error getting favorites:', error);
@@ -167,48 +328,51 @@ class SupabaseService {
         }
     }
 
-    // Add movie to watchlist
+    // Add movie to watchlist (same pattern as favorites)
     async addToWatchlist(userId: string, movie: any): Promise<boolean> {
         if (!this.isConfigured() || !this.client) {
             console.log('[SupabaseService] Not configured, skipping');
             return false;
         }
 
-        try {
-            // First, insert/update movie in movies table
-            console.log('[SupabaseService] addToWatchlist: Inserting movie into movies table...');
-            const { error: movieError } = await this.client
-                .from('movies')
-                .upsert({
-                    id: movie.id,
-                    title: movie.title,
-                    overview: movie.overview,
-                    poster_path: movie.poster_path,
-                    backdrop_path: movie.backdrop_path,
-                    release_date: movie.release_date,
-                    vote_average: movie.vote_average,
-                    genre_ids: movie.genre_ids || [],
-                    updated_at: Math.floor(Date.now() / 1000),
-                }, { onConflict: 'id' });
+        if (!movie?.id) {
+            console.error('[SupabaseService] Invalid movie payload, missing id');
+            return false;
+        }
 
-            if (movieError) {
-                console.error('[SupabaseService] Error inserting movie to watchlist:', movieError);
+        const resolvedUserId = userId === 'local' || !userId ? await this.getAuthenticatedUserId() : userId;
+        if (!resolvedUserId) {
+            console.error('[SupabaseService] No authenticated user id available; cannot add to watchlist due to RLS.');
+            return false;
+        }
+
+        try {
+            console.log('[SupabaseService] addToWatchlist: Upserting movie...');
+            const moviePayload = this.buildMoviePayload(movie);
+            console.log('[SupabaseService] moviePayload (watchlist upsert):', moviePayload);
+
+            const upsertResp = await this.client.from('movies').upsert(moviePayload, { onConflict: 'id' }).select('id');
+            const upsertError = (upsertResp as any).error ?? null;
+            if (upsertError) {
+                console.error('[SupabaseService] Error inserting movie to watchlist:', upsertError);
             }
 
-            const { error } = await this.client
+            const resp = await this.client
                 .from('watchlist')
                 .insert({
-                    user_id: userId,
+                    user_id: resolvedUserId,
                     movie_id: movie.id,
-                    title: movie.title,
-                    overview: movie.overview,
-                    poster_path: movie.poster_path,
-                    backdrop_path: movie.backdrop_path,
-                    release_date: movie.release_date,
-                    vote_average: movie.vote_average,
-                    genre_ids: movie.genre_ids || [],
-                });
+                    title: moviePayload.title,
+                    overview: moviePayload.overview,
+                    poster_path: moviePayload.poster_path,
+                    backdrop_path: moviePayload.backdrop_path,
+                    release_date: moviePayload.release_date,
+                    vote_average: moviePayload.vote_average,
+                    genre_ids: moviePayload.genre_ids,
+                })
+                .select();
 
+            const error = (resp as any).error ?? null;
             if (error) {
                 console.error('[SupabaseService] Error adding to watchlist:', error);
                 return false;
@@ -229,12 +393,20 @@ class SupabaseService {
         }
 
         try {
-            const { error } = await this.client
+            const resolvedUserId = userId === 'local' || !userId ? await this.getAuthenticatedUserId() : userId;
+            if (!resolvedUserId) {
+                console.error('[SupabaseService] No authenticated user id available; cannot remove from watchlist due to RLS.');
+                return false;
+            }
+
+            const resp = await this.client
                 .from('watchlist')
                 .delete()
-                .eq('user_id', userId)
-                .eq('movie_id', movieId);
+                .eq('user_id', resolvedUserId)
+                .eq('movie_id', movieId)
+                .select();
 
+            const error = (resp as any).error ?? null;
             if (error) {
                 console.error('[SupabaseService] Error removing from watchlist:', error);
                 return false;
@@ -254,11 +426,20 @@ class SupabaseService {
         }
 
         try {
-            const { data, error } = await this.client
+            const resolvedUserId = userId === 'local' || !userId ? await this.getAuthenticatedUserId() : userId;
+            if (!resolvedUserId) {
+                console.warn('[SupabaseService] No authenticated user id available; returning empty watchlist.');
+                return [];
+            }
+
+            const resp = await this.client
                 .from('watchlist')
                 .select('*')
-                .eq('user_id', userId)
+                .eq('user_id', resolvedUserId)
                 .order('added_at', { ascending: false });
+
+            const error = (resp as any).error ?? null;
+            const data = (resp as any).data ?? null;
 
             if (error) {
                 console.error('[SupabaseService] Error getting watchlist:', error);
@@ -272,5 +453,4 @@ class SupabaseService {
     }
 }
 
-// Singleton instance
 export const supabaseService = new SupabaseService();

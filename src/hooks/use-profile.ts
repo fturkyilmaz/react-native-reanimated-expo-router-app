@@ -72,7 +72,7 @@ export function useUpdateProfile() {
                 id: user?.id || 'local',
                 email: data.email,
                 name: data.name,
-                avatar_url: user?.avatar,
+                // avatar_url: user?.avatar,
                 token: user?.token || '',
             });
 

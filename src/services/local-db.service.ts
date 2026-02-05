@@ -130,11 +130,11 @@ export const FavoritesService = {
         return new Promise((resolve) => {
             db.transaction((tx) => {
                 tx.executeSql(
-                    `INSERT INTO favorites (movie_id, user_id, synced) VALUES (?, ?, ?)`,
+                    `INSERT OR IGNORE INTO favorites (movie_id, user_id, synced) VALUES (?, ?, ?)`,
                     [movieId, userId, isOnline ? 1 : 0],
                     (_, result) => {
-                        console.log('[DEBUG-FavoritesService] add success, insertId:', result.insertId);
-                        resolve(result.insertId > 0);
+                        console.log('[DEBUG-FavoritesService] add success : ', result);
+                        resolve(true);
                     },
                     (_, error) => {
                         console.error('[DEBUG-FavoritesService] Error adding:', error);

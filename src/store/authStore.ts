@@ -79,7 +79,7 @@ export const useAuthStore = create<AuthState>()(
                                 id: result.user.id,
                                 email: result.user.email,
                                 name: result.user.name,
-                                avatar: result.user.avatar,
+                                // avatar: result.user.avatar,
                                 token: result.user.token,
                             });
 
@@ -310,11 +310,11 @@ export const useAuthStore = create<AuthState>()(
                             const sqliteUser = await UserService.getCurrentUser();
                             if (sqliteUser && !state.user) {
                                 state.setUser({
-                                    id: sqliteUser.id,
-                                    email: sqliteUser.email,
-                                    name: sqliteUser.name || '',
-                                    avatar: sqliteUser.avatar || undefined,
-                                    token: sqliteUser.token || '',
+                                    id: sqliteUser?.id || '',
+                                    email: sqliteUser?.email || '',
+                                    name: sqliteUser?.name || '',
+                                    avatar: sqliteUser?.avatar || undefined,
+                                    token: sqliteUser?.token || '',
                                 });
                             }
                         } catch {
