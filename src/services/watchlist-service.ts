@@ -13,6 +13,7 @@
  */
 
 import type { Movie } from '@/config/api';
+import { logger } from '@/utils/logger';
 import { execute, getDatabase, query, queryOne, transaction } from '../db/database';
 
 // ============================================================================
@@ -123,7 +124,7 @@ export const WatchlistService = {
         try {
             validateMovie(movie);
 
-            console.log('[WatchlistService] Adding to watchlist:', movie.id, 'online:', isOnline);
+            logger.movies.info('Adding to watchlist', { movieId: movie.id, isOnline });
 
             await transaction(async (tx) => {
                 // Step 1: Ensure movie exists in movies table
@@ -174,7 +175,7 @@ export const WatchlistService = {
                 });
 
                 if (existing) {
-                    console.log('[WatchlistService] Already in watchlist:', movie.id);
+                    logger.movies.debug('Already in watchlist', { movieId: movie.id });
                     return; // Already exists
                 }
 
@@ -215,13 +216,13 @@ export const WatchlistService = {
                 }
             });
 
-            console.log('[WatchlistService] Added to watchlist:', movie.id);
+            logger.movies.info('Added to watchlist', { movieId: movie.id });
             return true;
         } catch (error) {
             if (error instanceof WatchlistServiceError) {
                 throw error;
             }
-            console.error('[WatchlistService] Add error:', error);
+            logger.movies.error('Add failed', { movieId: movie.id, error: error instanceof Error ? error.message : error });
             throw new WatchlistServiceError(
                 `Failed to add movie ${movie.id} to watchlist`,
                 'ADD_ERROR',
@@ -241,7 +242,7 @@ export const WatchlistService = {
         }
 
         try {
-            console.log('[WatchlistService] Removing from watchlist:', movieId);
+            logger.movies.info('Removing from watchlist', { movieId });
 
             const result = await transaction<boolean>(async (tx) => {
                 // Step 1: Remove any pending "add" operations for this movie (deduplication)
@@ -272,7 +273,7 @@ export const WatchlistService = {
                 });
 
                 if (removeResult === 0) {
-                    console.log('[WatchlistService] Not found in watchlist:', movieId);
+                    logger.movies.debug('Not found in watchlist', { movieId });
                     return false;
                 }
 
@@ -296,10 +297,10 @@ export const WatchlistService = {
                 return true;
             });
 
-            console.log('[WatchlistService] Removed from watchlist:', movieId, result);
+            logger.movies.info('Removed from watchlist', { movieId, result });
             return result;
         } catch (error) {
-            console.error('[WatchlistService] Remove error:', error);
+            logger.movies.error('Remove failed', { movieId, error: error instanceof Error ? error.message : error });
             throw new WatchlistServiceError(
                 `Failed to remove movie ${movieId} from watchlist`,
                 'REMOVE_ERROR',
@@ -330,7 +331,7 @@ export const WatchlistService = {
             const row = await queryOne<{ id: number }>(sql, [movieId]);
             return row !== null;
         } catch (error) {
-            console.error('[WatchlistService] isInWatchlist error:', error);
+            logger.movies.error('isInWatchlist check failed', { error: error instanceof Error ? error.message : error });
             return false;
         }
     },
@@ -353,10 +354,10 @@ export const WatchlistService = {
       `;
             const rows = await query<WatchlistWithMovie>(sql, []);
 
-            console.log('[WatchlistService] getAll:', rows.length, 'items');
+            logger.movies.debug('getAll watchlist', { count: rows.length });
             return rows.map(mapToMovie);
         } catch (error) {
-            console.error('[WatchlistService] getAll error:', error);
+            logger.movies.error('getAll failed', { error: error instanceof Error ? error.message : error });
             throw new WatchlistServiceError(
                 'Failed to get watchlist',
                 'GET_ALL_ERROR',
@@ -374,7 +375,7 @@ export const WatchlistService = {
             const rows = await query<{ movie_id: number }>(sql, []);
             return rows.map((r) => r.movie_id);
         } catch (error) {
-            console.error('[WatchlistService] getIds error:', error);
+            logger.movies.error('getIds failed', { error: error instanceof Error ? error.message : error });
             return [];
         }
     },
@@ -388,7 +389,7 @@ export const WatchlistService = {
             const row = await queryOne<{ count: number }>(sql, []);
             return row?.count || 0;
         } catch (error) {
-            console.error('[WatchlistService] count error:', error);
+            logger.movies.error('count failed', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -401,7 +402,7 @@ export const WatchlistService = {
             const sql = `SELECT * FROM ${TABLE_NAME} WHERE synced = 0 AND user_id = 'local'`;
             return await query<RawWatchlist>(sql, []);
         } catch (error) {
-            console.error('[WatchlistService] getUnsynced error:', error);
+            logger.movies.error('getUnsynced failed', { error: error instanceof Error ? error.message : error });
             return [];
         }
     },
@@ -414,7 +415,7 @@ export const WatchlistService = {
             const sql = `UPDATE ${TABLE_NAME} SET synced = 1 WHERE movie_id = ?`;
             return await execute(sql, [movieId]);
         } catch (error) {
-            console.error('[WatchlistService] markAsSynced error:', error);
+            logger.movies.error('markAsSynced failed', { error: error instanceof Error ? error.message : error });
             return false;
         }
     },
@@ -428,10 +429,10 @@ export const WatchlistService = {
                 `DELETE FROM ${TABLE_NAME} WHERE user_id = 'local'`,
                 []
             );
-            console.log('[WatchlistService] Cleared watchlist:', result);
+            logger.movies.info('Cleared watchlist', { count: result });
             return result ? 1 : 0;
         } catch (error) {
-            console.error('[WatchlistService] clear error:', error);
+            logger.movies.error('clear failed', { error: error instanceof Error ? error.message : error });
             throw new WatchlistServiceError(
                 'Failed to clear watchlist',
                 'CLEAR_ERROR',

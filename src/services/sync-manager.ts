@@ -91,23 +91,23 @@ let networkUnsubscribe: (() => void) | null = null;
  */
 const setupNetworkListener = (): void => {
     if (networkUnsubscribe) {
-        console.log('[SyncManager] Network listener already active');
+        logger.sync.debug('Network listener already active');
         return;
     }
 
-    console.log('[SyncManager] Setting up network listener');
+    logger.sync.info('Setting up network listener');
     networkUnsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
         const isConnected = state.isConnected ?? false;
         const wasOffline = !useSyncStore.getState().isOnline;
 
-        console.log('[SyncManager] Network state changed:', { isConnected, wasOffline });
+        logger.sync.debug('Network state changed', { isConnected, wasOffline });
 
         // Update store
         useSyncStore.getState().setOnline(isConnected);
 
         // Trigger sync when coming back online
         if (isConnected && wasOffline) {
-            console.log('[SyncManager] Back online, triggering sync...');
+            logger.sync.info('Back online, triggering sync');
             syncManager.syncAll();
         }
     });
@@ -120,7 +120,7 @@ const cleanupNetworkListener = (): void => {
     if (networkUnsubscribe) {
         networkUnsubscribe();
         networkUnsubscribe = null;
-        console.log('[SyncManager] Network listener cleaned up');
+        logger.sync.debug('Network listener cleaned up');
     }
 };
 
@@ -134,7 +134,7 @@ export const syncManager = {
      * Should be called once at app startup
      */
     initialize: async (): Promise<void> => {
-        console.log('[SyncManager] Initializing...');
+        logger.sync.info('Initializing...');
 
         try {
             // Initialize database
@@ -160,9 +160,9 @@ export const syncManager = {
             useSyncStore.getState().setFailedCount(failedItems.length);
 
             useSyncStore.getState().setInitialized(true);
-            console.log('[SyncManager] Initialization complete:', { isOnline: isConnected, pendingCount });
+            logger.sync.info('Initialization complete', { isOnline: isConnected, pendingCount });
         } catch (error) {
-            console.error('[SyncManager] Initialization failed:', error);
+            logger.sync.error('Initialization failed', { error: error instanceof Error ? error.message : error });
             useSyncStore.getState().setError('Sync initialization failed');
         }
     },
@@ -172,10 +172,10 @@ export const syncManager = {
      * Should be called at app cleanup
      */
     cleanup: (): void => {
-        console.log('[SyncManager] Cleaning up...');
+        logger.sync.info('Cleaning up');
         cleanupNetworkListener();
         useSyncStore.getState().reset();
-        console.log('[SyncManager] Cleanup complete');
+        logger.sync.debug('Cleanup complete');
     },
 
     /**
@@ -186,13 +186,13 @@ export const syncManager = {
 
         // Prevent multiple simultaneous syncs
         if (state.isSyncing) {
-            console.log('[SyncManager] Sync already in progress, skipping...');
+            logger.sync.debug('Sync already in progress, skipping');
             return { synced: 0, failed: 0 };
         }
 
         // Only sync if online
         if (!state.isOnline) {
-            console.log('[SyncManager] Offline, skipping sync...');
+            logger.sync.debug('Offline, skipping sync');
             return { synced: 0, failed: 0 };
         }
 
@@ -203,11 +203,11 @@ export const syncManager = {
         let failed = 0;
 
         try {
-            console.log('[SyncManager] Starting sync...');
+            logger.sync.info('Starting sync');
 
             // Get pending operations
             const pendingItems = await SyncQueueService.getPending();
-            console.log('[SyncManager] Pending items:', pendingItems.length);
+            logger.sync.debug('Pending items', { count: pendingItems.length });
 
             for (const item of pendingItems) {
                 // Mark as processing
@@ -232,9 +232,9 @@ export const syncManager = {
                     // Mark as completed
                     await SyncQueueService.updateStatus(item.id, 'completed');
                     synced++;
-                    console.log('[SyncManager] Synced item:', item.id, item.type, item.operation);
+                    logger.sync.info('Synced item', { id: item.id, type: item.type, operation: item.operation });
                 } catch (error) {
-                    console.error('[SyncManager] Failed to sync item:', item.id, error);
+                    logger.sync.error('Failed to sync item', { id: item.id, error: error instanceof Error ? error.message : error });
 
                     // Increment retry count
                     await SyncQueueService.incrementRetry(item.id);
@@ -263,9 +263,9 @@ export const syncManager = {
             // Update last sync time
             useSyncStore.getState().setLastSyncTime(Date.now());
 
-            console.log('[SyncManager] Sync complete:', { synced, failed, pending: pendingCount });
+            logger.sync.info('Sync complete', { synced, failed, pending: pendingCount });
         } catch (error) {
-            console.error('[SyncManager] Sync error:', error);
+            logger.sync.error('Sync error', { error: error instanceof Error ? error.message : error });
             useSyncStore.getState().setError('Sync failed');
         } finally {
             useSyncStore.getState().setSyncing(false);
@@ -291,14 +291,14 @@ export const syncManager = {
                     await FavoritesService.markAsSynced(item.movie_id);
                     synced++;
                 } catch (error) {
-                    console.error('[SyncManager] Failed to sync favorite:', item.movie_id, error);
+                    logger.sync.error('Failed to sync favorite', { movieId: item.movie_id, error: error instanceof Error ? error.message : error });
                 }
             }
 
-            console.log('[SyncManager] Favorites synced:', synced);
+            logger.sync.debug('Favorites synced', { count: synced });
             return synced;
         } catch (error) {
-            console.error('[SyncManager] syncFavorites error:', error);
+            logger.sync.error('syncFavorites error', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -320,14 +320,14 @@ export const syncManager = {
                     await WatchlistService.markAsSynced(item.movie_id);
                     synced++;
                 } catch (error) {
-                    console.error('[SyncManager] Failed to sync watchlist:', item.movie_id, error);
+                    logger.sync.error('Failed to sync watchlist', { movieId: item.movie_id, error: error instanceof Error ? error.message : error });
                 }
             }
 
-            console.log('[SyncManager] Watchlist synced:', synced);
+            logger.sync.debug('Watchlist synced', { count: synced });
             return synced;
         } catch (error) {
-            console.error('[SyncManager] syncWatchlist error:', error);
+            logger.sync.error('syncWatchlist error', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -340,7 +340,7 @@ export const syncManager = {
         const resetCount = await SyncQueueService.resetFailed();
 
         if (resetCount > 0) {
-            console.log('[SyncManager] Reset failed items:', resetCount);
+            logger.sync.info('Reset failed items', { count: resetCount });
             // Trigger sync
             const result = await syncManager.syncAll();
             return { retried: result.synced, failed: result.failed };
@@ -355,10 +355,10 @@ export const syncManager = {
     cleanupOrphanMovies: async (): Promise<number> => {
         try {
             const deletedCount = await MovieService.deleteOrphans();
-            console.log('[SyncManager] Deleted orphan movies:', deletedCount);
+            logger.sync.info('Deleted orphan movies', { count: deletedCount });
             return deletedCount;
         } catch (error) {
-            console.error('[SyncManager] cleanupOrphanMovies error:', error);
+            logger.sync.error('cleanupOrphanMovies error', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -375,7 +375,7 @@ export const syncManager = {
         useSyncStore.getState().setFailedCount(failedItems.length);
         useSyncStore.getState().setOnline(netState.isConnected ?? false);
 
-        console.log('[SyncManager] State refreshed:', {
+        logger.sync.info('State refreshed', {
             pending: pendingCount,
             failed: failedItems.length,
             online: netState.isConnected,

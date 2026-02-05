@@ -13,6 +13,7 @@
  */
 
 import type { Movie } from '@/config/api';
+import { logger } from '@/utils/logger';
 import { execute, getDatabase, query, queryOne, transaction } from '../db/database';
 
 // ============================================================================
@@ -135,13 +136,13 @@ export const MovieService = {
             ];
 
             const result = await execute(sql, params);
-            console.log('[MovieService] Upserted movie:', movie.id, result ? 'success' : 'failed');
+            logger.movies.debug('Upserted movie', { movieId: movie.id });
             return result;
         } catch (error) {
             if (error instanceof MovieServiceError) {
                 throw error;
             }
-            console.error('[MovieService] Upsert error:', error);
+            logger.movies.error('Upsert error', { movieId: movie.id, error: error instanceof Error ? error.message : error });
             throw new MovieServiceError(
                 `Failed to upsert movie ${movie.id}`,
                 'UPSERT_ERROR',
@@ -194,7 +195,7 @@ export const MovieService = {
                                 },
                                 (_, error) => {
                                     failed++;
-                                    console.warn('[MovieService] Batch upsert error for movie', movie.id, error);
+                                    logger.movies.warn('Batch upsert error for movie', { movieId: movie.id });
                                     resolve(); // Continue with other movies
                                     return true;
                                 }
@@ -206,10 +207,10 @@ export const MovieService = {
                 }
             });
         } catch (error) {
-            console.error('[MovieService] Batch upsert transaction error:', error);
+            logger.movies.error('Batch upsert transaction error', { error: error instanceof Error ? error.message : error });
         }
 
-        console.log('[MovieService] Batch upsert complete:', { success, failed });
+        logger.movies.debug('Batch upsert complete', { success, failed });
         return { success, failed };
     },
 
@@ -222,14 +223,14 @@ export const MovieService = {
             const row = await queryOne<RawMovie>(sql, [id]);
 
             if (!row) {
-                console.log('[MovieService] Movie not found:', id);
+                logger.movies.debug('Movie not found', { movieId: id });
                 return null;
             }
 
-            console.log('[MovieService] Found movie:', id);
+            logger.movies.debug('Found movie', { movieId: id });
             return mapToMovie(row);
         } catch (error) {
-            console.error('[MovieService] getById error:', error);
+            logger.movies.error('getById error', { movieId: id, error: error instanceof Error ? error.message : error });
             throw new MovieServiceError(
                 `Failed to get movie ${id}`,
                 'GET_BY_ID_ERROR',
@@ -272,7 +273,7 @@ export const MovieService = {
             const rows = await query<RawMovie>(sql, [limit]);
             return rows.map(mapToMovie);
         } catch (error) {
-            console.error('[MovieService] getAll error:', error);
+            logger.movies.error('getAll error', { error: error instanceof Error ? error.message : error });
             throw new MovieServiceError(
                 'Failed to get all movies',
                 'GET_ALL_ERROR',
@@ -286,7 +287,7 @@ export const MovieService = {
      */
     search: async (queryText: string, limit = 20): Promise<MovieWithGenres[]> => {
         if (!queryText || queryText.trim().length < 2) {
-            console.warn('[MovieService] Search query too short:', queryText);
+            logger.movies.warn('Search query too short', { queryText });
             return [];
         }
 
@@ -300,7 +301,7 @@ export const MovieService = {
             const rows = await query<RawMovie>(sql, [`%${queryText}%`, limit]);
             return rows.map(mapToMovie);
         } catch (error) {
-            console.error('[MovieService] Search error:', error);
+            logger.movies.error('Search error', { queryText, error: error instanceof Error ? error.message : error });
             throw new MovieServiceError(
                 `Failed to search movies with query "${queryText}"`,
                 'SEARCH_ERROR',
@@ -316,10 +317,10 @@ export const MovieService = {
         try {
             const sql = 'DELETE FROM movies WHERE id = ?';
             const result = await execute(sql, [id]);
-            console.log('[MovieService] Deleted movie:', id, result ? 'success' : 'not found');
+            logger.movies.debug('Deleted movie', { movieId: id, success: !!result });
             return result;
         } catch (error) {
-            console.error('[MovieService] Delete error:', error);
+            logger.movies.error('Delete error', { movieId: id, error: error instanceof Error ? error.message : error });
             throw new MovieServiceError(
                 `Failed to delete movie ${id}`,
                 'DELETE_ERROR',
@@ -342,10 +343,10 @@ export const MovieService = {
         )
       `;
             const result = await execute(sql, []);
-            console.log('[MovieService] Deleted orphan movies:', result);
+            logger.movies.debug('Deleted orphan movies', { count: result });
             return result ? 1 : 0;
         } catch (error) {
-            console.error('[MovieService] deleteOrphans error:', error);
+            logger.movies.error('deleteOrphans error', { error: error instanceof Error ? error.message : error });
             throw new MovieServiceError(
                 'Failed to delete orphan movies',
                 'DELETE_ORPHANS_ERROR',
@@ -363,7 +364,7 @@ export const MovieService = {
             const row = await queryOne<{ count: number }>(sql, []);
             return row?.count || 0;
         } catch (error) {
-            console.error('[MovieService] Count error:', error);
+            logger.movies.error('Count error', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },

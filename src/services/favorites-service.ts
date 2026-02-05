@@ -13,6 +13,7 @@
  */
 
 import type { Movie } from '@/config/api';
+import { logger } from '@/utils/logger';
 import { execute, getDatabase, query, queryOne, transaction } from '../db/database';
 
 // ============================================================================
@@ -123,7 +124,7 @@ export const FavoritesService = {
         try {
             validateMovie(movie);
 
-            console.log('[FavoritesService] Adding to favorites:', movie.id, 'online:', isOnline);
+            logger.movies.info('Adding to favorites', { movieId: movie.id, isOnline });
 
             await transaction(async (tx) => {
                 // Step 1: Ensure movie exists in movies table
@@ -174,7 +175,7 @@ export const FavoritesService = {
                 });
 
                 if (existing) {
-                    console.log('[FavoritesService] Already favorite:', movie.id);
+                    logger.movies.debug('Already favorite', { movieId: movie.id });
                     return; // Already exists
                 }
 
@@ -215,13 +216,13 @@ export const FavoritesService = {
                 }
             });
 
-            console.log('[FavoritesService] Added to favorites:', movie.id);
+            logger.movies.info('Added to favorites', { movieId: movie.id });
             return true;
         } catch (error) {
             if (error instanceof FavoritesServiceError) {
                 throw error;
             }
-            console.error('[FavoritesService] Add error:', error);
+            logger.movies.error('Add failed', { movieId: movie.id, error: error instanceof Error ? error.message : error });
             throw new FavoritesServiceError(
                 `Failed to add movie ${movie.id} to favorites`,
                 'ADD_ERROR',
@@ -241,7 +242,7 @@ export const FavoritesService = {
         }
 
         try {
-            console.log('[FavoritesService] Removing from favorites:', movieId);
+            logger.movies.info('Removing from favorites', { movieId });
 
             const result = await transaction<boolean>(async (tx) => {
                 // Step 1: Remove any pending "add" operations for this movie (deduplication)
@@ -272,7 +273,7 @@ export const FavoritesService = {
                 });
 
                 if (removeResult === 0) {
-                    console.log('[FavoritesService] Not found in favorites:', movieId);
+                    logger.movies.debug('Not found in favorites', { movieId });
                     return false;
                 }
 
@@ -296,10 +297,10 @@ export const FavoritesService = {
                 return true;
             });
 
-            console.log('[FavoritesService] Removed from favorites:', movieId, result);
+            logger.movies.info('Removed from favorites', { movieId, result });
             return result;
         } catch (error) {
-            console.error('[FavoritesService] Remove error:', error);
+            logger.movies.error('Remove failed', { movieId, error: error instanceof Error ? error.message : error });
             throw new FavoritesServiceError(
                 `Failed to remove movie ${movieId} from favorites`,
                 'REMOVE_ERROR',
@@ -330,7 +331,7 @@ export const FavoritesService = {
             const row = await queryOne<{ id: number }>(sql, [movieId]);
             return row !== null;
         } catch (error) {
-            console.error('[FavoritesService] isFavorite error:', error);
+            logger.movies.error('isFavorite check failed', { error: error instanceof Error ? error.message : error });
             return false;
         }
     },
@@ -353,10 +354,10 @@ export const FavoritesService = {
       `;
             const rows = await query<FavoriteWithMovie>(sql, []);
 
-            console.log('[FavoritesService] getAll:', rows.length, 'items');
+            logger.movies.debug('getAll favorites', { count: rows.length });
             return rows.map(mapToMovie);
         } catch (error) {
-            console.error('[FavoritesService] getAll error:', error);
+            logger.movies.error('getAll failed', { error: error instanceof Error ? error.message : error });
             throw new FavoritesServiceError(
                 'Failed to get favorites',
                 'GET_ALL_ERROR',
@@ -374,7 +375,7 @@ export const FavoritesService = {
             const rows = await query<{ movie_id: number }>(sql, []);
             return rows.map((r) => r.movie_id);
         } catch (error) {
-            console.error('[FavoritesService] getIds error:', error);
+            logger.movies.error('getIds failed', { error: error instanceof Error ? error.message : error });
             return [];
         }
     },
@@ -388,7 +389,7 @@ export const FavoritesService = {
             const row = await queryOne<{ count: number }>(sql, []);
             return row?.count || 0;
         } catch (error) {
-            console.error('[FavoritesService] count error:', error);
+            logger.movies.error('count failed', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -401,7 +402,7 @@ export const FavoritesService = {
             const sql = `SELECT * FROM ${TABLE_NAME} WHERE synced = 0 AND user_id = 'local'`;
             return await query<RawFavorite>(sql, []);
         } catch (error) {
-            console.error('[FavoritesService] getUnsynced error:', error);
+            logger.movies.error('getUnsynced failed', { error: error instanceof Error ? error.message : error });
             return [];
         }
     },
@@ -414,7 +415,7 @@ export const FavoritesService = {
             const sql = `UPDATE ${TABLE_NAME} SET synced = 1 WHERE movie_id = ?`;
             return await execute(sql, [movieId]);
         } catch (error) {
-            console.error('[FavoritesService] markAsSynced error:', error);
+            logger.movies.error('markAsSynced failed', { error: error instanceof Error ? error.message : error });
             return false;
         }
     },
@@ -428,10 +429,10 @@ export const FavoritesService = {
                 `DELETE FROM ${TABLE_NAME} WHERE user_id = 'local'`,
                 []
             );
-            console.log('[FavoritesService] Cleared favorites:', result);
+            logger.movies.info('Cleared favorites', { count: result });
             return result ? 1 : 0;
         } catch (error) {
-            console.error('[FavoritesService] clear error:', error);
+            logger.movies.error('clear failed', { error: error instanceof Error ? error.message : error });
             throw new FavoritesServiceError(
                 'Failed to clear favorites',
                 'CLEAR_ERROR',

@@ -12,6 +12,7 @@
  * - Cleanup completed operations
  */
 
+import { logger } from '@/utils/logger';
 import { execute, getDatabase, query, queryOne } from '../db/database';
 
 // ============================================================================
@@ -131,13 +132,13 @@ export const SyncQueueService = {
       `;
 
             const result = await execute(sql, [type, movieId, operation]);
-            console.log('[SyncQueueService] Added to queue:', result);
+            logger.sync.debug('Added to queue', { type, movieId, operation });
             return result;
         } catch (error) {
             if (error instanceof SyncQueueServiceError) {
                 throw error;
             }
-            console.error('[SyncQueueService] Add error:', error);
+            logger.sync.error('Add error', { type, movieId, operation, error: error instanceof Error ? error.message : error });
             throw new SyncQueueServiceError(
                 'Failed to add to sync queue',
                 'ADD_ERROR',
@@ -160,10 +161,10 @@ export const SyncQueueService = {
       `;
 
             const rows = await query<SyncQueueItem>(sql, [MAX_RETRIES]);
-            console.log('[SyncQueueService] getPending:', rows.length, 'items');
+            logger.sync.debug('getPending', { count: rows.length });
             return rows;
         } catch (error) {
-            console.error('[SyncQueueService] getPending error:', error);
+            logger.sync.error('getPending error', { error: error instanceof Error ? error.message : error });
             throw new SyncQueueServiceError(
                 'Failed to get pending sync items',
                 'GET_PENDING_ERROR',
@@ -184,7 +185,7 @@ export const SyncQueueService = {
             const row = await queryOne<{ count: number }>(sql, [MAX_RETRIES]);
             return row?.count || 0;
         } catch (error) {
-            console.error('[SyncQueueService] getPendingCount error:', error);
+            logger.sync.error('getPendingCount error', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -203,7 +204,7 @@ export const SyncQueueService = {
       `;
             return await query<SyncQueueItem>(sql, [movieId]);
         } catch (error) {
-            console.error('[SyncQueueService] getByMovieId error:', error);
+            logger.sync.error('getByMovieId error', { movieId, error: error instanceof Error ? error.message : error });
             return [];
         }
     },
@@ -224,7 +225,7 @@ export const SyncQueueService = {
       `;
             return await execute(sql, [status, id]);
         } catch (error) {
-            console.error('[SyncQueueService] updateStatus error:', error);
+            logger.sync.error('updateStatus error', { id, status, error: error instanceof Error ? error.message : error });
             throw new SyncQueueServiceError(
                 'Failed to update sync status',
                 'UPDATE_STATUS_ERROR',
@@ -246,7 +247,7 @@ export const SyncQueueService = {
       `;
             return await execute(sql, [id]);
         } catch (error) {
-            console.error('[SyncQueueService] incrementRetry error:', error);
+            logger.sync.error('incrementRetry error', { id, error: error instanceof Error ? error.message : error });
             return false;
         }
     },
@@ -263,10 +264,10 @@ export const SyncQueueService = {
         WHERE status = 'failed' AND retry_count < ?
       `;
             const result = await execute(sql, [MAX_RETRIES]);
-            console.log('[SyncQueueService] Reset failed:', result);
+            logger.sync.debug('Reset failed', { count: result });
             return result ? 1 : 0;
         } catch (error) {
-            console.error('[SyncQueueService] resetFailed error:', error);
+            logger.sync.error('resetFailed error', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -278,10 +279,10 @@ export const SyncQueueService = {
         try {
             const sql = `DELETE FROM ${TABLE_NAME} WHERE status = 'completed'`;
             const result = await execute(sql, []);
-            console.log('[SyncQueueService] Cleaned up:', result, 'completed items');
+            logger.sync.debug('Cleanup', { count: result });
             return result ? 1 : 0;
         } catch (error) {
-            console.error('[SyncQueueService] cleanup error:', error);
+            logger.sync.error('cleanup error', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -294,7 +295,7 @@ export const SyncQueueService = {
             const sql = `DELETE FROM ${TABLE_NAME} WHERE id = ?`;
             return await execute(sql, [id]);
         } catch (error) {
-            console.error('[SyncQueueService] remove error:', error);
+            logger.sync.error('remove error', { id, error: error instanceof Error ? error.message : error });
             return false;
         }
     },
@@ -306,10 +307,10 @@ export const SyncQueueService = {
         try {
             const sql = `DELETE FROM ${TABLE_NAME} WHERE movie_id = ?`;
             const result = await execute(sql, [movieId]);
-            console.log('[SyncQueueService] Removed by movieId:', movieId, result);
+            logger.sync.debug('Removed by movieId', { movieId, count: result });
             return result ? 1 : 0;
         } catch (error) {
-            console.error('[SyncQueueService] removeByMovieId error:', error);
+            logger.sync.error('removeByMovieId error', { movieId, error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -321,10 +322,10 @@ export const SyncQueueService = {
         try {
             const sql = `DELETE FROM ${TABLE_NAME} WHERE type = ?`;
             const result = await execute(sql, [type]);
-            console.log('[SyncQueueService] Cleared by type:', type, result);
+            logger.sync.debug('Cleared by type', { type, count: result });
             return result ? 1 : 0;
         } catch (error) {
-            console.error('[SyncQueueService] clearByType error:', error);
+            logger.sync.error('clearByType error', { type, error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -336,10 +337,10 @@ export const SyncQueueService = {
         try {
             const sql = `DELETE FROM ${TABLE_NAME}`;
             const result = await execute(sql, []);
-            console.log('[SyncQueueService] Cleared all:', result);
+            logger.sync.debug('Cleared all', { count: result });
             return result ? 1 : 0;
         } catch (error) {
-            console.error('[SyncQueueService] clear error:', error);
+            logger.sync.error('clear error', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -353,7 +354,7 @@ export const SyncQueueService = {
             const row = await queryOne<{ count: number }>(sql, []);
             return row?.count || 0;
         } catch (error) {
-            console.error('[SyncQueueService] count error:', error);
+            logger.sync.error('count error', { error: error instanceof Error ? error.message : error });
             return 0;
         }
     },
@@ -372,7 +373,7 @@ export const SyncQueueService = {
       `;
             return await query<SyncQueueItem>(sql, []);
         } catch (error) {
-            console.error('[SyncQueueService] getFailed error:', error);
+            logger.sync.error('getFailed error', { error: error instanceof Error ? error.message : error });
             return [];
         }
     },
