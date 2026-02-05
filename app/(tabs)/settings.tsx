@@ -402,6 +402,21 @@ export default function SettingsScreen() {
                         Made with ❤️ in Istanbul
                     </Text>
                 </View>
+
+                {/* Debug Section */}
+                {__DEV__ && (
+                    <>
+                        <SectionHeader title="DEBUG" />
+                        <View style={[styles.section, { backgroundColor: theme.card }]}>
+                            <SettingItem
+                                icon="bug-outline"
+                                title="Database Sıfırla"
+                                subtitle="Development only"
+                                onPress={() => router.push('/(settings)/reset-db')}
+                            />
+                        </View>
+                    </>
+                )}
             </ScrollView>
         </SafeAreaView>
     );

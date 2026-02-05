@@ -1,276 +1,281 @@
-// @ts-nocheck
-import { Movie } from '@/config/api';
-import { initializeDatabase } from '@/db/database';
-import { useAuth } from '@/hooks/use-auth';
-import { MovieService, WatchlistService } from '@/services/local-db.service';
-import { supabaseService } from '@/services/supabase-service';
-import { syncManager, useSyncStatus } from '@/services/sync-manager';
-import NetInfo from '@react-native-community/netinfo';
-import { useFocusEffect } from '@react-navigation/native';
-import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+/**
+ * useWatchlist - Watchlist management hook
+ *
+ * Provides comprehensive watchlist management with:
+ * - Optimistic UI updates
+ * - Automatic sync to Supabase when online
+ * - Error handling with rollback
+ * - Loading and error states
+ */
 
-interface WatchlistContextType {
+import type { Movie } from '@/config/api';
+import { initializeDatabase } from '@/db/database';
+import { syncManager, useSyncStatus } from '@/services/sync-manager';
+import { WatchlistService } from '@/services/watchlist-service';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+/**
+ * Watchlist context type
+ */
+export interface WatchlistContextType {
+    /** All watchlist movies */
     watchlist: Movie[];
+    /** Add movie to watchlist */
     addToWatchlist: (movie: Movie) => Promise<void>;
+    /** Remove movie from watchlist */
     removeFromWatchlist: (movieId: number) => Promise<void>;
+    /** Check if movie is in watchlist */
     isInWatchlist: (movieId: number) => Promise<boolean>;
+    /** Toggle watchlist status */
     toggleWatchlist: (movie: Movie) => Promise<void>;
+    /** Clear all watchlist items */
     clearWatchlist: () => Promise<void>;
-    syncWatchlist: () => Promise<void>;
+    /** Refresh watchlist */
+    refresh: () => Promise<void>;
+    /** Force sync to Supabase */
+    sync: () => Promise<void>;
+    /** Sync status */
     isSyncing: boolean;
+    /** Network status */
     isOnline: boolean;
+    /** Loading state */
+    isLoading: boolean;
+    /** Error message */
     error: string | null;
+    /** Clear error */
     clearError: () => void;
 }
 
+// ============================================================================
+// CONTEXT
+// ============================================================================
+
 const WatchlistContext = createContext<WatchlistContextType | null>(null);
 
-export function WatchlistProvider({ children }: { children: ReactNode }) {
+/**
+ * Watchlist Provider Component
+ */
+export function WatchlistProvider({ children }: { children: React.ReactNode }) {
     const [watchlist, setWatchlist] = useState<Movie[]>([]);
-    const [isOnline, setIsOnline] = useState(false);
-    const [isInitialized, setIsInitialized] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { isSyncing } = useSyncStatus();
-    const { user } = useAuth();
 
-    // Initialize database once
+    const { isSyncing, isOnline } = useSyncStatus();
+    const isInitialized = useRef(false);
+
+    /**
+     * Initialize database and load watchlist
+     */
     useEffect(() => {
         let mounted = true;
+
         const init = async () => {
+            if (isInitialized.current) return;
+
             try {
+                console.log('[WatchlistProvider] Initializing...');
                 await initializeDatabase();
                 if (!mounted) return;
-                setIsInitialized(true);
+                isInitialized.current = true;
                 await loadWatchlist();
             } catch (err) {
-                console.error('Database initialization error:', err);
-                setError('Veritabanı başlatılamadı');
+                console.error('[WatchlistProvider] Init error:', err);
+                if (mounted) {
+                    setError('Veritabanı başlatılamadı');
+                }
             }
         };
+
         init();
+
         return () => {
             mounted = false;
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Monitor network status
-    useEffect(() => {
-        const unsubscribe = NetInfo.addEventListener(state => {
-            const online = state.isConnected ?? false;
-            setIsOnline(online);
-
-            // Sync when coming back online
-            if (online && watchlist.length > 0) {
-                syncManager.syncAll().catch(e => console.warn('[Watchlist] syncAll failed:', e));
-            }
-        });
-
-        return () => unsubscribe();
-    }, [watchlist.length]);
-
-    // loadWatchlist as stable callback
+    /**
+     * Load watchlist from database
+     */
     const loadWatchlist = useCallback(async () => {
-        if (!isInitialized) return;
-        try {
-            const data = await WatchlistService.getAll();
-            setWatchlist(data || []);
-        } catch (err) {
-            console.error('Error loading watchlist:', err);
-            setError('İzleme listesi yüklenemedi');
-            setWatchlist([]);
-        }
-    }, [isInitialized]);
+        if (!isInitialized.current) return;
 
-    // Reload when screen is focused and initialized
+        try {
+            setIsLoading(true);
+            const data = await WatchlistService.getAll();
+            setWatchlist(data);
+            setError(null);
+        } catch (err) {
+            console.error('[WatchlistProvider] Load error:', err);
+            setError('İzleme listesi yüklenemedi');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    /**
+     * Reload when screen is focused
+     */
     useFocusEffect(
         useCallback(() => {
-            if (isInitialized) {
+            if (isInitialized.current) {
                 loadWatchlist();
             }
-        }, [isInitialized, loadWatchlist])
+        }, [loadWatchlist])
     );
 
-    const addToWatchlist = useCallback(
-        async (movie: Movie) => {
-            setError(null);
+    /**
+     * Add movie to watchlist (optimistic)
+     */
+    const addToWatchlist = useCallback(async (movie: Movie) => {
+        setError(null);
 
-            // Wait for database initialization
-            if (!isInitialized) {
-                try {
-                    await initializeDatabase();
-                    setIsInitialized(true);
-                } catch (err) {
-                    console.error('Database initialization failed:', err);
-                    setError('Veritabanı başlatılamadı');
-                    return;
-                }
-            }
-
-            if (!movie || !movie.id) {
-                setError('Geçersiz film verisi');
-                return;
-            }
-
-            try {
-                // Ensure movie is saved with complete data
-                await MovieService.upsert(movie);
-
-                const success = await WatchlistService.add(movie.id, 'local', isOnline);
-                if (!success) {
-                    console.warn('[Watchlist] Local add failed for movie:', movie.id);
-                    setError('İzleme listesine eklenemedi');
-                    return;
-                }
-
-                await loadWatchlist();
-
-                // Sync to Supabase if online and user is logged in
-                if (isOnline && user?.id) {
-                    try {
-                        console.log('[DEBUG-Watchlist] Syncing to Supabase...');
-                        const supabaseResult = await supabaseService.addToWatchlist(user.id, movie);
-                        console.log('[DEBUG-Watchlist] Supabase addToWatchlist result:', supabaseResult);
-                        if (!supabaseResult) {
-                            // service returned false — log and keep local state
-                            console.warn('[Watchlist] Supabase addToWatchlist returned false (not synced).');
-                        }
-                    } catch (e) {
-                        console.error('[Watchlist] Supabase sync error:', e);
-                        // Do not throw — keep local state and schedule sync
-                    }
-                } else if (!isOnline) {
-                    console.log('[Watchlist] Offline mode - will sync when online');
-                }
-            } catch (err) {
-                console.error('Error adding to watchlist:', err);
-                setError('İzleme listesine eklenirken hata oluştu');
-            }
-        },
-        [isInitialized, isOnline, loadWatchlist, user]
-    );
-
-    const removeFromWatchlist = useCallback(
-        async (movieId: number) => {
-            setError(null);
-
-            // Wait for database initialization
-            if (!isInitialized) {
-                try {
-                    await initializeDatabase();
-                    setIsInitialized(true);
-                } catch (err) {
-                    console.error('Database initialization failed:', err);
-                    setError('Veritabanı başlatılamadı');
-                    return;
-                }
-            }
-
-            try {
-                const success = await WatchlistService.remove(movieId, isOnline);
-                if (!success) {
-                    console.warn('[Watchlist] Local remove failed for movieId:', movieId);
-                    setError('İzleme listesinden kaldırılamadı');
-                    return;
-                }
-
-                await loadWatchlist();
-
-                // Sync to Supabase if online and user is logged in
-                if (isOnline && user?.id) {
-                    try {
-                        console.log('[DEBUG-Watchlist] Syncing remove to Supabase...');
-                        const supabaseResult = await supabaseService.removeFromWatchlist(user.id, movieId);
-                        console.log('[DEBUG-Watchlist] Supabase removeFromWatchlist result:', supabaseResult);
-                        if (!supabaseResult) {
-                            console.warn('[Watchlist] Supabase removeFromWatchlist returned false (not synced).');
-                        }
-                    } catch (e) {
-                        console.error('[Watchlist] Supabase remove sync error:', e);
-                        // Keep local state; sync manager will retry later
-                    }
-                } else if (!isOnline) {
-                    console.log('[Watchlist] Offline mode - will sync when online');
-                }
-            } catch (err) {
-                console.error('Error removing from watchlist:', err);
-                setError('İzleme listesinden kaldırılırken hata oluştu');
-            }
-        },
-        [isInitialized, isOnline, loadWatchlist, user]
-    );
-
-    const isInWatchlist = useCallback(
-        async (movieId: number): Promise<boolean> => {
-            if (!isInitialized) return false;
-            try {
-                return await WatchlistService.isInWatchlist(movieId);
-            } catch (err) {
-                console.error('Error checking watchlist:', err);
-                return false;
-            }
-        },
-        [isInitialized]
-    );
-
-    const toggleWatchlist = useCallback(
-        async (movie: Movie) => {
-            // Ensure DB is initialized before toggling
-            if (!isInitialized) {
-                try {
-                    await initializeDatabase();
-                    setIsInitialized(true);
-                } catch (err) {
-                    console.error('Database initialization failed:', err);
-                    setError('Veritabanı başlatılamadı');
-                    return;
-                }
-            }
-
-            try {
-                const alreadyInWatchlist = await WatchlistService.isInWatchlist(movie.id);
-                if (alreadyInWatchlist) {
-                    await removeFromWatchlist(movie.id);
-                } else {
-                    await addToWatchlist(movie);
-                }
-            } catch (err) {
-                console.error('Error toggling watchlist:', err);
-                setError('İzleme listesi güncellenemedi');
-            }
-        },
-        [isInitialized, addToWatchlist, removeFromWatchlist]
-    );
-
-    const clearWatchlist = useCallback(async () => {
-        if (!isInitialized) return;
         try {
-            const items = await WatchlistService.getAll();
-            for (const item of items) {
-                await WatchlistService.remove(item.id);
-            }
-            await loadWatchlist();
-        } catch (err) {
-            console.error('Error clearing watchlist:', err);
-            setError('İzleme listesi temizlenemedi');
-        }
-    }, [isInitialized, loadWatchlist]);
+            // Optimistic update
+            setWatchlist((prev) => {
+                if (prev.some((w) => w.id === movie.id)) return prev;
+                return [movie, ...prev];
+            });
 
-    const syncWatchlist = useCallback(async () => {
+            // Add to local database
+            await WatchlistService.add(movie, isOnline);
+
+            // If online, sync to Supabase
+            if (isOnline) {
+                try {
+                    await syncManager.syncAll();
+                } catch (syncErr) {
+                    console.warn('[WatchlistProvider] Sync error:', syncErr);
+                }
+            }
+
+            console.log('[WatchlistProvider] Added to watchlist:', movie.id);
+        } catch (err) {
+            // Rollback optimistic update
+            setWatchlist((prev) => prev.filter((w) => w.id !== movie.id));
+            const message = err instanceof Error ? err.message : 'İzleme listesine eklenemedi';
+            setError(message);
+            console.error('[WatchlistProvider] Add error:', err);
+            throw err;
+        }
+    }, [isOnline]);
+
+    /**
+     * Remove movie from watchlist (optimistic)
+     */
+    const removeFromWatchlist = useCallback(async (movieId: number) => {
+        setError(null);
+
+        try {
+            // Optimistic update
+            setWatchlist((prev) => prev.filter((w) => w.id !== movieId));
+
+            // Remove from local database
+            await WatchlistService.remove(movieId, isOnline);
+
+            // If online, sync to Supabase
+            if (isOnline) {
+                try {
+                    await syncManager.syncAll();
+                } catch (syncErr) {
+                    console.warn('[WatchlistProvider] Sync error:', syncErr);
+                }
+            }
+
+            console.log('[WatchlistProvider] Removed from watchlist:', movieId);
+        } catch (err) {
+            // Rollback - reload
+            await loadWatchlist();
+            const message = err instanceof Error ? err.message : 'İzleme listesinden kaldırılamadı';
+            setError(message);
+            console.error('[WatchlistProvider] Remove error:', err);
+            throw err;
+        }
+    }, [isOnline, loadWatchlist]);
+
+    /**
+     * Check if movie is in watchlist
+     */
+    const isInWatchlist = useCallback(async (movieId: number): Promise<boolean> => {
+        if (!isInitialized.current) return false;
+
+        try {
+            return await WatchlistService.isInWatchlist(movieId);
+        } catch (err) {
+            console.error('[WatchlistProvider] isInWatchlist error:', err);
+            return false;
+        }
+    }, []);
+
+    /**
+     * Toggle watchlist status
+     */
+    const toggleWatchlist = useCallback(async (movie: Movie) => {
+        const isIn = await WatchlistService.isInWatchlist(movie.id);
+        if (isIn) {
+            await removeFromWatchlist(movie.id);
+        } else {
+            await addToWatchlist(movie);
+        }
+    }, [addToWatchlist, removeFromWatchlist]);
+
+    /**
+     * Clear all watchlist items
+     */
+    const clearWatchlist = useCallback(async () => {
+        setError(null);
+
+        try {
+            // Optimistic update
+            setWatchlist([]);
+
+            // Clear from local database
+            await WatchlistService.clear();
+
+            console.log('[WatchlistProvider] Cleared watchlist');
+        } catch (err) {
+            // Rollback - reload
+            await loadWatchlist();
+            const message = err instanceof Error ? err.message : 'İzleme listesi temizlenemedi';
+            setError(message);
+            console.error('[WatchlistProvider] Clear error:', err);
+            throw err;
+        }
+    }, [loadWatchlist]);
+
+    /**
+     * Refresh watchlist
+     */
+    const refresh = useCallback(async () => {
+        await loadWatchlist();
+    }, [loadWatchlist]);
+
+    /**
+     * Force sync to Supabase
+     */
+    const sync = useCallback(async () => {
         if (!isOnline) {
-            console.log('Offline - sync skipped');
+            setError('Çevrimdışı modda senkronizasyon yapılamaz');
             return;
         }
 
         try {
-            await syncManager.syncWatchlist();
+            await syncManager.syncAll();
             await loadWatchlist();
         } catch (err) {
-            console.error('Error syncing watchlist:', err);
-            setError('İzleme listesi senkronizasyonu başarısız');
+            console.error('[WatchlistProvider] Sync error:', err);
+            setError('Senkronizasyon başarısız');
+            throw err;
         }
     }, [isOnline, loadWatchlist]);
 
+    /**
+     * Clear error
+     */
     const clearError = useCallback(() => setError(null), []);
 
     return (
@@ -282,9 +287,11 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
                 isInWatchlist,
                 toggleWatchlist,
                 clearWatchlist,
-                syncWatchlist,
+                refresh,
+                sync,
                 isSyncing,
                 isOnline,
+                isLoading,
                 error,
                 clearError,
             }}
@@ -294,10 +301,23 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     );
 }
 
-export function useWatchlist() {
+/**
+ * useWatchlist hook
+ *
+ * @throws Error if used outside WatchlistProvider
+ */
+export function useWatchlist(): WatchlistContextType {
     const context = useContext(WatchlistContext);
+
     if (!context) {
         throw new Error('useWatchlist must be used within a WatchlistProvider');
     }
+
     return context;
 }
+
+// ============================================================================
+// INLINE IMPORTS
+// ============================================================================
+
+import { createContext, useContext } from 'react';

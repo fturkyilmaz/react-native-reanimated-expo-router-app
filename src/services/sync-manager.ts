@@ -1,406 +1,430 @@
-// @ts-nocheck - Complex types (debugged SyncManager)
-import { useAuthStore } from '@/store/authStore';
-import NetInfo from '@react-native-community/netinfo';
-import { useCallback, useEffect, useState } from 'react';
-import { FavoritesService, MovieService, SyncQueueService, WatchlistService } from './local-db.service';
-import { supabaseService } from './supabase-service';
+// @ts-nocheck
+/**
+ * SyncManager - Sync orchestration and state management
+ *
+ * Coordinates offline-to-online sync operations.
+ * Provides global state management for sync status.
+ *
+ * Features:
+ * - Global network listener for automatic sync
+ * - Batch sync operations
+ * - Retry failed operations
+ * - Orphan movie cleanup
+ * - Sync state store with Zustand
+ */
 
-// Type for sync queue items
-type LocalSyncQueue = {
-    id: number;
-    table_name: string;
-    record_id: number;
-    action: string;
-    created_at: number;
-    retry_count: number;
+import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
+import { create } from 'zustand';
+import { initializeDatabase } from '../db/database';
+import { FavoritesService } from './favorites-service';
+import { MovieService } from './movie-service';
+import { supabaseSyncService } from './supabase-sync-service';
+import { SyncQueueService } from './sync-queue-service';
+import { WatchlistService } from './watchlist-service';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+/**
+ * Sync state interface
+ */
+interface SyncState {
+    isInitialized: boolean;
+    isSyncing: boolean;
+    lastSyncTime: number | null;
+    pendingCount: number;
+    failedCount: number;
+    isOnline: boolean;
+    error: string | null;
+}
+
+/**
+ * Sync actions
+ */
+interface SyncActions {
+    setInitialized: (initialized: boolean) => void;
+    setSyncing: (syncing: boolean) => void;
+    setLastSyncTime: (time: number | null) => void;
+    setPendingCount: (count: number) => void;
+    setFailedCount: (count: number) => void;
+    setOnline: (online: boolean) => void;
+    setError: (error: string | null) => void;
+    reset: () => void;
+}
+
+// ============================================================================
+// ZUSTAND STORE
+// ============================================================================
+
+const initialState: SyncState = {
+    isInitialized: false,
+    isSyncing: false,
+    lastSyncTime: null,
+    pendingCount: 0,
+    failedCount: 0,
+    isOnline: false,
+    error: null,
 };
 
-// Maximum retry attempts for failed sync operations
-const MAX_RETRY_COUNT = 3;
+export const useSyncStore = create<SyncState & SyncActions>((set) => ({
+    ...initialState,
 
-// Delay between retry attempts (ms)
-const RETRY_DELAY = 2000;
+    setInitialized: (initialized) => set({ isInitialized: initialized }),
+    setSyncing: (syncing) => set({ isSyncing: syncing }),
+    setLastSyncTime: (time) => set({ lastSyncTime: time }),
+    setPendingCount: (count) => set({ pendingCount: count }),
+    setFailedCount: (count) => set({ failedCount: count }),
+    setOnline: (online) => set({ isOnline: online }),
+    setError: (error) => set({ error }),
+    reset: () => set(initialState),
+}));
 
-class SyncManager {
-    public isSyncing = false;
-    private isOnline = false;
-    private unsubscribeNetInfo: (() => void) | null = null;
+// ============================================================================
+// NETWORK LISTENER
+// ============================================================================
 
-    constructor() {
-        this.initialize();
+let networkUnsubscribe: (() => void) | null = null;
+
+/**
+ * Setup global network listener for automatic sync
+ */
+const setupNetworkListener = (): void => {
+    if (networkUnsubscribe) {
+        console.log('[SyncManager] Network listener already active');
+        return;
     }
 
-    private initialize(): void {
-        console.log('[SyncManager] initialize called');
-        // initial network state
-        NetInfo.fetch().then(state => {
-            this.isOnline = state.isConnected ?? false;
-            console.log('[SyncManager] initial network state:', this.isOnline);
-        }).catch(e => {
-            console.warn('[SyncManager] NetInfo.fetch failed:', e);
-        });
+    console.log('[SyncManager] Setting up network listener');
+    networkUnsubscribe = NetInfo.addEventListener((state: NetInfoState) => {
+        const isConnected = state.isConnected ?? false;
+        const wasOffline = !useSyncStore.getState().isOnline;
 
-        this.unsubscribeNetInfo = NetInfo.addEventListener(state => {
-            const wasOffline = !this.isOnline;
-            this.isOnline = state.isConnected ?? false;
-            console.log('[SyncManager] network changed. isOnline:', this.isOnline);
+        console.log('[SyncManager] Network state changed:', { isConnected, wasOffline });
 
-            // Auto-sync when coming back online
-            if (wasOffline && this.isOnline) {
-                console.log('[SyncManager] Came back online — starting syncAll');
-                this.syncAll().catch(err => console.error('[SyncManager] syncAll error on reconnect:', err));
-            }
-        });
+        // Update store
+        useSyncStore.getState().setOnline(isConnected);
+
+        // Trigger sync when coming back online
+        if (isConnected && wasOffline) {
+            console.log('[SyncManager] Back online, triggering sync...');
+            syncManager.syncAll();
+        }
+    });
+};
+
+/**
+ * Cleanup network listener
+ */
+const cleanupNetworkListener = (): void => {
+    if (networkUnsubscribe) {
+        networkUnsubscribe();
+        networkUnsubscribe = null;
+        console.log('[SyncManager] Network listener cleaned up');
     }
+};
 
-    // Sync all pending changes to Supabase
-    async syncAll(): Promise<void> {
-        console.log('[SyncManager] syncAll called. isOnline:', this.isOnline, 'isSyncing:', this.isSyncing);
-        if (!this.isOnline) {
-            console.log('[SyncManager] offline — skipping syncAll');
-            return;
-        }
-        if (this.isSyncing) {
-            console.log('[SyncManager] already syncing — skipping concurrent run');
-            return;
-        }
+// ============================================================================
+// SYNC MANAGER
+// ============================================================================
 
-        this.isSyncing = true;
+export const syncManager = {
+    /**
+     * Initialize sync manager
+     * Should be called once at app startup
+     */
+    initialize: async (): Promise<void> => {
+        console.log('[SyncManager] Initializing...');
 
         try {
-            const { user } = useAuthStore.getState();
-            console.log('[SyncManager] current user from store:', user?.id ?? null);
-            if (!user?.id) {
-                console.log('[SyncManager] No user logged in, skipping sync');
-                this.isSyncing = false;
-                return;
+            // Initialize database
+            const dbInitialized = await initializeDatabase();
+            if (!dbInitialized) {
+                throw new Error('Failed to initialize database');
             }
 
-            // Get all pending sync items
-            const pendingItems = await SyncQueueService.getAll();
-            console.log('[SyncManager] pendingItems count:', pendingItems?.length ?? 0);
+            // Setup network listener
+            setupNetworkListener();
 
-            if (!pendingItems || pendingItems.length === 0) {
-                console.log('[SyncManager] No pending items to sync');
-                this.isSyncing = false;
-                return;
-            }
+            // Check initial network state
+            const netState = await NetInfo.fetch();
+            const isConnected = netState.isConnected ?? false;
+            useSyncStore.getState().setOnline(isConnected);
 
-            console.log('[SyncManager] Syncing', pendingItems.length, 'items');
+            // Update pending count
+            const pendingCount = await SyncQueueService.getPendingCount();
+            useSyncStore.getState().setPendingCount(pendingCount);
 
-            // Process each item sequentially (could be parallelized if desired)
+            // Update failed count
+            const failedItems = await SyncQueueService.getFailed();
+            useSyncStore.getState().setFailedCount(failedItems.length);
+
+            useSyncStore.getState().setInitialized(true);
+            console.log('[SyncManager] Initialization complete:', { isOnline: isConnected, pendingCount });
+        } catch (error) {
+            console.error('[SyncManager] Initialization failed:', error);
+            useSyncStore.getState().setError('Sync initialization failed');
+        }
+    },
+
+    /**
+     * Cleanup sync manager
+     * Should be called at app cleanup
+     */
+    cleanup: (): void => {
+        console.log('[SyncManager] Cleaning up...');
+        cleanupNetworkListener();
+        useSyncStore.getState().reset();
+        console.log('[SyncManager] Cleanup complete');
+    },
+
+    /**
+     * Sync all pending operations to Supabase
+     */
+    syncAll: async (): Promise<{ synced: number; failed: number }> => {
+        const state = useSyncStore.getState();
+
+        // Prevent multiple simultaneous syncs
+        if (state.isSyncing) {
+            console.log('[SyncManager] Sync already in progress, skipping...');
+            return { synced: 0, failed: 0 };
+        }
+
+        // Only sync if online
+        if (!state.isOnline) {
+            console.log('[SyncManager] Offline, skipping sync...');
+            return { synced: 0, failed: 0 };
+        }
+
+        useSyncStore.getState().setSyncing(true);
+        useSyncStore.getState().setError(null);
+
+        let synced = 0;
+        let failed = 0;
+
+        try {
+            console.log('[SyncManager] Starting sync...');
+
+            // Get pending operations
+            const pendingItems = await SyncQueueService.getPending();
+            console.log('[SyncManager] Pending items:', pendingItems.length);
+
             for (const item of pendingItems) {
-                console.log('[SyncManager] Processing item:', item.id, item.table_name, item.action, 'record:', item.record_id, 'retry_count:', item.retry_count);
+                // Mark as processing
+                await SyncQueueService.updateStatus(item.id, 'processing');
 
-                // Skip items that have exceeded max retries
-                if (item.retry_count >= MAX_RETRY_COUNT) {
-                    console.warn('[SyncManager] Skipping item with max retries:', item.id);
-                    continue;
-                }
+                try {
+                    // Sync based on type
+                    if (item.type === 'favorite') {
+                        if (item.operation === 'add') {
+                            await supabaseSyncService.addFavorite(item.movie_id);
+                        } else {
+                            await supabaseSyncService.removeFavorite(item.movie_id);
+                        }
+                    } else if (item.type === 'watchlist') {
+                        if (item.operation === 'add') {
+                            await supabaseSyncService.addToWatchlist(item.movie_id);
+                        } else {
+                            await supabaseSyncService.removeFromWatchlist(item.movie_id);
+                        }
+                    }
 
-                const success = await this.processSyncItem(item, user.id);
+                    // Mark as completed
+                    await SyncQueueService.updateStatus(item.id, 'completed');
+                    synced++;
+                    console.log('[SyncManager] Synced item:', item.id, item.type, item.operation);
+                } catch (error) {
+                    console.error('[SyncManager] Failed to sync item:', item.id, error);
 
-                if (success) {
-                    console.log('[SyncManager] Item synced successfully, removing from queue:', item.id);
-                    await SyncQueueService.remove(item.id);
-                } else {
-                    console.warn('[SyncManager] Item failed to sync:', item.id);
-                    // increment retry count so we don't loop forever
+                    // Increment retry count
                     await SyncQueueService.incrementRetry(item.id);
-                }
-            }
 
-        } catch (error) {
-            console.error('[SyncManager] syncAll error:', error);
-        } finally {
-            this.isSyncing = false;
-            console.log('[SyncManager] syncAll finished');
-        }
-    }
-
-    // Sync favorites only
-    async syncFavorites(): Promise<void> {
-        console.log('[SyncManager] syncFavorites called. isOnline:', this.isOnline, 'isSyncing:', this.isSyncing);
-        if (!this.isOnline) {
-            console.log('[SyncManager] offline — skipping syncFavorites');
-            return;
-        }
-        if (this.isSyncing) {
-            console.log('[SyncManager] already syncing — skipping syncFavorites');
-            return;
-        }
-
-        this.isSyncing = true;
-
-        try {
-            const { user } = useAuthStore.getState();
-            console.log('[SyncManager] user for syncFavorites:', user?.id ?? null);
-            if (!user?.id) {
-                console.log('[SyncManager] No user logged in, skipping favorites sync');
-                this.isSyncing = false;
-                return;
-            }
-
-            // Get pending favorites
-            const pendingFavorites = await FavoritesService.getUnsynced();
-            console.log('[SyncManager] pendingFavorites count:', pendingFavorites?.length ?? 0);
-
-            for (const item of pendingFavorites) {
-                console.log('[SyncManager] syncing favorite localId:', item.id, 'movie_id:', item.movie_id, 'synced:', item.synced);
-                const movie: any = await MovieService.getById(item.movie_id);
-                if (!movie) {
-                    console.warn('[SyncManager] Movie not found for favorite sync, skipping localId:', item.id);
-                    // mark as synced to avoid infinite retries? depends on policy — here we skip
-                    continue;
-                }
-
-                if (item.synced === 0) {
-                    console.log('[SyncManager] calling supabaseService.addFavorite for movie:', movie.id);
-                    const res: any = await supabaseService.addFavorite(user.id, movie);
-                    // Expect res to be { success: boolean, data?: any, error?: any } ideally
-                    console.log('[SyncManager] supabaseService.addFavorite result:', res);
-
-                    // If supabaseService returns boolean (legacy), handle both cases
-                    const success = typeof res === 'boolean' ? res : (res?.success === true);
-
-                    if (success) {
-                        console.log('[SyncManager] supabase addFavorite succeeded for localId:', item.id);
-                        await FavoritesService.markSynced(item.id);
+                    // Check if max retries exceeded
+                    const maxRetries = SyncQueueService.getMaxRetries();
+                    if (item.retry_count >= maxRetries - 1) {
+                        await SyncQueueService.updateStatus(item.id, 'failed');
+                        failed++;
                     } else {
-                        console.warn('[SyncManager] supabase addFavorite failed for localId:', item.id, 'res:', res);
-                        // do not mark synced; SyncQueueService will handle retries if used
+                        // Reset to pending for retry
+                        await SyncQueueService.updateStatus(item.id, 'pending');
                     }
-                } else {
-                    console.log('[SyncManager] item already marked synced, skipping:', item.id);
                 }
             }
 
-            console.log('[SyncManager] Favorites sync loop finished');
+            // Cleanup completed items
+            await SyncQueueService.cleanup();
+
+            // Update counts
+            const pendingCount = await SyncQueueService.getPendingCount();
+            const failedItems = await SyncQueueService.getFailed();
+            useSyncStore.getState().setPendingCount(pendingCount);
+            useSyncStore.getState().setFailedCount(failedItems.length);
+
+            // Update last sync time
+            useSyncStore.getState().setLastSyncTime(Date.now());
+
+            console.log('[SyncManager] Sync complete:', { synced, failed, pending: pendingCount });
         } catch (error) {
-            console.error('[SyncManager] Sync favorites error:', error);
+            console.error('[SyncManager] Sync error:', error);
+            useSyncStore.getState().setError('Sync failed');
         } finally {
-            this.isSyncing = false;
-            console.log('[SyncManager] syncFavorites finished');
-        }
-    }
-
-    // Sync watchlist only
-    async syncWatchlist(): Promise<void> {
-        console.log('[SyncManager] syncWatchlist called. isOnline:', this.isOnline, 'isSyncing:', this.isSyncing);
-        if (!this.isOnline) {
-            console.log('[SyncManager] offline — skipping syncWatchlist');
-            return;
-        }
-        if (this.isSyncing) {
-            console.log('[SyncManager] already syncing — skipping syncWatchlist');
-            return;
+            useSyncStore.getState().setSyncing(false);
         }
 
-        this.isSyncing = true;
+        return { synced, failed };
+    },
+
+    /**
+     * Sync only favorites
+     */
+    syncFavorites: async (): Promise<number> => {
+        const state = useSyncStore.getState();
+        if (!state.isOnline) return 0;
 
         try {
-            const { user } = useAuthStore.getState();
-            console.log('[SyncManager] user for syncWatchlist:', user?.id ?? null);
-            if (!user?.id) {
-                console.log('[SyncManager] No user logged in, skipping watchlist sync');
-                this.isSyncing = false;
-                return;
-            }
+            const unsynced = await FavoritesService.getUnsynced();
+            let synced = 0;
 
-            // Get pending watchlist
-            const pendingWatchlist = await WatchlistService.getUnsynced();
-            console.log('[SyncManager] pendingWatchlist count:', pendingWatchlist?.length ?? 0);
-
-            for (const item of pendingWatchlist) {
-                console.log('[SyncManager] syncing watchlist localId:', item.id, 'movie_id:', item.movie_id, 'synced:', item.synced);
-                const movie: any = await MovieService.getById(item.movie_id);
-                if (!movie) {
-                    console.warn('[SyncManager] Movie not found for watchlist sync, skipping localId:', item.id);
-                    continue;
-                }
-
-                if (item.synced === 0) {
-                    console.log('[SyncManager] calling supabaseService.addToWatchlist for movie:', movie.id);
-                    const res: any = await supabaseService.addToWatchlist(user.id, movie);
-                    console.log('[SyncManager] supabaseService.addToWatchlist result:', res);
-                    const success = typeof res === 'boolean' ? res : (res?.success === true);
-
-                    if (success) {
-                        console.log('[SyncManager] supabase addToWatchlist succeeded for localId:', item.id);
-                        await WatchlistService.markSynced(item.id);
-                    } else {
-                        console.warn('[SyncManager] supabase addToWatchlist failed for localId:', item.id, 'res:', res);
-                    }
-                } else {
-                    console.log('[SyncManager] item already marked synced, skipping:', item.id);
+            for (const item of unsynced) {
+                try {
+                    await supabaseSyncService.addFavorite(item.movie_id);
+                    await FavoritesService.markAsSynced(item.movie_id);
+                    synced++;
+                } catch (error) {
+                    console.error('[SyncManager] Failed to sync favorite:', item.movie_id, error);
                 }
             }
 
-            console.log('[SyncManager] Watchlist sync loop finished');
+            console.log('[SyncManager] Favorites synced:', synced);
+            return synced;
         } catch (error) {
-            console.error('[SyncManager] Sync watchlist error:', error);
-        } finally {
-            this.isSyncing = false;
-            console.log('[SyncManager] syncWatchlist finished');
+            console.error('[SyncManager] syncFavorites error:', error);
+            return 0;
         }
-    }
+    },
 
-    private async processSyncItem(item: LocalSyncQueue, userId: string): Promise<boolean> {
-        console.log('[SyncManager] processSyncItem start for item:', item.id);
-        let success = false;
-        let attempt = 0;
-
-        while (attempt < MAX_RETRY_COUNT && !success) {
-            try {
-                console.log(`[SyncManager] attempt ${attempt + 1} for item ${item.id}`);
-                if (item.table_name === 'favorites') {
-                    if (item.action === 'INSERT') {
-                        const movie: any = await MovieService.getById(item.record_id);
-                        if (movie) {
-                            const res: any = await supabaseService.addFavorite(userId, movie);
-                            console.log('[SyncManager] addFavorite response:', res);
-                            success = typeof res === 'boolean' ? res : (res?.success === true);
-                        } else {
-                            console.warn('[SyncManager] Movie not found for favorite sync:', item.record_id);
-                            success = true; // Skip if movie not found
-                        }
-                    } else if (item.action === 'DELETE') {
-                        const res: any = await supabaseService.removeFavorite(userId, item.record_id);
-                        success = typeof res === 'boolean' ? res : (res?.success === true);
-                    }
-                } else if (item.table_name === 'watchlist') {
-                    if (item.action === 'INSERT') {
-                        const movie: any = await MovieService.getById(item.record_id);
-                        if (movie) {
-                            const res: any = await supabaseService.addToWatchlist(userId, movie);
-                            success = typeof res === 'boolean' ? res : (res?.success === true);
-                        } else {
-                            console.warn('[SyncManager] Movie not found for watchlist sync:', item.record_id);
-                            success = true; // Skip if movie not found
-                        }
-                    } else if (item.action === 'DELETE') {
-                        const res: any = await supabaseService.removeFromWatchlist(userId, item.record_id);
-                        success = typeof res === 'boolean' ? res : (res?.success === true);
-                    }
-                }
-
-                if (!success) {
-                    console.warn(`[SyncManager] attempt ${attempt + 1} failed for item ${item.id}`);
-                    if (attempt < MAX_RETRY_COUNT - 1) {
-                        const delay = RETRY_DELAY * (attempt + 1);
-                        console.log(`[SyncManager] waiting ${delay}ms before retrying item ${item.id}`);
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                    }
-                } else {
-                    console.log(`[SyncManager] success on attempt ${attempt + 1} for item ${item.id}`);
-                }
-
-                attempt++;
-            } catch (error) {
-                console.error('[SyncManager] Error processing sync item (attempt', attempt + 1, '):', error);
-
-                if (attempt >= MAX_RETRY_COUNT - 1) {
-                    // Increment retry count in database
-                    try {
-                        await SyncQueueService.incrementRetry(item.id);
-                        console.warn('[SyncManager] Max retries reached for item:', item.id);
-                    } catch (incErr) {
-                        console.error('[SyncManager] Failed to increment retry count for item:', item.id, incErr);
-                    }
-                } else {
-                    const delay = RETRY_DELAY * (attempt + 1);
-                    console.log(`[SyncManager] waiting ${delay}ms after error before next attempt for item ${item.id}`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                }
-                attempt++;
-            }
-        }
-
-        console.log('[SyncManager] processSyncItem finished for item:', item.id, 'success:', success);
-        return success;
-    }
-
-    // Pull data from Supabase to local
-    async pullFromSupabase(userId: string): Promise<void> {
-        console.log('[SyncManager] pullFromSupabase called for user:', userId);
-        if (!this.isOnline) {
-            console.log('[SyncManager] Offline, skipping pull');
-            return;
-        }
-
-        if (!userId) {
-            console.log('[SyncManager] No user ID provided, skipping pull');
-            return;
-        }
+    /**
+     * Sync only watchlist
+     */
+    syncWatchlist: async (): Promise<number> => {
+        const state = useSyncStore.getState();
+        if (!state.isOnline) return 0;
 
         try {
-            console.log('[SyncManager] Pulling data from Supabase for user:', userId);
+            const unsynced = await WatchlistService.getUnsynced();
+            let synced = 0;
 
-            // Pull favorites
-            const remoteFavorites: any = await supabaseService.getFavorites(userId);
-            console.log('[SyncManager] remoteFavorites count:', remoteFavorites?.length ?? 0);
-            if (remoteFavorites && remoteFavorites.length > 0) {
-                for (const movie of remoteFavorites) {
-                    console.log('[SyncManager] pulling favorite movie id:', movie.movie_id ?? movie.id ?? 'unknown', 'title:', movie.title);
-                    // Ensure movie exists locally
-                    await MovieService.upsert(movie);
-                    // Add to local favorites with userId (mark as synced)
-                    await FavoritesService.add(movie.movie_id ?? movie.id, userId, true);
+            for (const item of unsynced) {
+                try {
+                    await supabaseSyncService.addToWatchlist(item.movie_id);
+                    await WatchlistService.markAsSynced(item.movie_id);
+                    synced++;
+                } catch (error) {
+                    console.error('[SyncManager] Failed to sync watchlist:', item.movie_id, error);
                 }
-                console.log('[SyncManager] Pulled', remoteFavorites.length, 'favorites');
-            } else {
-                console.log('[SyncManager] No remote favorites to pull');
             }
 
-            // Pull watchlist
-            const remoteWatchlist: any = await supabaseService.getWatchlist(userId);
-            console.log('[SyncManager] remoteWatchlist count:', remoteWatchlist?.length ?? 0);
-            if (remoteWatchlist && remoteWatchlist.length > 0) {
-                for (const movie of remoteWatchlist) {
-                    console.log('[SyncManager] pulling watchlist movie id:', movie.movie_id ?? movie.id ?? 'unknown', 'title:', movie.title);
-                    await MovieService.upsert(movie);
-                    await WatchlistService.add(movie.movie_id ?? movie.id, userId, true);
-                }
-                console.log('[SyncManager] Pulled', remoteWatchlist.length, 'watchlist items');
-            } else {
-                console.log('[SyncManager] No remote watchlist items to pull');
-            }
+            console.log('[SyncManager] Watchlist synced:', synced);
+            return synced;
         } catch (error) {
-            console.error('[SyncManager] Pull from Supabase error:', error);
+            console.error('[SyncManager] syncWatchlist error:', error);
+            return 0;
         }
-    }
+    },
 
-    // Cleanup
-    destroy(): void {
-        if (this.unsubscribeNetInfo) {
-            this.unsubscribeNetInfo();
-            this.unsubscribeNetInfo = null;
+    /**
+     * Retry failed operations
+     */
+    retryFailed: async (): Promise<{ retried: number; failed: number }> => {
+        // Reset failed items to pending
+        const resetCount = await SyncQueueService.resetFailed();
+
+        if (resetCount > 0) {
+            console.log('[SyncManager] Reset failed items:', resetCount);
+            // Trigger sync
+            const result = await syncManager.syncAll();
+            return { retried: result.synced, failed: result.failed };
         }
-        console.log('[SyncManager] destroyed');
-    }
-}
 
-// Singleton instance
-export const syncManager = new SyncManager();
+        return { retried: 0, failed: 0 };
+    },
 
-// React hook for sync status
-export function useSyncStatus() {
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [lastSynced, setLastSynced] = useState<Date | null>(null);
+    /**
+     * Cleanup orphan movies (not in favorites or watchlist)
+     */
+    cleanupOrphanMovies: async (): Promise<number> => {
+        try {
+            const deletedCount = await MovieService.deleteOrphans();
+            console.log('[SyncManager] Deleted orphan movies:', deletedCount);
+            return deletedCount;
+        } catch (error) {
+            console.error('[SyncManager] cleanupOrphanMovies error:', error);
+            return 0;
+        }
+    },
 
-    useEffect(() => {
-        const checkSync = () => {
-            setIsSyncing((syncManager as any).isSyncing);
-        };
+    /**
+     * Force refresh sync state
+     */
+    refreshState: async (): Promise<void> => {
+        const pendingCount = await SyncQueueService.getPendingCount();
+        const failedItems = await SyncQueueService.getFailed();
+        const netState = await NetInfo.fetch();
 
-        const interval = setInterval(checkSync, 1000);
-        return () => clearInterval(interval);
-    }, []);
+        useSyncStore.getState().setPendingCount(pendingCount);
+        useSyncStore.getState().setFailedCount(failedItems.length);
+        useSyncStore.getState().setOnline(netState.isConnected ?? false);
 
-    const triggerSync = useCallback(async () => {
-        await syncManager.syncAll();
-        setLastSynced(new Date());
-    }, []);
+        console.log('[SyncManager] State refreshed:', {
+            pending: pendingCount,
+            failed: failedItems.length,
+            online: netState.isConnected,
+        });
+    },
 
-    return { isSyncing, lastSynced, triggerSync };
-}
+    /**
+     * Get sync status summary
+     */
+    getStatus: (): SyncState => {
+        return useSyncStore.getState();
+    },
+};
+
+// ============================================================================
+// HOOKS FOR REACT COMPONENTS
+// ============================================================================
+
+/**
+ * Hook to use sync state
+ */
+export const useSyncStatus = () => {
+    const state = useSyncStore();
+    return {
+        isInitialized: state.isInitialized,
+        isSyncing: state.isSyncing,
+        lastSyncTime: state.lastSyncTime,
+        pendingCount: state.pendingCount,
+        failedCount: state.failedCount,
+        isOnline: state.isOnline,
+        error: state.error,
+    };
+};
+
+/**
+ * Hook to trigger sync
+ */
+export const useSyncTrigger = () => {
+    const syncAll = async () => {
+        return syncManager.syncAll();
+    };
+
+    const retryFailed = async () => {
+        return syncManager.retryFailed();
+    };
+
+    const refresh = async () => {
+        await syncManager.refreshState();
+    };
+
+    return { syncAll, retryFailed, refresh };
+};
