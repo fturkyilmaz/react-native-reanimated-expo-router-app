@@ -2,10 +2,10 @@
  * use-profile Hook Unit Tests
  */
 
-import { renderHook, waitFor } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useUpdateProfile, useChangePassword, useUploadAvatar } from '@/hooks/use-profile';
+import { useChangePassword, useUpdateProfile, useUploadAvatar } from '@/hooks/use-profile';
 import { useAuthStore } from '@/store/authStore';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { renderHook, waitFor } from '@testing-library/react-native';
 
 // Mock dependencies
 jest.mock('@/store/authStore', () => ({
@@ -22,6 +22,16 @@ jest.mock('@/utils/logger', () => ({
     LOG_CATEGORIES: {
         AUTH: 'AUTH',
     },
+}));
+
+// Mock @/sentry to prevent expo import issues
+jest.mock('@/sentry', () => ({
+    init: jest.fn(),
+    captureException: jest.fn(),
+    captureMessage: jest.fn(),
+    setUser: jest.fn(),
+    setTag: jest.fn(),
+    addBreadcrumb: jest.fn(),
 }));
 
 describe('use-profile Hook', () => {
@@ -58,94 +68,94 @@ describe('use-profile Hook', () => {
     });
 
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <QueryClientProvider client= { queryClient } >
-        { children }
+        <QueryClientProvider client={queryClient} >
+            {children}
         </QueryClientProvider>
     );
 
-describe('useUpdateProfile', () => {
-    it('should return mutation functions', () => {
-        const { result } = renderHook(() => useUpdateProfile(), { wrapper });
+    describe('useUpdateProfile', () => {
+        it('should return mutation functions', () => {
+            const { result } = renderHook(() => useUpdateProfile(), { wrapper });
 
-        expect(result.current.mutate).toBeDefined();
-        expect(result.current.mutateAsync).toBeDefined();
-        expect(typeof result.current.mutate).toBe('function');
-    });
-
-    it('should return loading state', () => {
-        const { result } = renderHook(() => useUpdateProfile(), { wrapper });
-
-        expect(result.current.isPending).toBe(false);
-        expect(result.current.isSuccess).toBe(false);
-        expect(result.current.isError).toBe(false);
-    });
-
-    it('should update user on success', async () => {
-        const { result } = renderHook(() => useUpdateProfile(), { wrapper });
-
-        result.current.mutate({
-            name: 'New Name',
-            email: 'new@example.com',
-            phone: '1234567890',
-            bio: 'New bio',
+            expect(result.current.mutate).toBeDefined();
+            expect(result.current.mutateAsync).toBeDefined();
+            expect(typeof result.current.mutate).toBe('function');
         });
 
-        await waitFor(() => {
-            expect(mockSetUser).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    id: '1',
-                    name: 'New Name',
-                    email: 'new@example.com',
-                    phone: '1234567890',
-                    bio: 'New bio',
-                })
-            );
-        });
-    });
-});
+        it('should return loading state', () => {
+            const { result } = renderHook(() => useUpdateProfile(), { wrapper });
 
-describe('useChangePassword', () => {
-    it('should return mutation functions', () => {
-        const { result } = renderHook(() => useChangePassword(), { wrapper });
-
-        expect(result.current.mutate).toBeDefined();
-        expect(typeof result.current.mutate).toBe('function');
-    });
-
-    it('should complete password change', async () => {
-        const { result } = renderHook(() => useChangePassword(), { wrapper });
-
-        result.current.mutate({
-            currentPassword: 'oldpassword',
-            newPassword: 'newpassword123',
+            expect(result.current.isPending).toBe(false);
+            expect(result.current.isSuccess).toBe(false);
+            expect(result.current.isError).toBe(false);
         });
 
-        await waitFor(() => {
-            expect(result.current.isSuccess).toBe(true);
+        it('should update user on success', async () => {
+            const { result } = renderHook(() => useUpdateProfile(), { wrapper });
+
+            result.current.mutate({
+                name: 'New Name',
+                email: 'new@example.com',
+                phone: '1234567890',
+                bio: 'New bio',
+            });
+
+            await waitFor(() => {
+                expect(mockSetUser).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        id: '1',
+                        name: 'New Name',
+                        email: 'new@example.com',
+                        phone: '1234567890',
+                        bio: 'New bio',
+                    })
+                );
+            });
         });
     });
-});
 
-describe('useUploadAvatar', () => {
-    it('should return mutation functions', () => {
-        const { result } = renderHook(() => useUploadAvatar(), { wrapper });
+    describe('useChangePassword', () => {
+        it('should return mutation functions', () => {
+            const { result } = renderHook(() => useChangePassword(), { wrapper });
 
-        expect(result.current.mutate).toBeDefined();
-        expect(typeof result.current.mutate).toBe('function');
-    });
+            expect(result.current.mutate).toBeDefined();
+            expect(typeof result.current.mutate).toBe('function');
+        });
 
-    it('should update user avatar on success', async () => {
-        const { result } = renderHook(() => useUploadAvatar(), { wrapper });
+        it('should complete password change', async () => {
+            const { result } = renderHook(() => useChangePassword(), { wrapper });
 
-        result.current.mutate('file://avatar.jpg');
+            result.current.mutate({
+                currentPassword: 'oldpassword',
+                newPassword: 'newpassword123',
+            });
 
-        await waitFor(() => {
-            expect(mockSetUser).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    avatar: expect.stringContaining('ui-avatars.com'),
-                })
-            );
+            await waitFor(() => {
+                expect(result.current.isSuccess).toBe(true);
+            });
         });
     });
-});
+
+    describe('useUploadAvatar', () => {
+        it('should return mutation functions', () => {
+            const { result } = renderHook(() => useUploadAvatar(), { wrapper });
+
+            expect(result.current.mutate).toBeDefined();
+            expect(typeof result.current.mutate).toBe('function');
+        });
+
+        it('should update user avatar on success', async () => {
+            const { result } = renderHook(() => useUploadAvatar(), { wrapper });
+
+            result.current.mutate('file://avatar.jpg');
+
+            await waitFor(() => {
+                expect(mockSetUser).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        avatar: expect.stringContaining('ui-avatars.com'),
+                    })
+                );
+            });
+        });
+    });
 });

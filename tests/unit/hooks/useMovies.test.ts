@@ -175,10 +175,15 @@ describe("useMovies", () => {
 
     const initialPage = result.current.page;
 
+    // loadMore should synchronously increment page, then async fetch
     act(() => {
       result.current.loadMore();
     });
 
+    // Page should be incremented synchronously
+    expect(result.current.page).toBe(initialPage + 1);
+
+    // Wait for async fetch to complete
     await act(async () => {
       jest.advanceTimersByTime(1000);
     });

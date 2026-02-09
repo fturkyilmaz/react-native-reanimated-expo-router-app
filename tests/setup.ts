@@ -79,6 +79,103 @@ jest.mock("expo-haptics", () => ({
   impactAsync: jest.fn(),
   notificationAsync: jest.fn(),
   selectionAsync: jest.fn(),
+  ImpactFeedbackStyle: {
+    Light: 'light',
+    Medium: 'medium',
+    Heavy: 'heavy',
+  },
+  NotificationFeedbackType: {
+    Success: 'success',
+    Warning: 'warning',
+    Error: 'error',
+  },
+}));
+
+// Mock expo
+jest.mock("expo", () => ({
+  isRunningInExpoGo: false,
+  ExpoModulesCore: {
+    requireNativeModule: jest.fn(),
+    requireOptionalModule: jest.fn(),
+  },
+  Constants: {
+    expoConfig: {},
+    manifest: {},
+  },
+}));
+
+// Mock @sentry/react-native
+jest.mock("@sentry/react-native", () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  setUser: jest.fn(),
+  setTag: jest.fn(),
+  setContext: jest.fn(),
+  startTransaction: jest.fn(),
+  getCurrentScope: jest.fn(),
+  getGlobalScope: jest.fn(),
+  withScope: jest.fn((cb) => cb()),
+}));
+
+// Mock react-native-worklets
+jest.mock("react-native-worklets", () => ({
+  Worklets: {
+    createRunOnJS: jest.fn((fn) => fn),
+    createContext: jest.fn(),
+    createValue: jest.fn(),
+  },
+  useRunOnJS: jest.fn((fn) => fn),
+  useCreateContext: jest.fn(() => [jest.fn(), jest.fn()]),
+}));
+
+// Mock @react-native-community/netinfo
+jest.mock("@react-native-community/netinfo", () => ({
+  useNetInfo: jest.fn(() => ({
+    isConnected: true,
+    isInternetReachable: true,
+    type: 'wifi',
+    details: { isConnectionExpensive: false },
+  })),
+  addConnectionChangeListener: jest.fn(),
+  removeConnectionChangeListener: jest.fn(),
+  fetch: jest.fn(() => Promise.resolve({
+    isConnected: true,
+    isInternetReachable: true,
+    type: 'wifi',
+    details: { isConnectionExpensive: false },
+  })),
+}));
+
+// Mock @react-navigation/native
+jest.mock("@react-navigation/native", () => ({
+  ...jest.requireActual("@react-navigation/native"),
+  useFocusEffect: jest.fn((callback) => {
+    const cleanup = callback();
+    return cleanup;
+  }),
+  useIsFocused: jest.fn(() => true),
+  useNavigation: jest.fn(() => ({
+    navigate: jest.fn(),
+    dispatch: jest.fn(),
+    goBack: jest.fn(),
+    reset: jest.fn(),
+    setOptions: jest.fn(),
+  })),
+  NavigationContainer: jest.fn(({ children }) => children),
+}));
+
+// Mock database
+jest.mock("@/db/database", () => ({
+  initializeDatabase: jest.fn(() => Promise.resolve({})),
+  getDatabase: jest.fn(() => Promise.resolve({
+    insert: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    query: jest.fn(() => Promise.resolve([])),
+    close: jest.fn(),
+  })),
 }));
 
 // Mock expo-localization
