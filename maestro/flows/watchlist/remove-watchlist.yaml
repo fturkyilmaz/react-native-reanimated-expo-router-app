@@ -1,0 +1,51 @@
+appId: ${APP_ID}
+name: Remove from Watchlist Flow Tests
+---
+- launchApp
+- assertVisible: "email-input"
+
+- tapOn: "email-input"
+- inputText: "test@test.com"
+- tapOn: "password-input"
+- inputText: "123456"
+- tapOn: "login-button"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    timeout: 15000
+    visible:
+      - "movies-flatlist"
+    then:
+
+- tapOn: "movie-card-0"
+- tapOn: "watchlist-button"
+- tapOn: "tab-watchlist"
+- assertVisible: "watchlist-movie-0"
+
+- tapOn: "remove-watchlist-0"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    timeout: 5000
+    visible:
+      - "No Watchlist Yet"
+    then:
+      - assertVisible: "No Watchlist Yet"
+      - assertVisible: "Browse Movies"
+
+- takeScreenshot:
+    name: "empty-watchlist"
+    path: ".maestro/screenshots/empty-watchlist.png"
+
+- tapOn: "Browse Movies"
+- assertVisible: "movies-flatlist"
+- tapOn: "movie-card-0"
+- tapOn: "watchlist-button"
+- waitForAnimationToEnd
+
+- tapOn: "tab-watchlist"
+- assertVisible: "watchlist-movie-0"
+
+- tapOn: "remove-watchlist-0"
+- waitForAnimationToEnd
+- assertVisible: "No Watchlist Yet"

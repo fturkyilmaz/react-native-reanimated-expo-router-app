@@ -144,6 +144,7 @@ export default function LoginScreen() {
                                 name="email"
                                 render={({ field: { onChange, value } }) => (
                                     <TextInput
+                                        testID="email-input"
                                         style={[styles.input, { color: theme.text }]}
                                         placeholder={t('auth.email')}
                                         placeholderTextColor={theme.textSecondary}
@@ -180,6 +181,7 @@ export default function LoginScreen() {
                                 name="password"
                                 render={({ field: { onChange, value } }) => (
                                     <TextInput
+                                        testID="password-input"
                                         style={[styles.input, { color: theme.text }]}
                                         placeholder={t('auth.password')}
                                         placeholderTextColor={theme.textSecondary}
@@ -207,6 +209,7 @@ export default function LoginScreen() {
                     </Pressable>
 
                     <Pressable
+                        testID="login-button"
                         style={[styles.button, { backgroundColor: theme.primary }, isLoading && styles.buttonDisabled]}
                         onPress={handleSubmit(onSubmit)}
                         disabled={isLoading}
@@ -221,6 +224,7 @@ export default function LoginScreen() {
                     {/* Biometric Login Button */}
                     {showBiometricButton && (
                         <Pressable
+                            testID="biometric-button"
                             style={styles.biometricButton}
                             onPress={handleBiometricLogin}
                             disabled={isLoading}

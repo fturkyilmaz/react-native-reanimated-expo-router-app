@@ -1,0 +1,53 @@
+appId: ${APP_ID}
+name: Movie Discovery Flow Tests
+---
+- launchApp
+- assertVisible: "email-input"
+
+- tapOn: "email-input"
+- inputText: "test@test.com"
+- tapOn: "password-input"
+- inputText: "123456"
+- tapOn: "login-button"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+      timeout: 15000
+      visible:
+          - "movies-flatlist"
+      then:
+          - assertVisible: "movie-card-0"
+
+- assertVisible: "movies-flatlist"
+- assertVisible: "movie-card-0"
+
+- repeat:
+      times: 3
+      commands:
+          - scroll
+      timeout: 5000
+      whileElementNotVisible: "movie-card-3"
+
+- swipe:
+      direction: DOWN
+      start: 50%, 20%
+      end: 50%, 80%
+- waitForAnimationToEnd
+
+- takeScreenshot:
+      name: "after-refresh"
+      path: ".maestro/screenshots/after-refresh.png"
+
+- tapOn: "movie-card-0"
+- assertVisible: "movie-detail-screen"
+- assertVisible: "favorite-button"
+
+- takeScreenshot:
+      name: "movie-detail"
+      path: ".maestro/screenshots/movie-detail.png"
+
+- scroll
+- scroll
+
+- tapOn: "Back"
+- assertVisible: "movies-flatlist"

@@ -1,0 +1,34 @@
+appId: ${APP_ID}
+name: Setup - Authenticated State
+env:
+  EMAIL: ${TEST_EMAIL}
+  PASSWORD: ${TEST_PASSWORD}
+---
+- launchApp
+
+- extendedWaitUntil:
+    timeout: 5000
+    visible:
+      - "movies-flatlist"
+    then:
+      - runFlow: null
+
+- extendedWaitUntil:
+    timeout: 10000
+    visible:
+      - "email-input"
+    then:
+      - tapOn: "email-input"
+      - inputText: ${EMAIL}
+      - tapOn: "password-input"
+      - inputText: ${PASSWORD}
+      - tapOn: "login-button"
+      - waitForAnimationToEnd
+
+- extendedWaitUntil:
+    timeout: 15000
+    visible:
+      - "movies-flatlist"
+      - "movie-card-0"
+    then:
+      - assertVisible: "tab-discover"

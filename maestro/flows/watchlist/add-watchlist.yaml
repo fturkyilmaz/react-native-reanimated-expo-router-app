@@ -1,0 +1,35 @@
+appId: ${APP_ID}
+name: Add to Watchlist Flow Tests
+---
+- launchApp
+- assertVisible: "email-input"
+
+- tapOn: "email-input"
+- inputText: "test@test.com"
+- tapOn: "password-input"
+- inputText: "123456"
+- tapOn: "login-button"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+      timeout: 15000
+      visible:
+          - "movies-flatlist"
+      then:
+
+- tapOn: "movie-card-0"
+- assertVisible: "movie-detail-screen"
+- tapOn: "watchlist-button"
+- waitForAnimationToEnd
+
+- takeScreenshot:
+      name: "added-to-watchlist"
+      path: ".maestro/screenshots/watchlist-added.png"
+
+- tapOn: "tab-watchlist"
+- assertVisible: "watchlist-list"
+- assertVisible: "watchlist-movie-0"
+
+- takeScreenshot:
+      name: "watchlist"
+      path: ".maestro/screenshots/watchlist.png"

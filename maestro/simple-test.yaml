@@ -1,0 +1,8 @@
+appId: host.exp.Exponent
+name: Simple Test
+---
+- launchApp:
+    clearState: true
+- waitForAnimationToEnd:
+    timeout: 30000
+- assertVisible: "Welcome Back"

@@ -1,0 +1,22 @@
+appId: host.exp.Exponent
+name: Login Flow Tests
+---
+- launchApp
+- waitForAnimationToEnd:
+    timeout: 30000
+- assertVisible: "Login"
+- tapOn:
+    id: "email-input"
+- inputText: "test@test.com"
+- tapOn:
+    id: "password-input"
+- inputText: "123456"
+- tapOn:
+    id: "login-button"
+- waitForAnimationToEnd:
+    timeout: 15000
+- extendedWaitUntil:
+    timeout: 15000
+    visible:
+      - "Popular"
+- assertVisible: "Popular"

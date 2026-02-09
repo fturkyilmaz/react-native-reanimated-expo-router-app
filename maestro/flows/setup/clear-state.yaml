@@ -1,0 +1,13 @@
+appId: ${APP_ID}
+name: Clear App State
+---
+- clearState
+- launchApp
+
+- extendedWaitUntil:
+    timeout: 10000
+    visible:
+      - "email-input"
+    then:
+      - assertVisible: "Login"
+      - assertVisible: "email-input"

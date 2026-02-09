@@ -83,6 +83,7 @@ export default function RegisterScreen() {
                             ]}>
                                 <Ionicons name="person-outline" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                                 <TextInput
+                                    testID="name-input"
                                     style={[styles.input, { color: theme.text }, errors.name && { borderColor: theme.primary }]}
                                     placeholder={t('auth.name')}
                                     placeholderTextColor={theme.textSecondary}
@@ -110,6 +111,7 @@ export default function RegisterScreen() {
                             ]}>
                                 <Ionicons name="mail-outline" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                                 <TextInput
+                                    testID="email-input"
                                     style={[styles.input, { color: theme.text }, errors.email && { borderColor: theme.primary }]}
                                     placeholder={t('auth.email')}
                                     placeholderTextColor={theme.textSecondary}
@@ -138,6 +140,7 @@ export default function RegisterScreen() {
                             ]}>
                                 <Ionicons name="lock-closed-outline" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                                 <TextInput
+                                    testID="password-input"
                                     style={[styles.input, { color: theme.text }, errors.password && { borderColor: theme.primary }]}
                                     placeholder={t('auth.password')}
                                     placeholderTextColor={theme.textSecondary}
@@ -165,6 +168,7 @@ export default function RegisterScreen() {
                             ]}>
                                 <Ionicons name="shield-checkmark-outline" size={20} color={theme.textSecondary} style={styles.inputIcon} />
                                 <TextInput
+                                    testID="confirm-password-input"
                                     style={[styles.input, { color: theme.text }, errors.confirmPassword && { borderColor: theme.primary }]}
                                     placeholder={t('auth.confirmPassword')}
                                     placeholderTextColor={theme.textSecondary}
@@ -180,6 +184,7 @@ export default function RegisterScreen() {
 
                     {/* Register Button */}
                     <Pressable
+                        testID="register-button"
                         style={[styles.button, { backgroundColor: theme.primary }, isLoadingAny && styles.buttonDisabled]}
                         onPress={handleSubmit(onSubmit)}
                         disabled={isLoadingAny}

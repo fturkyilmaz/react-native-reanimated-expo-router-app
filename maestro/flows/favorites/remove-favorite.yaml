@@ -1,0 +1,52 @@
+appId: ${APP_ID}
+name: Remove from Favorites Flow Tests
+---
+- launchApp
+- assertVisible: "email-input"
+
+- tapOn: "email-input"
+- inputText: "test@test.com"
+- tapOn: "password-input"
+- inputText: "123456"
+- tapOn: "login-button"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    timeout: 15000
+    visible:
+      - "movies-flatlist"
+    then:
+
+- tapOn: "movie-card-0"
+- tapOn: "favorite-button"
+- tapOn: "tab-favorites"
+- assertVisible: "favorite-movie-0"
+
+- tapOn: "remove-favorite-0"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    timeout: 5000
+    visible:
+      - "No Favorites Yet"
+    then:
+      - assertVisible: "No Favorites Yet"
+      - assertVisible: "Start Exploring"
+
+- takeScreenshot:
+    name: "empty-favorites"
+    path: ".maestro/screenshots/empty-favorites.png"
+
+- tapOn: "Start Exploring"
+- assertVisible: "movies-flatlist"
+- tapOn: "movie-card-0"
+- assertVisible: "movie-detail-screen"
+- tapOn: "favorite-button"
+- waitForAnimationToEnd
+- assertVisible: "favorite-button"
+
+- tapOn: "favorite-button"
+- waitForAnimationToEnd
+
+- tapOn: "tab-favorites"
+- assertVisible: "No Favorites Yet"

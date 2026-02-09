@@ -1,0 +1,58 @@
+appId: ${APP_ID}
+name: Search Flow Tests
+---
+- launchApp
+- assertVisible: "email-input"
+
+- tapOn: "email-input"
+- inputText: "test@test.com"
+- tapOn: "password-input"
+- inputText: "123456"
+- tapOn: "login-button"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    timeout: 15000
+    visible:
+      - "movies-flatlist"
+    then:
+
+- tapOn: "search-input"
+- assertVisible: "search-input"
+- assertVisible: "search-results"
+
+- tapOn: "search-input"
+- inputText: "Inception"
+
+- repeat:
+    times: 3
+    timeout: 10000
+    commands:
+      - waitForAnimationToEnd
+    whileElementNotVisible: "search-results"
+
+- assertVisible: "search-results"
+
+- tapOn: "search-results"
+- assertVisible: "movie-detail-screen"
+- assertVisible: "movie-title"
+
+- tapOn: "Back"
+- assertVisible: "search-input"
+
+- tapOn: "search-input"
+- clearText
+- waitForAnimationToEnd
+
+- tapOn: "search-input"
+- inputText: "Matrix"
+
+- repeat:
+    times: 3
+    timeout: 10000
+    commands:
+      - waitForAnimationToEnd
+    whileElementNotVisible: "search-results"
+
+- tapOn: "tab-discover"
+- assertVisible: "movies-flatlist"

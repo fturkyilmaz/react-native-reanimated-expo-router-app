@@ -1,0 +1,41 @@
+appId: ${APP_ID}
+name: Settings Flow Tests
+---
+- launchApp
+- assertVisible: "email-input"
+
+- tapOn: "email-input"
+- inputText: "test@test.com"
+- tapOn: "password-input"
+- inputText: "123456"
+- tapOn: "login-button"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+      timeout: 15000
+      visible:
+          - "movies-flatlist"
+      then:
+
+- tapOn: "tab-settings"
+- assertVisible: "settings-screen"
+
+- takeScreenshot:
+      name: "settings-screen"
+      path: ".maestro/screenshots/settings.png"
+
+- assertVisible: "theme-toggle"
+- assertVisible: "language-dropdown"
+- assertVisible: "Logout"
+
+- tapOn: "Logout"
+- assertVisible: "Login"
+- assertVisible: "email-input"
+
+- tapOn: "email-input"
+- inputText: "test@test.com"
+- tapOn: "password-input"
+- inputText: "123456"
+- tapOn: "login-button"
+- waitForAnimationToEnd
+- assertVisible: "movies-flatlist"

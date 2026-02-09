@@ -1,0 +1,41 @@
+appId: ${APP_ID}
+name: Add to Favorites Flow Tests
+---
+- launchApp
+- assertVisible: "email-input"
+
+- tapOn: "email-input"
+- inputText: "test@test.com"
+- tapOn: "password-input"
+- inputText: "123456"
+- tapOn: "login-button"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+      timeout: 15000
+      visible:
+          - "movies-flatlist"
+      then:
+
+- tapOn: "movie-card-0"
+- assertVisible: "movie-detail-screen"
+- assertVisible: "favorite-button"
+
+- takeScreenshot:
+      name: "movie-detail"
+      path: ".maestro/screenshots/movie-detail.png"
+
+- tapOn: "favorite-button"
+- waitForAnimationToEnd
+
+- takeScreenshot:
+      name: "favorited"
+      path: ".maestro/screenshots/favorited.png"
+
+- tapOn: "tab-favorites"
+- assertVisible: "favorites-list"
+- assertVisible: "favorite-movie-0"
+
+- takeScreenshot:
+      name: "favorites-list"
+      path: ".maestro/screenshots/favorites-list.png"

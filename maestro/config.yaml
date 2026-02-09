@@ -1,0 +1,42 @@
+# Maestro Global Configuration for CineSearch
+# Version: 1.0.0
+#
+# IMPORTANT: This file is for configuration only.
+# To run tests, use:
+#   maestro test maestro/flows/
+#
+# Or run individual flows:
+#   maestro test maestro/flows/auth/login.yaml
+#   maestro test maestro/flows/movies/discover.yaml
+
+appId: ${APP_ID}
+name: CineSearch E2E Tests
+
+# Default timeout in milliseconds (10 seconds)
+timeout: 10000
+
+# Recording settings
+recordActions: false
+recordSlowActions: false
+
+# Screenshot settings
+takeScreenshotOnFailure: true
+
+# Android specific settings
+android:
+  device:
+    orientation: PORTRAIT
+    model: "Pixel_6"
+
+# iOS specific settings
+ios:
+  device:
+    orientation: PORTRAIT
+    type: "iPhone 15"
+
+---
+# This is a placeholder flow to validate configuration.
+# Use individual flow files from maestro/flows/ directory
+
+- launchApp:
+    appId: ${APP_ID}
