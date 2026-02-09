@@ -1,8 +1,48 @@
 import { tmdbService } from "@/services/tmdb";
 import {
-    mockApiResponse,
-    mockMovieDetails
+  mockApiResponse,
+  mockMovieDetails
 } from "../../__mocks__/mockData";
+
+// Mock API_CONFIG to enable real API calls in tests
+jest.mock("@/config/api", () => ({
+  API_CONFIG: {
+    BASE_URL: 'https://api.themoviedb.org/3',
+    API_KEY: 'test-api-key',
+    ACCESS_TOKEN: 'test-access-token',
+    IMAGE_BASE_URL: 'https://image.tmdb.org/t/p',
+  },
+  Movie: jest.fn(),
+  MovieDetails: jest.fn(),
+  MovieVideos: jest.fn(),
+  PersonResult: jest.fn(),
+  TVShow: jest.fn(),
+  TVShowDetails: jest.fn(),
+}));
+
+// Mock OpenTelemetry
+jest.mock("@/otel", () => ({
+  initializeOpenTelemetry: jest.fn(),
+  isInitialized: jest.fn(() => true),
+  getTracer: jest.fn(() => ({
+    startSpan: jest.fn(() => ({
+      setAttribute: jest.fn(),
+      end: jest.fn(),
+    })),
+  })),
+  recordException: jest.fn(),
+}));
+
+// Mock Sentry
+jest.mock("@/sentry", () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  setUser: jest.fn(),
+  setTag: jest.fn(),
+  setContext: jest.fn(),
+}));
 
 describe("tmdbService", () => {
   beforeEach(() => {
