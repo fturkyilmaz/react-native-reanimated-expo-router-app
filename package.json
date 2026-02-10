@@ -5,8 +5,8 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
     "test": "jest",
@@ -30,7 +30,7 @@
     "test:maestro:ios": "maestro test maestro/flows/ --platform ios",
     "test:maestro:android": "maestro test maestro/flows/ --platform android",
     "test:maestro:smoke": "maestro test maestro/flows/auth/login.yaml && maestro test maestro/flows/movies/discover.yaml",
-    "test:maestro:auth": "maestro test maestro/flows/auth/",
+    "test:maestro:auth": "maestro test maestro/flows/auth/login.yaml",
     "test:maestro:movies": "maestro test maestro/flows/movies/",
     "test:maestro:favorites": "maestro test maestro/flows/favorites/",
     "test:maestro:watchlist": "maestro test maestro/flows/watchlist/",
@@ -112,6 +112,7 @@
     "react-native-screens": "~4.16.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.5.1",
+    "react-native-worklets-core": "^1.6.2",
     "react-redux": "^9.2.0",
     "zod": "^4.3.6",
     "zustand": "^5.0.10"

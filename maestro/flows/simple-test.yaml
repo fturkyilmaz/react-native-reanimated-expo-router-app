@@ -1,7 +1,6 @@
-appId: ${APP_ID}
-name: Clear App State
+appId: host.exp.Exponent
+name: Simple Test
 ---
-- clearState
 - launchApp
 - waitForAnimationToEnd:
     timeout: 10000
