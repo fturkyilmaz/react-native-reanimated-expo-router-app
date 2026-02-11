@@ -201,7 +201,7 @@ export default function MovieDetail() {
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#141414', minHeight: 900 }}>
+        <View style={{ flex: 1, backgroundColor: '#141414', minHeight: 900 }} testID="movie-detail-screen">
             <Stack.Screen options={{ headerShown: false }} />
 
             <Animated.View style={[
@@ -260,6 +260,7 @@ export default function MovieDetail() {
                         style={{ position: 'absolute', top: 50, right: 20, zIndex: 10 }}
                         onPress={handleFavoritePress}
                         hitSlop={20}
+                        testID="favorite-button"
                     >
                         <View style={[
                             { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
@@ -276,6 +277,7 @@ export default function MovieDetail() {
                     <Pressable
                         style={{ position: 'absolute', top: 100, right: 20, zIndex: 10 }}
                         onPress={handleWatchlistPress}
+                        testID="watchlist-button"
                     >
                         <View style={[
                             { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
@@ -297,7 +299,7 @@ export default function MovieDetail() {
                         contentAnimatedStyle
                     ]}
                 >
-                    <Text style={{ color: 'white', fontSize: 32, fontWeight: '800', marginBottom: 12, letterSpacing: -0.5 }}>{title}</Text>
+                    <Text style={{ color: 'white', fontSize: 32, fontWeight: '800', marginBottom: 12, letterSpacing: -0.5 }} testID="movie-title">{title}</Text>
 
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 }}>
                         <Text style={{ color: '#b3b3b3', fontSize: 15, fontWeight: '600' }}>{year}</Text>
@@ -328,6 +330,7 @@ export default function MovieDetail() {
                         <Text style={{ color: 'white', fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Fragman</Text>
                         {trailer ? (
                             <Pressable
+                                testID="video-player"
                                 style={{ width: '100%', height: 250, borderRadius: 12, overflow: 'hidden', position: 'relative' }}
                                 onPress={() => {
                                     const youtubeUrl = `https://www.youtube.com/watch?v=${trailer.key}`;

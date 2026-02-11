@@ -47,7 +47,6 @@ export default function TabLayout() {
               title: t("home.discover"),
               tabBarLabel: t("home.discover"),
               headerShown: false,
-
               tabBarIcon: ({ color, focused }) => (
                 <MaterialCommunityIcons
                   name={focused ? "home" : "home-outline"}
@@ -55,6 +54,7 @@ export default function TabLayout() {
                   color={color}
                 />
               ),
+              tabBarAccessibilityLabel: "tab-home",
             }}
           />
 
@@ -73,6 +73,7 @@ export default function TabLayout() {
                   color={color}
                 />
               ),
+              tabBarAccessibilityLabel: "tab-discover",
             }}
           />
 
@@ -89,6 +90,7 @@ export default function TabLayout() {
                   color={color}
                 />
               ),
+              tabBarAccessibilityLabel: "tab-watchlist",
             }}
           />
 
@@ -105,6 +107,7 @@ export default function TabLayout() {
                   color={color}
                 />
               ),
+              tabBarAccessibilityLabel: "tab-favorites",
             }}
           />
 
@@ -121,6 +124,7 @@ export default function TabLayout() {
                   color={color}
                 />
               ),
+              tabBarAccessibilityLabel: "tab-settings",
             }}
           />
         </Tabs>

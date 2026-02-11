@@ -62,6 +62,7 @@ export default function WatchlistScreen() {
             </View>
 
             <FlatList
+                testID="watchlist-list"
                 data={watchlist}
                 numColumns={2}
                 keyExtractor={(item) => item.id.toString()}

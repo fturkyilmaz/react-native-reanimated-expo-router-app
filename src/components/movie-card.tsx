@@ -100,6 +100,7 @@ export const MovieCard = memo(function MovieCard({
             onPressOut={handlePressOut}
             accessibilityRole="button"
             accessibilityLabel={movie.title}
+            testID={`movie-card-${index}`}
         >
             <View style={styles.posterContainer}>
                 <Image

@@ -199,7 +199,7 @@ export default function SettingsScreen() {
     );
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} testID="settings-screen">
             <Stack.Screen
                 options={{
                     title: t('settings.title'),
@@ -292,6 +292,7 @@ export default function SettingsScreen() {
                 <SectionHeader title={t('settings.preferences')} />
                 <View style={[styles.section, { backgroundColor: theme.card }]}>
                     <SettingToggle
+                        testID="theme-toggle"
                         icon={isDarkMode ? "moon" : "sunny-outline"}
                         title={t('settings.darkMode')}
                         subtitle={isDarkMode ? "Açık" : "Kapalı"}
@@ -299,6 +300,7 @@ export default function SettingsScreen() {
                         onValueChange={toggleTheme}
                     />
                     <SettingItem
+                        testID="language-dropdown"
                         icon="language-outline"
                         title={t('settings.language')}
                         subtitle={selectedLanguage}
@@ -388,6 +390,7 @@ export default function SettingsScreen() {
                         }
                     ]}
                     onPress={handleLogout}
+                    testID="logout-button"
                 >
                     <Ionicons name="log-out-outline" size={20} color={theme.primary} />
                     <Text style={[styles.logoutText, { color: theme.primary }]}>{t('auth.logout')}</Text>

@@ -12,22 +12,23 @@ name: Settings Flow Tests
 - waitForAnimationToEnd
 
 - extendedWaitUntil:
-      timeout: 15000
-      visible:
-          - "movies-flatlist"
-      then:
+        timeout: 15000
+        visible:
+              - "movies-flatlist"
+        then:
 
-- tapOn: "tab-settings"
+- tapOn: "Settings"
 - assertVisible: "settings-screen"
 
 - takeScreenshot:
-      name: "settings-screen"
-      path: ".maestro/screenshots/settings.png"
+        name: "settings-screen"
+        path: ".maestro/screenshots/settings.png"
 
 - assertVisible: "theme-toggle"
 - assertVisible: "language-dropdown"
 - assertVisible: "Logout"
 
+- tapOn: "Logout"
 - tapOn: "Logout"
 - assertVisible: "Login"
 - assertVisible: "email-input"

@@ -132,6 +132,7 @@ export default function FavoritesScreen() {
             />
 
             <FlatList
+                testID="favorites-list"
                 data={favorites}
                 keyExtractor={(item) => String(item?.id ?? Math.random())}
                 contentContainerStyle={styles.list}

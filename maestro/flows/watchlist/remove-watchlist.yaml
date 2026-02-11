@@ -19,10 +19,13 @@ name: Remove from Watchlist Flow Tests
 
 - tapOn: "movie-card-0"
 - tapOn: "watchlist-button"
-- tapOn: "tab-watchlist"
-- assertVisible: "watchlist-movie-0"
-
-- tapOn: "remove-watchlist-0"
+- tapOn: "İzleme Listesi"
+- scrollUntilVisible:
+    element:
+      id: "movie-card-0"
+    direction: DOWN
+- tapOn:
+    id: "remove-button-0"
 - waitForAnimationToEnd
 
 - extendedWaitUntil:
@@ -43,9 +46,13 @@ name: Remove from Watchlist Flow Tests
 - tapOn: "watchlist-button"
 - waitForAnimationToEnd
 
-- tapOn: "tab-watchlist"
-- assertVisible: "watchlist-movie-0"
+- tapOn: "İzleme Listesi"
+- scrollUntilVisible:
+    element:
+      id: "movie-card-0"
+    direction: DOWN
 
-- tapOn: "remove-watchlist-0"
+- tapOn:
+    id: "remove-button-0"
 - waitForAnimationToEnd
 - assertVisible: "No Watchlist Yet"

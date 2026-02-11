@@ -184,7 +184,7 @@ export default function RegisterScreen() {
 
                     {/* Register Button */}
                     <Pressable
-                        testID="register-button"
+                        testID="register-button-btn"
                         style={[styles.button, { backgroundColor: theme.primary }, isLoadingAny && styles.buttonDisabled]}
                         onPress={handleSubmit(onSubmit)}
                         disabled={isLoadingAny}

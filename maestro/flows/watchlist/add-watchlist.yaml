@@ -12,10 +12,10 @@ name: Add to Watchlist Flow Tests
 - waitForAnimationToEnd
 
 - extendedWaitUntil:
-      timeout: 15000
-      visible:
-          - "movies-flatlist"
-      then:
+        timeout: 15000
+        visible:
+              - "movies-flatlist"
+        then:
 
 - tapOn: "movie-card-0"
 - assertVisible: "movie-detail-screen"
@@ -23,13 +23,16 @@ name: Add to Watchlist Flow Tests
 - waitForAnimationToEnd
 
 - takeScreenshot:
-      name: "added-to-watchlist"
-      path: ".maestro/screenshots/watchlist-added.png"
+        name: "added-to-watchlist"
+        path: ".maestro/screenshots/watchlist-added.png"
 
-- tapOn: "tab-watchlist"
+- tapOn: "İzleme Listesi"
 - assertVisible: "watchlist-list"
-- assertVisible: "watchlist-movie-0"
+- scrollUntilVisible:
+        element:
+              id: "movie-card-0"
+        direction: DOWN
 
 - takeScreenshot:
-      name: "watchlist"
-      path: ".maestro/screenshots/watchlist.png"
+        name: "watchlist"
+        path: ".maestro/screenshots/watchlist.png"

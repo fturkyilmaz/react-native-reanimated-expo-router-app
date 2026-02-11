@@ -244,7 +244,7 @@ export default function LoginScreen() {
                 {/* Footer */}
                 <View style={styles.footer}>
                     <Text style={[styles.footerText, { color: theme.textSecondary }]}>{t('auth.noAccount')} </Text>
-                    <Link href="/(auth)/register" asChild>
+                    <Link href="/(auth)/register" asChild testID='register-button'>
                         <Pressable>
                             <Text style={[styles.footerLink, { color: theme.primary }]}>{t('auth.register')}</Text>
                         </Pressable>

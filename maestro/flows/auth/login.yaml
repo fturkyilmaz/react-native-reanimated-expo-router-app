@@ -3,16 +3,16 @@ name: Login Flow Tests
 ---
 - launchApp
 - waitForAnimationToEnd:
-        timeout: 30000
+    timeout: 30000
 - assertVisible: "Login"
 - tapOn:
-        id: "email-input"
+    id: "email-input"
 - inputText: "test@test.com"
 - tapOn:
-        id: "password-input"
+    id: "password-input"
 - inputText: "123456"
 - tapOn:
-        id: "login-button"
+    id: "login-button"
 - waitForAnimationToEnd:
-        timeout: 15000
-- assertVisible: "Welcome"
+    timeout: 15000
+- assertVisible: "Discover"

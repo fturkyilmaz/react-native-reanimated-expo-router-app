@@ -12,32 +12,32 @@ name: Tab Navigation Flow Tests
 - waitForAnimationToEnd
 
 - extendedWaitUntil:
-      timeout: 15000
-      visible:
-          - "movies-flatlist"
-      then:
+        timeout: 15000
+        visible:
+              - "movies-flatlist"
+        then:
 
-- assertVisible: "tab-discover"
+- assertVisible: "Discover"
 - assertVisible: "movies-flatlist"
 
-- tapOn: "tab-favorites"
+- tapOn: "Favorilerim"
 - assertVisible: "favorites-list"
 
-- tapOn: "tab-watchlist"
+- tapOn: "İzleme Listesi"
 - assertVisible: "watchlist-list"
 
-- tapOn: "tab-settings"
+- tapOn: "Ayarlar"
 - assertVisible: "settings-screen"
 
 - takeScreenshot:
-      name: "settings-screen"
-      path: ".maestro/screenshots/settings.png"
+        name: "settings-screen"
+        path: ".maestro/screenshots/settings.png"
 
-- tapOn: "tab-discover"
+- tapOn: "Discover"
 - assertVisible: "movies-flatlist"
-- tapOn: "tab-favorites"
+- tapOn: "Favorilerim"
 - assertVisible: "favorites-list"
-- tapOn: "tab-watchlist"
+- tapOn: "İzleme Listesi"
 - assertVisible: "watchlist-list"
-- tapOn: "tab-discover"
+- tapOn: "Discover"
 - assertVisible: "movies-flatlist"

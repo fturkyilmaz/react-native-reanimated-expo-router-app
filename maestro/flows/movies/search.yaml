@@ -54,5 +54,5 @@ name: Search Flow Tests
       - waitForAnimationToEnd
     whileElementNotVisible: "search-results"
 
-- tapOn: "tab-discover"
+- tapOn: "Discover"
 - assertVisible: "movies-flatlist"

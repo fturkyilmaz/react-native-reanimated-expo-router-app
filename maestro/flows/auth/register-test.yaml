@@ -1,0 +1,7 @@
+appId: host.exp.Exponent
+name: Register Test
+---
+- launchApp
+- waitForAnimationToEnd:
+    timeout: 10000
+- assertVisible: "Login"

@@ -1,86 +1,41 @@
-appId: ${APP_ID}
+appId: host.exp.Exponent
 name: Register Flow Tests
-env:
-  NAME: ${TEST_NAME}
-  EMAIL: ${TEST_EMAIL}
-  PASSWORD: ${TEST_PASSWORD}
 ---
 - launchApp
-- assertVisible: "email-input"
 
-- tapOn: "Register"
-- assertVisible: "Create Account"
-- assertVisible: "name-input"
+- waitForAnimationToEnd:
+      timeout: 10000
 
-- tapOn: "Register"
-- assertVisible: "Name is required"
+- assertVisible: "Welcome Back"
 
-- tapOn: "name-input"
-- inputText: "A"
+- tapOn:
+      id: "register-button"
+- tapOn:
+      id: "name-input"
+- inputText:
+      id: "name-input"
+      text: "Test User"
+- tapOn:
+      id: "email-input"
+- inputText:
+      id: "email-input"
+      text: "test@test.com"
 
-- tapOn: "email-input"
-- inputText: ${EMAIL}
-- tapOn: "password-input"
-- inputText: ${PASSWORD}
-- tapOn: "confirm-password-input"
-- inputText: ${PASSWORD}
-- tapOn: "Register"
-- assertVisible: "Name is required"
+- tapOn:
+      id: "password-input"
+- inputText:
+      id: "password-input"
+      text: "123456"
 
-- tapOn: "name-input"
-- inputText: ""
+- tapOn:
+      id: "confirm-password-input"
+- inputText:
+      id: "confirm-password-input"
+      text: "123456"
 
-- tapOn: "name-input"
-- inputText: ${NAME}
-- tapOn: "email-input"
-- inputText: "new@email.com"
-- tapOn: "password-input"
-- inputText: "Password1"
-- tapOn: "confirm-password-input"
-- inputText: "Password2"
-- tapOn: "Register"
-- assertVisible: "Passwords do not match"
+- tapOn:
+      id: "register-button-btn"
 
-- tapOn: "password-input"
-- inputText: ""
-- tapOn: "confirm-password-input"
-- inputText: ""
-
-- tapOn: "password-input"
-- inputText: "123"
-- tapOn: "confirm-password-input"
-- inputText: "123"
-- tapOn: "Register"
-- assertVisible: "Password must be at least 6 characters"
-
-- tapOn: "name-input"
-- inputText: ""
-- tapOn: "email-input"
-- inputText: ""
-- tapOn: "password-input"
-- inputText: ""
-- tapOn: "confirm-password-input"
-- inputText: ""
-
-- tapOn: "name-input"
-- inputText: ${NAME}
-- tapOn: "email-input"
-- inputText: ${EMAIL}
-- tapOn: "password-input"
-- inputText: ${PASSWORD}
-- tapOn: "confirm-password-input"
-- inputText: ${PASSWORD}
-- tapOn: "Register"
-
-- waitForAnimationToEnd
-- extendedWaitUntil:
-    timeout: 15000
-    visible:
-      - "movies-flatlist"
-      - "movie-card-0"
-    then:
-      - assertVisible: "Popular"
-
-- tapOn: "tab-settings"
-- tapOn: "logout-button"
-- assertVisible: "Login"
+- waitForAnimationToEnd:
+      timeout: 15000
+- assertVisible: "Discover"

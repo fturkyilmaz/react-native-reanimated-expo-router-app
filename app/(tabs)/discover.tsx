@@ -271,6 +271,7 @@ export default function DiscoverScreen() {
                             }]}>
                                 <Ionicons name="search" size={20} color={theme.textSecondary} style={styles.searchIcon} />
                                 <TextInput
+                                    testID="search-input"
                                     style={[styles.searchInput, { color: theme.text }]}
                                     placeholder="Film ara..."
                                     placeholderTextColor={theme.textSecondary}
@@ -293,6 +294,7 @@ export default function DiscoverScreen() {
                         }]}>
                             <Ionicons name="search" size={20} color={theme.textSecondary} style={styles.searchIcon} />
                             <TextInput
+                                testID="search-input"
                                 style={[styles.searchInput, { color: theme.text }]}
                                 placeholder="Film ara..."
                                 placeholderTextColor={theme.textSecondary}
@@ -312,6 +314,7 @@ export default function DiscoverScreen() {
                 </View>
 
                 <FlatList
+                    testID="movies-flatlist"
                     data={movies}
                     renderItem={renderMovieItem}
                     keyExtractor={(item, index) => `${item?.id}-${index}`}
