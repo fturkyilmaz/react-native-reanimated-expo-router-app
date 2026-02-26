@@ -14,7 +14,8 @@
         "edit": "Edit",
         "close": "Close",
         "search": "Search...",
-        "seeAll": "See All"
+        "seeAll": "See All",
+        "allLoaded": "All movies loaded"
     },
     "auth": {
         "welcomeBack": "Welcome Back",
@@ -123,7 +124,7 @@
         "version": "Version {{version}}"
     },
     "authTransition": {
-        "welcome": "Welcome {{name}}! 🎬",
+        "welcome": "Welcome {{name}}! \ud83c\udfac",
         "subText": "The world of movies is waiting for you..."
     },
     "language": {

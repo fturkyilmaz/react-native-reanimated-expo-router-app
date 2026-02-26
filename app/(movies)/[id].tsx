@@ -1,5 +1,6 @@
 import { Movie, MovieDetails, Video } from '@/config/api';
 import { useFavorites } from '@/hooks/use-favorites';
+import { useTheme } from '@/hooks/use-theme';
 import { useWatchlist } from '@/hooks/use-watchlist';
 import { tmdbService } from '@/services/tmdb';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +23,7 @@ const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 
 export default function MovieDetail() {
     const { t } = useTranslation();
+    const { theme, isDarkMode } = useTheme();
     const { id, item } = useLocalSearchParams();
     const { toggleFavorite, isFavorite } = useFavorites();
     const { toggleWatchlist, isInWatchlist } = useWatchlist();
@@ -191,17 +193,17 @@ export default function MovieDetail() {
 
     if (loading && !movieDetails) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#141414', minHeight: 900 }}>
+            <View style={{ flex: 1, backgroundColor: theme.background, minHeight: 900 }}>
                 <Stack.Screen options={{ headerShown: false }} />
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ color: 'white', fontSize: 16 }}>Yükleniyor...</Text>
+                    <Text style={{ color: theme.text, fontSize: 16 }}>{t('common.loading')}</Text>
                 </View>
             </View>
         );
     }
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#141414', minHeight: 900 }} testID="movie-detail-screen">
+        <View style={{ flex: 1, backgroundColor: theme.background, minHeight: 900 }} testID="movie-detail-screen">
             <Stack.Screen options={{ headerShown: false }} />
 
             <Animated.View style={[
@@ -211,17 +213,17 @@ export default function MovieDetail() {
                     left: 0,
                     right: 0,
                     height: 90,
-                    backgroundColor: 'rgba(20, 20, 20, 0.95)',
+                    backgroundColor: isDarkMode ? 'rgba(20, 20, 20, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                     zIndex: 100,
                     justifyContent: 'flex-end',
                     paddingBottom: 10,
                     paddingHorizontal: 20,
                     borderBottomWidth: 1,
-                    borderBottomColor: 'rgba(255,255,255,0.1)',
+                    borderBottomColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
                 },
                 headerAnimatedStyle
             ]}>
-                <Text style={{ color: 'white', fontSize: 18, fontWeight: '700', textAlign: 'center' }} numberOfLines={1}>{t('movie.details')}</Text>
+                <Text style={{ color: theme.text, fontSize: 18, fontWeight: '700', textAlign: 'center' }} numberOfLines={1}>{t('movie.details')}</Text>
             </Animated.View>
 
             <AnimatedScrollView
@@ -243,7 +245,7 @@ export default function MovieDetail() {
                     />
 
                     <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.8)', '#141414']}
+                        colors={['transparent', 'rgba(0,0,0,0.8)', theme.background]}
                         style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '60%' }}
                     />
 
@@ -299,7 +301,7 @@ export default function MovieDetail() {
                         contentAnimatedStyle
                     ]}
                 >
-                    <Text style={{ color: 'white', fontSize: 32, fontWeight: '800', marginBottom: 12, letterSpacing: -0.5 }} testID="movie-title">{title}</Text>
+                    <Text style={{ color: theme.text, fontSize: 32, fontWeight: '800', marginBottom: 12, letterSpacing: -0.5 }} testID="movie-title">{title}</Text>
 
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 }}>
                         <Text style={{ color: '#b3b3b3', fontSize: 15, fontWeight: '600' }}>{year}</Text>
@@ -313,21 +315,21 @@ export default function MovieDetail() {
 
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
                         {genres.slice(0, 3).map((genre) => (
-                            <View key={genre.id} style={{ backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
-                                <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>{genre.name}</Text>
+                            <View key={genre.id} style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: isDarkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }}>
+                                <Text style={{ color: theme.textSecondary, fontSize: 13, fontWeight: '600' }}>{genre.name}</Text>
                             </View>
                         ))}
                     </View>
 
                     <View style={{ marginBottom: 24 }}>
-                        <Text style={{ color: 'white', fontSize: 18, fontWeight: '700', marginBottom: 12 }}>{t('movie.summary')}</Text>
+                        <Text style={{ color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: 12 }}>{t('movie.summary')}</Text>
                         <Text style={{ color: '#b3b3b3', fontSize: 15, lineHeight: 22 }}>
                             {overview || 'Bu film için bir açıklama bulunmuyor.'}
                         </Text>
                     </View>
 
                     <View style={{ marginBottom: 24 }}>
-                        <Text style={{ color: 'white', fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Fragman</Text>
+                        <Text style={{ color: theme.text, fontSize: 18, fontWeight: '700', marginBottom: 12 }}>{t('movie.trailer')}</Text>
                         {trailer ? (
                             <Pressable
                                 testID="video-player"
@@ -345,7 +347,7 @@ export default function MovieDetail() {
                                     <Ionicons name="play-circle" size={64} color="white" />
                                 </View>
                                 <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12, backgroundColor: 'rgba(0,0,0,0.7)' }}>
-                                    <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>{trailer.name}</Text>
+                                    <Text style={{ color: theme.text, fontSize: 14, fontWeight: '600' }}>{trailer.name}</Text>
                                 </View>
                             </Pressable>
                         ) : (

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     ActivityIndicator,
     Dimensions,
@@ -31,6 +32,7 @@ export default function FavoritesScreen() {
     const { favorites: rawFavorites = [], removeFavorite, error, clearError } = useFavorites();
     const favorites = useMemo(() => rawFavorites ?? [], [rawFavorites]);
     const { theme, isDarkMode } = useTheme();
+    const { t } = useTranslation();
     const router = useRouter();
 
     // Track removing state per movie id to prevent double clicks
@@ -87,11 +89,10 @@ export default function FavoritesScreen() {
                     </Animated.View>
 
                     <Text style={[styles.emptyTitle, { color: theme.text }]}>
-                        Henüz Favori Yok
+                        {t('favorites.empty')}
                     </Text>
                     <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                        Beğendiğiniz filmleri buraya eklemek için{'\n'}
-                        kalp ikonuna dokunun
+                        {t('favorites.emptyMessage')}
                     </Text>
 
                     <Pressable
@@ -105,7 +106,7 @@ export default function FavoritesScreen() {
                             style={styles.gradientButton}
                         >
                             <Ionicons name="compass" size={20} color="white" />
-                            <Text style={styles.buttonText}>Keşfetmeye Başla</Text>
+                            <Text style={styles.buttonText}>{t('favorites.explore')}</Text>
                         </LinearGradient>
                     </Pressable>
                 </View>
@@ -118,7 +119,7 @@ export default function FavoritesScreen() {
             <Stack.Screen
                 options={{
                     headerShown: Platform.OS === 'ios',
-                    title: 'Favorilerim',
+                    title: t('favorites.title'),
                     headerStyle: { backgroundColor: theme.card },
                     headerTintColor: theme.text,
                     headerTitleStyle: { fontWeight: '700', color: theme.text },
@@ -140,10 +141,10 @@ export default function FavoritesScreen() {
                 ListHeaderComponent={
                     <View style={styles.headerInfo}>
                         <Text style={[styles.headerTitle, { color: theme.text }]}>
-                            Favorilerim
+                            {t('favorites.title')}
                         </Text>
                         <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
-                            {favorites.length} film favorilerinizde
+                            {t('favorites.movieCount').replace('{{count}}', favorites.length.toString())}
                         </Text>
                         {error ? (
                             <Text style={{ color: 'tomato', marginTop: 8 }}>{error}</Text>

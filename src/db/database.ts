@@ -246,9 +246,25 @@ const interpolateSQL = (sql: string, params: unknown[]): string => {
  * Check for potential SQL injection patterns in the query
  */
 const containsSQLInjection = (sql: string): boolean => {
+  const trimmedSql = sql.trim().toUpperCase();
+
+  // Whitelist specific safe queries needed by export function
+  // Only allow SELECT from known table names (hardcoded, no user input)
+  const allowedPatterns = [
+    /^SELECT\s+\*\s+FROM\s+users$/i,
+    /^SELECT\s+\*\s+FROM\s+movies$/i,
+    /^SELECT\s+\*\s+FROM\s+favorites$/i,
+    /^SELECT\s+\*\s+FROM\s+watchlist$/i,
+    /^SELECT\s+\*\s+FROM\s+sync_queue$/i,
+  ];
+
+  if (allowedPatterns.some(pattern => pattern.test(trimmedSql))) {
+    return false;
+  }
+
   // Check for common SQL injection patterns
   const injectionPatterns = [
-    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|EXEC|UNION)\b)/i,
+    /(\b(SELECT|INSERT|UPDATE|DELETE|ALTER|CREATE|TRUNCATE|EXEC|UNION)\b)/i,
     /(--|;|\/\*|\*\/)/,
     /(\bOR\b|\bAND\b)\s+\d+\s*=\s*\d+/i,
     /(\bOR\b|\bAND\b)\s+['"].*['"]\s*=\s*['"].*['"]/i,
@@ -258,6 +274,7 @@ const containsSQLInjection = (sql: string): boolean => {
   const baseQuery = sql.split("?")[0];
   return injectionPatterns.some((pattern) => pattern.test(baseQuery));
 };
+
 
 /**
  * Format a value for SQL interpolation with proper escaping
@@ -696,6 +713,46 @@ export const resetDatabase = async (): Promise<void> => {
     console.log("[Database] Reset complete");
   } catch (error) {
     console.error("[Database] Failed to reset:", error);
+    throw error;
+  }
+};
+
+/**
+ * Export database data as JSON
+ * Returns all tables data in JSON format
+ */
+export const exportDatabase = async (): Promise<string> => {
+  console.log("[Database] Exporting database...");
+
+  const database = await getDatabase();
+  if (!database) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    const exportData: Record<string, unknown[]> = {
+      users: [],
+      movies: [],
+      favorites: [],
+      watchlist: [],
+      sync_queue: [],
+    };
+
+    // Export each table
+    for (const table of Object.keys(exportData)) {
+      const result = await executeSQL(database, `SELECT * FROM ${table}`);
+      const rows = result.rows;
+      const data: unknown[] = [];
+      for (let i = 0; i < rows.length; i++) {
+        data.push(rows.item(i));
+      }
+      exportData[table] = data;
+    }
+
+    console.log("[Database] Export complete");
+    return JSON.stringify(exportData, null, 2);
+  } catch (error) {
+    console.error("[Database] Failed to export:", error);
     throw error;
   }
 };

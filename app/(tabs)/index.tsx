@@ -4,6 +4,7 @@ import { useMovies } from '@/hooks/use-movies';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuthStore } from '@/store/authStore';
 import { Stack } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Dimensions, FlatList, KeyboardAvoidingView, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,9 +17,10 @@ export default function HomeScreen() {
   const { movies: allMovies, loading, error, refresh, loadMore, hasMore } = useMovies('popular');
   const { user } = useAuthStore();
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const renderFooter = () => {
-    if (!hasMore && !loading) return <Text style={styles.endText}>Tüm filmler yüklendi</Text>;
+    if (!hasMore && !loading) return <Text style={styles.endText}>{t('common.allLoaded')}</Text>;
     return loading ? <Skeleton width={300} height={200} style={styles.skeletonFooter} /> : null;
   };
 
@@ -33,7 +35,7 @@ export default function HomeScreen() {
       <View style={styles.center}>
         <Text style={styles.error}>{error}</Text>
         <Pressable onPress={refresh} style={styles.retryButton}>
-          <Text style={styles.retryText}>Tekrar Dene</Text>
+          <Text style={styles.retryText}>{t('common.retry')}</Text>
         </Pressable>
       </View>
     );
