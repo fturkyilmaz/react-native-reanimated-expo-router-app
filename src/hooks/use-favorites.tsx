@@ -13,7 +13,7 @@ import { initializeDatabase } from '@/db/database';
 import { FavoritesService } from '@/services/favorites-service';
 import { syncManager, useSyncStatus } from '@/services/sync-manager';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 // ============================================================================
 // TYPES
@@ -289,9 +289,3 @@ export function useFavorites(): FavoritesContextType {
 
   return context;
 }
-
-// ============================================================================
-// INLINE IMPORTS
-// ============================================================================
-
-import { createContext, useContext } from 'react';

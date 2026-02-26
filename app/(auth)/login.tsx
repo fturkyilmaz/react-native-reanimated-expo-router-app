@@ -36,8 +36,8 @@ export default function LoginScreen() {
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
-            email: 'test@test.com',
-            password: '123456',
+            email: '',
+            password: '',
         },
     });
 
@@ -63,7 +63,19 @@ export default function LoginScreen() {
         if (result.success) {
             try {
                 clearError();
-                await login('test@test.com', '123456');
+                // Use stored credentials from biometric auth
+                // The actual credentials should be stored securely and retrieved from the auth store
+                const { user } = useAuthStore.getState();
+                if (user?.email && user?.token) {
+                    // For biometric login, we need to retrieve the stored password
+                    // This should be implemented using secure storage
+                    // For now, we'll use the stored email and a placeholder
+                    // In production, this should use proper secure storage
+                    await login(user.email, '');
+                } else {
+                    // Fallback to empty credentials if no stored user
+                    await login('', '');
+                }
                 router.replace('/(tabs)');
             } catch (error) { }
         }
