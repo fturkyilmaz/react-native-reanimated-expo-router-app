@@ -1,0 +1,43 @@
+appId: ${APP_ID}
+name: Tab Navigation Flow Tests
+---
+- launchApp
+- assertVisible: "email-input"
+
+- tapOn: "email-input"
+- inputText: "test@test.com"
+- tapOn: "password-input"
+- inputText: "123456"
+- tapOn: "login-button"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+        timeout: 15000
+        visible:
+              - "movies-flatlist"
+        then:
+
+- assertVisible: "Discover"
+- assertVisible: "movies-flatlist"
+
+- tapOn: "Favorilerim"
+- assertVisible: "favorites-list"
+
+- tapOn: "İzleme Listesi"
+- assertVisible: "watchlist-list"
+
+- tapOn: "Ayarlar"
+- assertVisible: "settings-screen"
+
+- takeScreenshot:
+        name: "settings-screen"
+        path: ".maestro/screenshots/settings.png"
+
+- tapOn: "Discover"
+- assertVisible: "movies-flatlist"
+- tapOn: "Favorilerim"
+- assertVisible: "favorites-list"
+- tapOn: "İzleme Listesi"
+- assertVisible: "watchlist-list"
+- tapOn: "Discover"
+- assertVisible: "movies-flatlist"

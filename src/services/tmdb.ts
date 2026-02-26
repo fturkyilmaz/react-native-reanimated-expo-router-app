@@ -1,4 +1,4 @@
-import { API_CONFIG, Movie, MovieDetails } from '@/config/api';
+import { API_CONFIG, Movie, MovieDetails, MovieVideos, PersonResult, TVShow, TVShowDetails } from '@/config/api';
 import { logApiError } from '@/otel/instrumentation/errors';
 import { withTracing } from '@/otel/instrumentation/fetch';
 import { addApiBreadcrumb, captureException } from '@/sentry';
@@ -112,29 +112,39 @@ let apiKeyWarningShown = false;
 class TMDBService {
     private baseUrl = API_CONFIG.BASE_URL;
     private apiKey = API_CONFIG.API_KEY;
+    private accessToken = API_CONFIG.ACCESS_TOKEN;
     private useMockData = false;
 
     constructor() {
-        // Check if API key is valid
-        if (!this.apiKey || this.apiKey === 'your_tmdb_api_key_here' || this.apiKey.length < 10) {
-            console.warn('[TMDB] API key not configured properly. Using mock data.');
+        // Check if access token is valid for Bearer auth
+        if (!this.accessToken || this.accessToken.length < 10) {
+            console.warn('[TMDB] Access token not configured properly. Using mock data.');
             this.useMockData = true;
         }
     }
 
     private async fetchWithError<T>(endpoint: string, operationName: string): Promise<T> {
-        // Return mock data if API key is not configured
+        // Return mock data if access token is not configured
         if (this.useMockData) {
             console.log(`[TMDB] Returning mock data for ${operationName}`);
             return this.getMockResponse(endpoint) as T;
         }
 
-        const url = `${this.baseUrl}${endpoint}?api_key=${this.apiKey}&language=tr-TR`;
+        // Remove trailing slash from baseUrl and leading slash from endpoint to avoid double slash
+        const cleanBaseUrl = (this.baseUrl || '').replace(/\/$/, '');
+        const cleanEndpoint = endpoint.replace(/^\//, '');
+        const separator = endpoint.includes('?') ? '&' : '?';
+        const url = `${cleanBaseUrl}/${cleanEndpoint}${separator}language=tr-TR`;
         const startTime = Date.now();
 
         try {
             const response = await withTracing(
-                () => fetch(url),
+                () => fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${this.accessToken}`,
+                        'accept': 'application/json',
+                    },
+                }),
                 {
                     spanName: `tmdb.${operationName}`,
                     endpoint: endpoint,
@@ -153,9 +163,9 @@ class TMDBService {
             if (!response.ok) {
                 if (response.status === 401 && !apiKeyWarningShown) {
                     apiKeyWarningShown = true;
-                    console.error('[TMDB] 401 Unauthorized: Invalid API key. Please check your .env file.');
+                    console.error('[TMDB] 401 Unauthorized: Invalid access token. Please check your .env file.');
                 }
-                throw new Error(`HTTP Error: ${response.status}`);
+                throw new Error(`HTTP Error: ${JSON.stringify(response)},${response.status}`);
             }
 
             return await response.json();
@@ -181,7 +191,7 @@ class TMDBService {
                     'api.operation': operationName,
                 },
                 extra: {
-                    url: url.replace(this.apiKey || '', '***'),
+                    url: url.replace(this.accessToken || '', '***'),
                     duration: Date.now() - startTime,
                 },
             });
@@ -215,15 +225,15 @@ class TMDBService {
     }
 
     async getPopularMovies(page = 1): Promise<{ results: Movie[]; total_pages: number }> {
-        return this.fetchWithError(`/movie/popular&page=${page}`, 'getPopularMovies');
+        return this.fetchWithError(`/movie/popular?page=${page}`, 'getPopularMovies');
     }
 
     async getTopRated(page = 1): Promise<{ results: Movie[]; total_pages: number }> {
-        return this.fetchWithError(`/movie/top_rated&page=${page}`, 'getTopRated');
+        return this.fetchWithError(`/movie/top_rated?page=${page}`, 'getTopRated');
     }
 
     async getUpcoming(page = 1): Promise<{ results: Movie[]; total_pages: number }> {
-        return this.fetchWithError(`/movie/upcoming&page=${page}`, 'getUpcoming');
+        return this.fetchWithError(`/movie/upcoming?page=${page}`, 'getUpcoming');
     }
 
     async getMovieDetails(id: number): Promise<MovieDetails> {
@@ -232,14 +242,63 @@ class TMDBService {
 
     async searchMovies(query: string, page = 1): Promise<{ results: Movie[] }> {
         return this.fetchWithError(
-            `/search/movie&query=${encodeURIComponent(query)}&page=${page}`,
+            `/search/movie?query=${encodeURIComponent(query)}&page=${page}`,
             'searchMovies'
         );
+    }
+
+    async getNowPlaying(page = 1): Promise<{ results: Movie[]; total_pages: number }> {
+        return this.fetchWithError(`/movie/now_playing?page=${page}`, 'getNowPlaying');
+    }
+
+    // TV Show methods
+    async getPopularTVShows(page = 1): Promise<{ results: TVShow[]; total_pages: number }> {
+        return this.fetchWithError(`/tv/popular?page=${page}`, 'getPopularTVShows');
+    }
+
+    async getTopRatedTVShows(page = 1): Promise<{ results: TVShow[]; total_pages: number }> {
+        return this.fetchWithError(`/tv/top_rated?page=${page}`, 'getTopRatedTVShows');
+    }
+
+    async getTVShowDetails(id: number): Promise<TVShowDetails> {
+        return this.fetchWithError(`/tv/${id}`, 'getTVShowDetails');
+    }
+
+    async searchTVShows(query: string, page = 1): Promise<{ results: TVShow[] }> {
+        return this.fetchWithError(
+            `/search/tv?query=${encodeURIComponent(query)}&page=${page}`,
+            'searchTVShows'
+        );
+    }
+
+    async getMovieVideos(movieId: number): Promise<MovieVideos> {
+        return this.fetchWithError(`/movie/${movieId}/videos`, 'getMovieVideos');
+    }
+
+    getYouTubeUrl(videoKey: string): string {
+        return `https://www.youtube.com/embed/${videoKey}`;
+    }
+
+    getYouTubeThumbnail(videoKey: string): string {
+        return `https://img.youtube.com/vi/${videoKey}/maxresdefault.jpg`;
     }
 
     getImageUrl(path: string | null, size: 'w500' | 'original' = 'w500'): string {
         if (!path) return 'https://via.placeholder.com/500x750?text=No+Image';
         return `${API_CONFIG.IMAGE_BASE_URL}/${size}${path}`;
+    }
+
+    // Genre methods for Discover page
+    async getGenreList(): Promise<{ genres: { id: number; name: string }[] }> {
+        return this.fetchWithError('/genre/movie/list', 'getGenreList');
+    }
+
+    async getMoviesByGenre(genreId: number, page = 1): Promise<{ results: Movie[]; total_pages: number }> {
+        return this.fetchWithError(`/discover/movie?with_genres=${genreId}&page=${page}`, 'getMoviesByGenre');
+    }
+
+    async getPopularPeople(page = 1): Promise<PersonResult> {
+        return this.fetchWithError(`/person/popular?page=${page}`, 'getPopularPeople');
     }
 }
 

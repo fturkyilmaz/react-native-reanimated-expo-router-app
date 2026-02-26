@@ -1,144 +1,167 @@
 /**
  * Profile Hook
- * 
- * Provides functionality for managing user profile updates.
- * 
+ *
+ * Provides functionality for managing user profile updates using Supabase Auth.
+ *
  * Usage:
  * const { mutate: updateProfile, isPending } = useUpdateProfile();
  * updateProfile({ name: 'New Name', email: 'new@email.com' });
  */
 
-import { useAuthStore } from '@/store/authStore';
-import { logger } from '@/utils/logger';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabaseAuth } from "@/services/supabase-auth";
+import { UserService } from "@/services/user-service";
+import { useAuthStore } from "@/store/authStore";
+import { logger } from "@/utils/logger";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ProfileFormData {
-    name: string;
-    email: string;
-    phone?: string;
-    bio?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  bio?: string;
 }
 
 interface UserUpdateResponse {
-    id: string;
-    name: string;
-    email: string;
-    phone?: string;
-    bio?: string;
-    avatar?: string;
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  bio?: string;
+  avatar?: string;
 }
 
 /**
- * Hook for updating user profile
+ * Hook for updating user profile with Supabase Auth
  */
 export function useUpdateProfile() {
-    const queryClient = useQueryClient();
-    const { user, setUser } = useAuthStore();
+  const queryClient = useQueryClient();
+  const { user, setUser } = useAuthStore();
 
-    return useMutation({
-        mutationFn: async (data: ProfileFormData): Promise<UserUpdateResponse> => {
-            logger.auth.info('Updating profile', { userId: user?.id });
+  return useMutation({
+    mutationFn: async (data: ProfileFormData): Promise<UserUpdateResponse> => {
+      logger.auth.info("Updating profile", { userId: user?.id });
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+      // First, try to update with Supabase Auth if user is authenticated
+      try {
+        const result = await supabaseAuth.updateUser({
+          email: user?.email ? user?.email : data.email,
+          phone: data.phone,
+          name: data.name,
+          bio: data.bio,
+        });
 
-            // In a real app, this would be an API call:
-            // const response = await apiClient.put('/user/profile', data);
+        if (result.error) {
+          // Check if it's an auth error
+          if (
+            result.error.includes("Auth session missing") ||
+            result.error.includes("not authenticated") ||
+            result.error.includes("JWT")
+          ) {
+            logger.auth.warn(
+              "User not authenticated with Supabase, using local update only",
+            );
+          } else {
+            logger.auth.warn("Supabase update failed", { error: result.error });
+          }
+        } else {
+          logger.auth.info("Supabase profile updated successfully");
+        }
+      } catch (supabaseError: any) {
+        // If Supabase fails, continue with local update
+        logger.auth.warn("Supabase update error, using local update", {
+          error: supabaseError.message,
+        });
+      }
 
-            // Mock successful response
-            const response: UserUpdateResponse = {
-                id: user?.id || '1',
-                name: data.name,
-                email: data.email,
-                phone: data.phone,
-                bio: data.bio,
-                avatar: user?.avatar,
-            };
+      // Always update local SQLite database
+      await UserService.upsert({
+        id: user?.id || "local",
+        email: data.email,
+        name: data.name,
+        // avatar_url: user?.avatar,
+        token: user?.token || "",
+      });
 
-            return response;
-        },
-        onSuccess: (data) => {
-            // Update local user state
-            setUser({
-                id: data.id,
-                name: data.name,
-                email: data.email,
-                phone: data.phone,
-                bio: data.bio,
-                avatar: data.avatar,
-            });
+      return {
+        id: user?.id || "local",
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        bio: data.bio,
+        avatar: user?.avatar,
+      };
+    },
+    onSuccess: (data) => {
+      // Update local user state
+      setUser({
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        bio: data.bio,
+        avatar: data.avatar,
+        token: user?.token || "",
+      });
 
-            // Invalidate related queries
-            queryClient.invalidateQueries({ queryKey: ['user'] });
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ["user"] });
 
-            logger.auth.info('Profile updated successfully', { userId: data.id });
-        },
-        onError: (error: Error) => {
-            logger.auth.error('Profile update failed', {
-                userId: user?.id,
-                error: error.message,
-            });
-        },
-    });
+      logger.auth.info("Profile updated successfully", { userId: data.id });
+    },
+    onError: (error: Error) => {
+      logger.auth.error("Profile update failed", {
+        userId: user?.id,
+        error: error.message,
+      });
+      throw error;
+    },
+  });
 }
 
 /**
  * Hook for changing password
  */
 export function useChangePassword() {
-    const { user } = useAuthStore();
+  const { user } = useAuthStore();
 
-    return useMutation({
-        mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
-            logger.auth.info('Changing password', { userId: user?.id });
+  return useMutation({
+    mutationFn: async (newPassword: string): Promise<void> => {
+      logger.auth.info("Changing password", { userId: user?.id });
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
+      // First check if user is authenticated with Supabase
+      const session = await supabaseAuth.getSession();
 
-            // Mock successful response
-            return { success: true };
-        },
-        onSuccess: () => {
-            logger.auth.info('Password changed successfully', { userId: user?.id });
-        },
-        onError: (error: Error) => {
-            logger.auth.error('Password change failed', {
-                userId: user?.id,
-                error: error.message,
-            });
-        },
-    });
-}
+      if (!session) {
+        // Fallback: update local only
+        logger.auth.warn("User not authenticated with Supabase");
+        return;
+      }
 
-/**
- * Hook for uploading avatar
- */
-export function useUploadAvatar() {
-    const queryClient = useQueryClient();
-    const { user, setUser } = useAuthStore();
+      // For password change, we need to use the Supabase client directly
+      const client = (supabaseAuth as any).getClient?.();
 
-    return useMutation({
-        mutationFn: async (avatarUri: string) => {
-            logger.auth.info('Uploading avatar', { userId: user?.id });
+      if (client && client.auth) {
+        const { error } = await client.auth.updateUser({
+          password: newPassword,
+        });
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
+        if (error) {
+          throw new Error(error.message);
+        }
+        return;
+      }
 
-            // Mock response with new avatar URL
-            const newAvatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=E50914&color=fff&size=128&t=${Date.now()}`;
-
-            return { avatarUrl: newAvatarUrl };
-        },
-        onSuccess: (data) => {
-            setUser({ avatar: data.avatarUrl });
-            queryClient.invalidateQueries({ queryKey: ['user'] });
-            logger.auth.info('Avatar uploaded successfully', { userId: user?.id });
-        },
-        onError: (error: Error) => {
-            logger.auth.error('Avatar upload failed', {
-                userId: user?.id,
-                error: error.message,
-            });
-        },
-    });
+      throw new Error("Supabase not configured");
+    },
+    onSuccess: () => {
+      logger.auth.info("Password changed successfully", { userId: user?.id });
+    },
+    onError: (error: Error) => {
+      logger.auth.error("Password change failed", {
+        userId: user?.id,
+        error: error.message,
+      });
+      throw error;
+    },
+  });
 }

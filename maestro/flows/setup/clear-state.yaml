@@ -1,0 +1,8 @@
+appId: ${APP_ID}
+name: Clear App State
+---
+- clearState
+- launchApp
+- waitForAnimationToEnd:
+    timeout: 10000
+- assertVisible: "email-input"

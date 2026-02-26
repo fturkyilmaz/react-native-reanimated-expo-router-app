@@ -38,6 +38,13 @@ export default function SettingsLayout() {
                     presentation: 'modal',
                 }}
             />
+            <Stack.Screen
+                name="reset-db"
+                options={{
+                    title: 'Database Sıfırla',
+                    headerShown: true,
+                }}
+            />
         </Stack>
     );
 }

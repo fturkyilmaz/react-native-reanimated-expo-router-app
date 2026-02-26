@@ -2,12 +2,14 @@
  * Structured Logging Utility
  * 
  * Provides centralized logging with levels, context, and remote error tracking.
+ * Includes Sentry breadcrumbs for all log levels.
  * 
  * Usage:
  * import { logger } from '@/utils/logger';
  * 
  * logger.info('User logged in', { userId: 123 });
  * logger.error('API request failed', { url, statusCode });
+ * logger.movies.info('Adding to favorites', { movieId: 123 });
  */
 
 import * as Sentry from '@sentry/react-native';
@@ -42,9 +44,51 @@ const CATEGORIES = {
     OFFLINE: 'OFFLINE',
     SECURITY: 'SECURITY',
     PERFORMANCE: 'PERFORMANCE',
+    DATABASE: 'DATABASE',
+    SYNC: 'SYNC',
 } as const;
 
 type LogCategory = (typeof CATEGORIES)[keyof typeof CATEGORIES];
+
+/**
+ * Convert log level to Sentry severity
+ */
+function levelToSentry(level: LogLevel): string {
+    switch (level) {
+        case 'debug':
+            return 'debug';
+        case 'info':
+            return 'info';
+        case 'warn':
+            return 'warning';
+        case 'error':
+            return 'error';
+        default:
+            return 'info';
+    }
+}
+
+/**
+ * Add breadcrumb to Sentry for tracing
+ */
+function addBreadcrumb(
+    message: string,
+    level: string,
+    context?: Record<string, unknown>,
+    category?: string
+): void {
+    try {
+        Sentry.addBreadcrumb({
+            message,
+            level: level as any,
+            data: __DEV__ ? context : sanitizeContext(context),
+            category: category || 'logger',
+            type: 'default',
+        });
+    } catch {
+        // Silent fail - don't break logging if Sentry fails
+    }
+}
 
 /**
  * Core logging function
@@ -83,6 +127,10 @@ function log(
         context || ''
     );
 
+    // Add breadcrumb to Sentry (all levels for tracing)
+    const sentryLevel = levelToSentry(level);
+    addBreadcrumb(message, sentryLevel, context, category);
+
     // Remote error tracking in production
     if (level === 'error') {
         Sentry.captureException(new Error(message), {
@@ -106,7 +154,7 @@ function log(
 function sanitizeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
     if (!context) return undefined;
 
-    const sensitiveKeys = ['password', 'token', 'apiKey', 'secret', 'creditCard'];
+    const sensitiveKeys = ['password', 'token', 'apiKey', 'secret', 'creditCard', 'accessToken'];
     const sanitized: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(context)) {
@@ -181,8 +229,27 @@ export const logger = {
         error: (message: string, context?: Record<string, unknown>) =>
             log('error', message, context, CATEGORIES.OFFLINE),
     },
+    database: {
+        debug: (message: string, context?: Record<string, unknown>) =>
+            log('debug', message, context, CATEGORIES.DATABASE),
+        info: (message: string, context?: Record<string, unknown>) =>
+            log('info', message, context, CATEGORIES.DATABASE),
+        warn: (message: string, context?: Record<string, unknown>) =>
+            log('warn', message, context, CATEGORIES.DATABASE),
+        error: (message: string, context?: Record<string, unknown>) =>
+            log('error', message, context, CATEGORIES.DATABASE),
+    },
+    sync: {
+        debug: (message: string, context?: Record<string, unknown>) =>
+            log('debug', message, context, CATEGORIES.SYNC),
+        info: (message: string, context?: Record<string, unknown>) =>
+            log('info', message, context, CATEGORIES.SYNC),
+        warn: (message: string, context?: Record<string, unknown>) =>
+            log('warn', message, context, CATEGORIES.SYNC),
+        error: (message: string, context?: Record<string, unknown>) =>
+            log('error', message, context, CATEGORIES.SYNC),
+    },
 };
 
 export const LOG_CATEGORIES = CATEGORIES;
 export type { LogCategory, LogEntry, LogLevel };
-

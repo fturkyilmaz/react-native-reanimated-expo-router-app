@@ -1,0 +1,7 @@
+appId: host.exp.Exponent
+name: Simple Test
+---
+- launchApp
+- waitForAnimationToEnd:
+    timeout: 10000
+- assertVisible: "email-input"

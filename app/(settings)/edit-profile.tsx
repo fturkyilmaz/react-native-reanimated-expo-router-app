@@ -88,6 +88,8 @@ export default function EditProfileScreen() {
     const handleSave = (data: ProfileFormData) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+
+
         updateProfile(data, {
             onSuccess: () => {
                 logger.auth.info('Profile updated successfully', { userId: user?.id });

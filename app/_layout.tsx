@@ -12,10 +12,12 @@ import i18n from '@/i18n';
 import { OpenTelemetryProvider } from '@/otel/provider';
 import { QueryProvider } from '@/providers/query-provider';
 import { SecurityProvider } from '@/security/security-provider';
+import { getNavigationIntegration } from '@/sentry';
 import { SentryProvider } from '@/sentry/provider';
 import { useAuthStore } from '@/store/authStore';
-import { Stack } from 'expo-router';
+import { Stack, useNavigationContainerRef } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -24,9 +26,21 @@ import SplashScreen from './splash-screen';
 
 function RootLayoutNav() {
   const { user, isTransitioning, completeTransition, isAuthenticated, isHydrated } = useAuthStore();
+  const navigationRef = useNavigationContainerRef();
 
   // Initialize network status monitoring (inside QueryProvider)
   useNetworkStatus();
+
+  // Register navigation container with Sentry
+  useEffect(() => {
+    if (navigationRef) {
+      const navigationIntegration = getNavigationIntegration();
+      if (navigationIntegration && typeof navigationIntegration.registerNavigationContainer === 'function') {
+        navigationIntegration.registerNavigationContainer(navigationRef);
+        console.log('[Sentry] Navigation container registered');
+      }
+    }
+  }, [navigationRef]);
 
   // Show splash screen while hydrating
   if (!isHydrated) {

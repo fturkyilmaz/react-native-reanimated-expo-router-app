@@ -44,5 +44,13 @@ export type {
     SecurityProviderProps
 } from './security-provider';
 
+// Audit Logger
+export {
+    securityAuditLogger,
+    useSecurityAudit,
+    type SecurityEvent,
+    type SecurityEventType
+} from './audit-logger';
+
 // Default exports
 export { default } from './security-provider';

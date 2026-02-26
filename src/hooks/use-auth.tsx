@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 await SecureStore.setItemAsync('userData', JSON.stringify(mockUser));
 
                 setUser(mockUser);
-                setIsTransitioning(true); // Animasyonu başlat!
+                setIsTransitioning(true);
             } else {
                 throw new Error('Geçersiz e-posta veya şifre');
             }

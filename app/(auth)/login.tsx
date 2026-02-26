@@ -63,7 +63,19 @@ export default function LoginScreen() {
         if (result.success) {
             try {
                 clearError();
-                await login('test@test.com', '123456');
+                // Use stored credentials from biometric auth
+                // The actual credentials should be stored securely and retrieved from the auth store
+                const { user } = useAuthStore.getState();
+                if (user?.email && user?.token) {
+                    // For biometric login, we need to retrieve the stored password
+                    // This should be implemented using secure storage
+                    // For now, we'll use the stored email and a placeholder
+                    // In production, this should use proper secure storage
+                    await login(user.email, '');
+                } else {
+                    // Fallback to empty credentials if no stored user
+                    await login('', '');
+                }
                 router.replace('/(tabs)');
             } catch (error) { }
         }
@@ -144,6 +156,7 @@ export default function LoginScreen() {
                                 name="email"
                                 render={({ field: { onChange, value } }) => (
                                     <TextInput
+                                        testID="email-input"
                                         style={[styles.input, { color: theme.text }]}
                                         placeholder={t('auth.email')}
                                         placeholderTextColor={theme.textSecondary}
@@ -180,6 +193,7 @@ export default function LoginScreen() {
                                 name="password"
                                 render={({ field: { onChange, value } }) => (
                                     <TextInput
+                                        testID="password-input"
                                         style={[styles.input, { color: theme.text }]}
                                         placeholder={t('auth.password')}
                                         placeholderTextColor={theme.textSecondary}
@@ -207,6 +221,7 @@ export default function LoginScreen() {
                     </Pressable>
 
                     <Pressable
+                        testID="login-button"
                         style={[styles.button, { backgroundColor: theme.primary }, isLoading && styles.buttonDisabled]}
                         onPress={handleSubmit(onSubmit)}
                         disabled={isLoading}
@@ -221,6 +236,7 @@ export default function LoginScreen() {
                     {/* Biometric Login Button */}
                     {showBiometricButton && (
                         <Pressable
+                            testID="biometric-button"
                             style={styles.biometricButton}
                             onPress={handleBiometricLogin}
                             disabled={isLoading}
@@ -240,7 +256,7 @@ export default function LoginScreen() {
                 {/* Footer */}
                 <View style={styles.footer}>
                     <Text style={[styles.footerText, { color: theme.textSecondary }]}>{t('auth.noAccount')} </Text>
-                    <Link href="/(auth)/register" asChild>
+                    <Link href="/(auth)/register" asChild testID='register-button'>
                         <Pressable>
                             <Text style={[styles.footerLink, { color: theme.primary }]}>{t('auth.register')}</Text>
                         </Pressable>

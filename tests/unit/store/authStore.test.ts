@@ -1,245 +1,284 @@
+import { StorageKey } from "@/security";
 import { useAuthStore } from "@/store/authStore";
-import { act, renderHook } from "@testing-library/react-native";
+import { act } from "@testing-library/react-native";
 import * as SecureStore from "expo-secure-store";
 
-// Mock SecureStore
-jest.mock("expo-secure-store", () => ({
-  setItemAsync: jest.fn(),
-  getItemAsync: jest.fn(),
-  deleteItemAsync: jest.fn(),
+jest.mock("@/services/local-db.service", () => ({
+  UserService: {
+    upsert: jest.fn(),
+    delete: jest.fn(),
+    getCurrentUser: jest.fn(),
+  },
+}));
+
+jest.mock("@/services/supabase-auth", () => ({
+  supabaseAuth: {
+    isConfigured: jest.fn(() => false),
+    signIn: jest.fn(),
+    signUp: jest.fn(),
+    signOut: jest.fn(),
+  },
 }));
 
 describe("authStore", () => {
+  const initialState = useAuthStore.getState();
+
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset store state
-    const { result } = renderHook(() => useAuthStore());
-    act(() => {
-      result.current.logout();
-    });
+    useAuthStore.setState(initialState, true);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it("initializes with correct default state", () => {
-    const { result } = renderHook(() => useAuthStore());
+    const state = useAuthStore.getState();
 
-    expect(result.current.user).toBeNull();
-    expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.isTransitioning).toBe(false);
-    expect(result.current.error).toBeNull();
-    expect(result.current.pendingNavigation).toBe(false);
+    expect(state.user).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.isLoading).toBe(false);
+    expect(state.isTransitioning).toBe(false);
+    expect(state.error).toBeNull();
+    expect(state.pendingNavigation).toBe(false);
   });
 
   it("logs in successfully with correct credentials", async () => {
-    const { result } = renderHook(() => useAuthStore());
-
     await act(async () => {
-      await result.current.login("test@test.com", "123456");
+      await useAuthStore.getState().login("test@test.com", "123456");
     });
 
-    expect(result.current.user).not.toBeNull();
-    expect(result.current.user?.email).toBe("test@test.com");
-    expect(result.current.user?.name).toBe("Furkan");
-    expect(result.current.isAuthenticated).toBe(true);
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.isTransitioning).toBe(true);
+    const state = useAuthStore.getState();
+    expect(state.user).not.toBeNull();
+    expect(state.user?.email).toBe("test@test.com");
+    expect(state.user?.name).toBe("Furkan");
+    expect(state.isAuthenticated).toBe(true);
+    expect(state.isLoading).toBe(false);
+    expect(state.isTransitioning).toBe(true);
     expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-      "userToken",
+      StorageKey.AUTH_TOKEN,
       expect.any(String),
+      expect.objectContaining({ keychainService: "com.cinesearch.secure" }),
     );
     expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-      "userData",
+      StorageKey.USER_DATA,
       expect.any(String),
+      expect.objectContaining({ keychainService: "com.cinesearch.secure" }),
     );
   });
 
   it("fails login with incorrect credentials", async () => {
-    const { result } = renderHook(() => useAuthStore());
+    let thrown: Error | null = null;
+    await act(async () => {
+      try {
+        await useAuthStore.getState().login("wrong@email.com", "wrongpassword");
+      } catch (err) {
+        thrown = err as Error;
+      }
+    });
 
-    await expect(
-      act(async () => {
-        await result.current.login("wrong@email.com", "wrongpassword");
-      }),
-    ).rejects.toThrow("Geçersiz e-posta veya şifre");
+    expect(thrown?.message).toBe("Geçersiz e-posta veya şifre");
 
-    expect(result.current.user).toBeNull();
-    expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.error).toBe("Geçersiz e-posta veya şifre");
-    expect(result.current.isLoading).toBe(false);
+    const state = useAuthStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.error).toBe("Geçersiz e-posta veya şifre");
+    expect(state.isLoading).toBe(false);
   });
 
   it("logs out successfully", async () => {
-    const { result } = renderHook(() => useAuthStore());
-
     // First login
     await act(async () => {
-      await result.current.login("test@test.com", "123456");
+      await useAuthStore.getState().login("test@test.com", "123456");
     });
 
-    expect(result.current.isAuthenticated).toBe(true);
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
 
     // Then logout
-    act(() => {
-      result.current.logout();
+    await act(async () => {
+      await useAuthStore.getState().logout();
     });
 
-    expect(result.current.user).toBeNull();
-    expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.error).toBeNull();
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith("userToken");
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith("userData");
+    const state = useAuthStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
+    expect(state.error).toBeNull();
+    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(StorageKey.AUTH_TOKEN);
+    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(StorageKey.USER_DATA);
   });
 
   it("registers successfully", async () => {
-    const { result } = renderHook(() => useAuthStore());
-
+    jest.useFakeTimers();
     await act(async () => {
-      await result.current.register("new@user.com", "password123", "New User");
+      const registerPromise = useAuthStore.getState().register(
+        "new@user.com",
+        "password123",
+        "New User",
+      );
+      jest.advanceTimersByTime(1500);
+      await registerPromise;
     });
 
-    expect(result.current.user).not.toBeNull();
-    expect(result.current.user?.email).toBe("new@user.com");
-    expect(result.current.user?.name).toBe("New User");
-    expect(result.current.isAuthenticated).toBe(true);
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.isTransitioning).toBe(true);
+    const state = useAuthStore.getState();
+    expect(state.user).not.toBeNull();
+    expect(state.user?.email).toBe("new@user.com");
+    expect(state.user?.name).toBe("New User");
+    expect(state.isAuthenticated).toBe(true);
+    expect(state.isLoading).toBe(false);
+    expect(state.isTransitioning).toBe(true);
+    jest.useRealTimers();
   });
 
   it("clears error", async () => {
-    const { result } = renderHook(() => useAuthStore());
-
     // Trigger an error
     try {
       await act(async () => {
-        await result.current.login("wrong@email.com", "wrongpassword");
+        await useAuthStore.getState().login("wrong@email.com", "wrongpassword");
       });
     } catch (e) {
       // Expected
     }
 
-    expect(result.current.error).not.toBeNull();
+    expect(useAuthStore.getState().error).not.toBeNull();
 
     act(() => {
-      result.current.clearError();
+      useAuthStore.getState().clearError();
     });
 
-    expect(result.current.error).toBeNull();
+    expect(useAuthStore.getState().error).toBeNull();
   });
 
   it("completes transition", async () => {
-    const { result } = renderHook(() => useAuthStore());
-
     await act(async () => {
-      await result.current.login("test@test.com", "123456");
+      await useAuthStore.getState().login("test@test.com", "123456");
     });
 
-    expect(result.current.isTransitioning).toBe(true);
-    expect(result.current.pendingNavigation).toBe(false);
+    const stateBefore = useAuthStore.getState();
+    expect(stateBefore.isTransitioning).toBe(true);
+    expect(stateBefore.pendingNavigation).toBe(false);
 
     act(() => {
-      result.current.completeTransition();
+      useAuthStore.getState().completeTransition();
     });
 
-    expect(result.current.isTransitioning).toBe(false);
-    expect(result.current.pendingNavigation).toBe(false);
+    const stateAfter = useAuthStore.getState();
+    expect(stateAfter.isTransitioning).toBe(false);
+    expect(stateAfter.pendingNavigation).toBe(false);
   });
 
   it("sets pending navigation", () => {
-    const { result } = renderHook(() => useAuthStore());
-
     act(() => {
-      result.current.setPendingNavigation(true);
+      useAuthStore.getState().setPendingNavigation(true);
     });
 
-    expect(result.current.pendingNavigation).toBe(true);
+    expect(useAuthStore.getState().pendingNavigation).toBe(true);
 
     act(() => {
-      result.current.setPendingNavigation(false);
+      useAuthStore.getState().setPendingNavigation(false);
     });
 
-    expect(result.current.pendingNavigation).toBe(false);
+    expect(useAuthStore.getState().pendingNavigation).toBe(false);
   });
 
   it("sets loading state during login", async () => {
-    const { result } = renderHook(() => useAuthStore());
+    jest.useFakeTimers();
+    expect(useAuthStore.getState().isLoading).toBe(false);
 
-    expect(result.current.isLoading).toBe(false);
+    const loginPromise = useAuthStore.getState().login("test@test.com", "123456");
+    expect(useAuthStore.getState().isLoading).toBe(true);
 
-    const loginPromise = act(async () => {
-      await result.current.login("test@test.com", "123456");
+    await act(async () => {
+      jest.advanceTimersByTime(1000);
+      await loginPromise;
     });
 
-    // During login, loading should be true
-    expect(result.current.isLoading).toBe(true);
-
-    await loginPromise;
-
-    expect(result.current.isLoading).toBe(false);
+    expect(useAuthStore.getState().isLoading).toBe(false);
+    jest.useRealTimers();
   });
 
   it("sets loading state during register", async () => {
-    const { result } = renderHook(() => useAuthStore());
+    jest.useFakeTimers();
+    expect(useAuthStore.getState().isLoading).toBe(false);
 
-    expect(result.current.isLoading).toBe(false);
+    const registerPromise = useAuthStore.getState().register(
+      "new@user.com",
+      "password123",
+      "New User",
+    );
+    expect(useAuthStore.getState().isLoading).toBe(true);
 
-    const registerPromise = act(async () => {
-      await result.current.register("new@user.com", "password123", "New User");
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+      await registerPromise;
     });
 
-    expect(result.current.isLoading).toBe(true);
-
-    await registerPromise;
-
-    expect(result.current.isLoading).toBe(false);
+    expect(useAuthStore.getState().isLoading).toBe(false);
+    jest.useRealTimers();
   });
 
   it("generates unique tokens for each login", async () => {
-    const { result } = renderHook(() => useAuthStore());
-
+    jest.useFakeTimers();
     await act(async () => {
-      await result.current.login("test@test.com", "123456");
+      const loginPromise = useAuthStore.getState().login("test@test.com", "123456");
+      jest.advanceTimersByTime(1000);
+      await loginPromise;
     });
 
-    const firstToken = result.current.user?.token;
+    const firstToken = useAuthStore.getState().user?.token;
 
     // Logout and login again
-    act(() => {
-      result.current.logout();
+    await act(async () => {
+      await useAuthStore.getState().logout();
     });
 
     // Small delay to ensure different timestamp
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     await act(async () => {
-      await result.current.login("test@test.com", "123456");
+      const loginPromise = useAuthStore.getState().login("test@test.com", "123456");
+      jest.advanceTimersByTime(1000);
+      await loginPromise;
     });
 
-    const secondToken = result.current.user?.token;
+    const secondToken = useAuthStore.getState().user?.token;
 
     expect(firstToken).not.toBe(secondToken);
+    jest.useRealTimers();
   });
 
   it("generates unique IDs for each registration", async () => {
-    const { result } = renderHook(() => useAuthStore());
-
+    jest.useFakeTimers();
     await act(async () => {
-      await result.current.register("user1@test.com", "password123", "User 1");
+      const registerPromise = useAuthStore.getState().register(
+        "user1@test.com",
+        "password123",
+        "User 1",
+      );
+      jest.advanceTimersByTime(1500);
+      await registerPromise;
     });
 
-    const firstId = result.current.user?.id;
+    const firstId = useAuthStore.getState().user?.id;
 
-    act(() => {
-      result.current.logout();
+    await act(async () => {
+      await useAuthStore.getState().logout();
     });
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     await act(async () => {
-      await result.current.register("user2@test.com", "password123", "User 2");
+      const registerPromise = useAuthStore.getState().register(
+        "user2@test.com",
+        "password123",
+        "User 2",
+      );
+      jest.advanceTimersByTime(1500);
+      await registerPromise;
     });
 
-    const secondId = result.current.user?.id;
+    const secondId = useAuthStore.getState().user?.id;
 
     expect(firstId).not.toBe(secondId);
+    jest.useRealTimers();
   });
 });

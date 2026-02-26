@@ -1,0 +1,41 @@
+# Maestro CI Configuration for CineSearch
+# Used for CI/CD pipelines and cloud testing
+
+appId: ${APP_ID}
+name: CineSearch CI Configuration
+
+# CI'da daha uzun timeout
+timeout: 20000
+
+# Artifacts - CI'da saklanacak dosyalar
+artifacts:
+  - path: .maestro/reports/**
+  - path: .maestro/screenshots/**
+  - path: .maestro/logs/**
+
+# Reporting
+report:
+  format: junit
+  output: .maestro/reports/junit-report.xml
+  includeLabels: true
+
+# Environment variables for CI
+env:
+  CI: "true"
+  APP_ID: "host.exp.Exponent"
+  TEST_EMAIL: "test@test.com"
+  TEST_PASSWORD: "123456"
+  TEST_NAME: "Test User"
+
+# Android CI settings
+android:
+  device:
+    orientation: PORTRAIT
+    model: "Pixel_6"
+    apiLevel: 34
+
+# iOS CI settings
+ios:
+  device:
+    orientation: PORTRAIT
+    type: "iPhone 15"

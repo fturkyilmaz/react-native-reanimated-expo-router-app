@@ -1,0 +1,41 @@
+appId: host.exp.Exponent
+name: Register Flow Tests
+---
+- launchApp
+
+- waitForAnimationToEnd:
+      timeout: 10000
+
+- assertVisible: "Welcome Back"
+
+- tapOn:
+      id: "register-button"
+- tapOn:
+      id: "name-input"
+- inputText:
+      id: "name-input"
+      text: "Test User"
+- tapOn:
+      id: "email-input"
+- inputText:
+      id: "email-input"
+      text: "test@test.com"
+
+- tapOn:
+      id: "password-input"
+- inputText:
+      id: "password-input"
+      text: "123456"
+
+- tapOn:
+      id: "confirm-password-input"
+- inputText:
+      id: "confirm-password-input"
+      text: "123456"
+
+- tapOn:
+      id: "register-button-btn"
+
+- waitForAnimationToEnd:
+      timeout: 15000
+- assertVisible: "Discover"

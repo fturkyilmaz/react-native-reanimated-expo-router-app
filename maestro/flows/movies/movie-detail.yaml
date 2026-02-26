@@ -1,0 +1,53 @@
+appId: ${APP_ID}
+name: Movie Detail Flow Tests
+---
+- launchApp
+- assertVisible: "email-input"
+
+- tapOn: "email-input"
+- inputText: "test@test.com"
+- tapOn: "password-input"
+- inputText: "123456"
+- tapOn: "login-button"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+      timeout: 15000
+      visible:
+          - "movies-flatlist"
+      then:
+
+- tapOn: "movie-card-0"
+- assertVisible: "movie-detail-screen"
+- assertVisible: "favorite-button"
+
+- takeScreenshot:
+      name: "movie-detail-initial"
+      path: ".maestro/screenshots/movie-detail.png"
+
+- scroll
+- scroll
+- scroll
+
+- takeScreenshot:
+      name: "movie-detail-scrolled"
+      path: ".maestro/screenshots/movie-detail-scrolled.png"
+
+- tapOn: "favorite-button"
+- waitForAnimationToEnd
+
+- takeScreenshot:
+      name: "after-favorite-toggle"
+      path: ".maestro/screenshots/favorite-toggle.png"
+
+- extendedWaitUntil:
+      timeout: 5000
+      visible:
+          - "video-player"
+      then:
+          - takeScreenshot:
+                name: "video-player"
+                path: ".maestro/screenshots/video-player.png"
+
+- tapOn: "Back"
+- assertVisible: "movies-flatlist"

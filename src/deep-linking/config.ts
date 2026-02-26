@@ -154,11 +154,11 @@ export function parseDeepLink(url: string): {
             }
         }
 
-        // Fallback screen
-        return { route: 'home', params };
+        // Unknown route
+        return { route: null, params };
     } catch (error) {
         console.error('[DeepLink] Failed to parse URL:', error);
-        return { route: 'home', params: {} };
+        return { route: null, params: {} };
     }
 }
 
@@ -222,8 +222,19 @@ export function getScreenFromRoute(
 
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
-            screen = screen.replace(`[${key}]`, value);
-            delete finalParams[key];
+            if (screen.includes(`[${key}]`)) {
+                screen = screen.replace(`[${key}]`, value);
+                delete finalParams[key];
+            }
+        });
+    }
+
+    if (routeConfig.params && params) {
+        Object.values(routeConfig.params).forEach((value) => {
+            if (value.startsWith(':')) {
+                const paramName = value.slice(1);
+                delete finalParams[paramName];
+            }
         });
     }
 

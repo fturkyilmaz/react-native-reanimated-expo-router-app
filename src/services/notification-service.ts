@@ -49,7 +49,21 @@ export async function sendNotification(
         });
 
         const data = await response.json();
-        return data;
+
+        if (data?.data?.[0]) {
+            return data.data[0] as NotificationResponse;
+        }
+
+        if (data?.status) {
+            return data as NotificationResponse;
+        }
+
+        return {
+            id: '',
+            status: 'error',
+            message: 'Invalid response',
+            details: data,
+        };
     } catch (error) {
         console.error('[NotificationService] Send failed:', error);
         return {

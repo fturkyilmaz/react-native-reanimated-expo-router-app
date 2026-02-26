@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react-native';
+import { isRunningInExpoGo } from 'expo';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
@@ -23,6 +24,15 @@ export interface SentryConfig {
 }
 
 /**
+ * React Navigation Integration options
+ */
+export interface ReactNavigationConfig {
+    enableTimeToInitialDisplay?: boolean;
+    routeChangeTimeoutMs?: number;
+    ignoreEmptyBackNavigationTransactions?: boolean;
+}
+
+/**
  * Varsayılan yapılandırma
  */
 const defaultConfig: SentryConfig = {
@@ -35,6 +45,16 @@ const defaultConfig: SentryConfig = {
     replaysOnErrorSampleRate: 1.0,
 };
 
+// React Navigation Integration instance
+let navigationIntegration: any = null;
+
+/**
+ * Sentry React Navigation Integration'ı al
+ */
+export function getNavigationIntegration(): any {
+    return navigationIntegration;
+}
+
 /**
  * Sentry'i başlat
  */
@@ -46,6 +66,14 @@ export function initializeSentry(config: Partial<SentryConfig> = {}): void {
         return;
     }
 
+    // Create React Navigation Integration
+    const expoGo = isRunningInExpoGo();
+    navigationIntegration = Sentry.reactNavigationIntegration({
+        enableTimeToInitialDisplay: !expoGo,
+        routeChangeTimeoutMs: 10000,
+        ignoreEmptyBackNavigationTransactions: true,
+    });
+
     Sentry.init({
         dsn: mergedConfig.dsn,
         environment: mergedConfig.environment,
@@ -54,8 +82,9 @@ export function initializeSentry(config: Partial<SentryConfig> = {}): void {
         tracesSampleRate: mergedConfig.tracesSampleRate,
         replaysSessionSampleRate: mergedConfig.replaysSessionSampleRate,
         replaysOnErrorSampleRate: mergedConfig.replaysOnErrorSampleRate,
-        // React Native specific options
-        enableNative: true,
+        // React Navigation specific options
+        integrations: [navigationIntegration!],
+        enableNativeFramesTracking: !expoGo,
         enableNativeCrashHandling: true,
         enableNativeNagger: true,
         autoInitializeNativeSdk: true,

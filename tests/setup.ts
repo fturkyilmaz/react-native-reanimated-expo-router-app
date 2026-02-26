@@ -1,6 +1,24 @@
 import "@testing-library/jest-native/extend-expect";
 import "react-native-gesture-handler/jestSetup";
 
+// Mock react-native base module (ensures StyleSheet exists)
+jest.mock("react-native", () => {
+  const RN = require("react-native/jest/mock");
+  return {
+    ...RN,
+    Platform: {
+      OS: "ios",
+      select: (obj: Record<string, any>) =>
+        obj.ios ?? obj.default ?? null,
+    },
+    StyleSheet: {
+      create: jest.fn((styles) => styles),
+      flatten: jest.fn((style) => style),
+      hairlineWidth: 1,
+    },
+  };
+});
+
 // Mock react-native-reanimated
 jest.mock("react-native-reanimated", () => {
   const Reanimated = require("react-native-reanimated/mock");
@@ -61,6 +79,103 @@ jest.mock("expo-haptics", () => ({
   impactAsync: jest.fn(),
   notificationAsync: jest.fn(),
   selectionAsync: jest.fn(),
+  ImpactFeedbackStyle: {
+    Light: 'light',
+    Medium: 'medium',
+    Heavy: 'heavy',
+  },
+  NotificationFeedbackType: {
+    Success: 'success',
+    Warning: 'warning',
+    Error: 'error',
+  },
+}));
+
+// Mock expo
+jest.mock("expo", () => ({
+  isRunningInExpoGo: false,
+  ExpoModulesCore: {
+    requireNativeModule: jest.fn(),
+    requireOptionalModule: jest.fn(),
+  },
+  Constants: {
+    expoConfig: {},
+    manifest: {},
+  },
+}));
+
+// Mock @sentry/react-native
+jest.mock("@sentry/react-native", () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  setUser: jest.fn(),
+  setTag: jest.fn(),
+  setContext: jest.fn(),
+  startTransaction: jest.fn(),
+  getCurrentScope: jest.fn(),
+  getGlobalScope: jest.fn(),
+  withScope: jest.fn((cb) => cb()),
+}));
+
+// Mock react-native-worklets
+jest.mock("react-native-worklets", () => ({
+  Worklets: {
+    createRunOnJS: jest.fn((fn) => fn),
+    createContext: jest.fn(),
+    createValue: jest.fn(),
+  },
+  useRunOnJS: jest.fn((fn) => fn),
+  useCreateContext: jest.fn(() => [jest.fn(), jest.fn()]),
+}));
+
+// Mock @react-native-community/netinfo
+jest.mock("@react-native-community/netinfo", () => ({
+  useNetInfo: jest.fn(() => ({
+    isConnected: true,
+    isInternetReachable: true,
+    type: 'wifi',
+    details: { isConnectionExpensive: false },
+  })),
+  addConnectionChangeListener: jest.fn(),
+  removeConnectionChangeListener: jest.fn(),
+  fetch: jest.fn(() => Promise.resolve({
+    isConnected: true,
+    isInternetReachable: true,
+    type: 'wifi',
+    details: { isConnectionExpensive: false },
+  })),
+}));
+
+// Mock @react-navigation/native
+jest.mock("@react-navigation/native", () => ({
+  ...jest.requireActual("@react-navigation/native"),
+  useFocusEffect: jest.fn((callback) => {
+    const cleanup = callback();
+    return cleanup;
+  }),
+  useIsFocused: jest.fn(() => true),
+  useNavigation: jest.fn(() => ({
+    navigate: jest.fn(),
+    dispatch: jest.fn(),
+    goBack: jest.fn(),
+    reset: jest.fn(),
+    setOptions: jest.fn(),
+  })),
+  NavigationContainer: jest.fn(({ children }) => children),
+}));
+
+// Mock database
+jest.mock("@/db/database", () => ({
+  initializeDatabase: jest.fn(() => Promise.resolve({})),
+  getDatabase: jest.fn(() => Promise.resolve({
+    insert: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    query: jest.fn(() => Promise.resolve([])),
+    close: jest.fn(),
+  })),
 }));
 
 // Mock expo-localization
@@ -351,6 +466,33 @@ jest.mock("expo-device", () => ({
   osVersion: '16.0',
 }));
 
+// Mock expo-constants
+jest.mock("expo-constants", () => ({
+  __esModule: true,
+  default: {
+    expoConfig: {
+      android: {},
+      ios: {},
+    },
+    manifest: {},
+    appOwnership: "standalone",
+    deviceName: "Test Device",
+    platform: { ios: {}, android: {} },
+    sessionId: "test-session",
+  },
+}));
+
+// Mock react-native-keyboard-controller
+jest.mock("react-native-keyboard-controller", () => ({
+  KeyboardAwareScrollView: jest.fn(({ children }) => children),
+  KeyboardToolbar: jest.fn(({ children }) => children),
+  useKeyboardAnimation: jest.fn(() => ({ height: 0, progress: 0 })),
+  KeyboardController: {
+    setInputMode: jest.fn(),
+    setDefaultMode: jest.fn(),
+  },
+}));
+
 // Mock expo-file-system
 jest.mock("expo-file-system", () => ({
   File: jest.fn().mockImplementation((path: string) => ({
@@ -387,6 +529,14 @@ jest.mock("react-native/Libraries/StyleSheet/StyleSheet", () => ({
   create: jest.fn((styles) => styles),
   flatten: jest.fn((style) => style),
   hairlineWidth: 1,
+}));
+
+// Mock security provider to avoid rendering issues in unit tests
+jest.mock("@/security/security-provider", () => ({
+  __esModule: true,
+  SecurityProvider: jest.fn(({ children }) => children),
+  useSecurity: jest.fn(() => ({})),
+  default: jest.fn(({ children }) => children),
 }));
 
 // Setup global fetch mock

@@ -3,11 +3,14 @@ import { useTheme } from '@/hooks/use-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useRouter } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
+    ActivityIndicator,
     Dimensions,
     FlatList,
     ImageBackground,
+    Platform,
     Pressable,
     StyleSheet,
     Text,
@@ -26,13 +29,39 @@ const CARD_WIDTH = width - 32;
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function FavoritesScreen() {
-    const { favorites, removeFavorite } = useFavorites();
+    const { favorites: rawFavorites = [], removeFavorite, error, clearError } = useFavorites();
+    const favorites = useMemo(() => rawFavorites ?? [], [rawFavorites]);
     const { theme, isDarkMode } = useTheme();
+    const { t } = useTranslation();
     const router = useRouter();
 
-    const handleRemove = useCallback((id: number) => {
-        removeFavorite(id);
-    }, [removeFavorite]);
+    // Track removing state per movie id to prevent double clicks
+    const [removingIds, setRemovingIds] = useState<Record<number, boolean>>({});
+
+    const handleRemove = useCallback(async (id: number) => {
+        // prevent double clicks
+        if (removingIds[id]) return;
+
+        // optimistic UI: mark as removing
+        setRemovingIds(prev => ({ ...prev, [id]: true }));
+        try {
+            await removeFavorite(id);
+            // removeFavorite should update local DB and provider will reload list;
+            // if provider does not reload automatically, you can optimistically update local state here.
+        } catch (e) {
+            // removeFavorite in provider may throw; we catch to avoid unhandled rejection
+            console.error('[FavoritesScreen] removeFavorite error:', e);
+        } finally {
+            // clear removing flag after short delay to avoid flicker if provider reloads quickly
+            setTimeout(() => {
+                setRemovingIds(prev => {
+                    const copy = { ...prev };
+                    delete copy[id];
+                    return copy;
+                });
+            }, 300);
+        }
+    }, [removeFavorite, removingIds]);
 
     const navigateToDetail = (movieId: number) => {
         router.push({
@@ -41,7 +70,7 @@ export default function FavoritesScreen() {
         });
     };
 
-    if (favorites.length === 0) {
+    if (!Array.isArray(favorites) || favorites.length === 0) {
         return (
             <View style={[styles.emptyContainer, { backgroundColor: theme.background }]}>
                 <Stack.Screen options={{ headerShown: false }} />
@@ -60,11 +89,10 @@ export default function FavoritesScreen() {
                     </Animated.View>
 
                     <Text style={[styles.emptyTitle, { color: theme.text }]}>
-                        Henüz Favori Yok
+                        {t('favorites.empty')}
                     </Text>
                     <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
-                        Beğendiğiniz filmleri buraya eklemek için{'\n'}
-                        kalp ikonuna dokunun
+                        {t('favorites.emptyMessage')}
                     </Text>
 
                     <Pressable
@@ -78,7 +106,7 @@ export default function FavoritesScreen() {
                             style={styles.gradientButton}
                         >
                             <Ionicons name="compass" size={20} color="white" />
-                            <Text style={styles.buttonText}>Keşfetmeye Başla</Text>
+                            <Text style={styles.buttonText}>{t('favorites.explore')}</Text>
                         </LinearGradient>
                     </Pressable>
                 </View>
@@ -90,8 +118,8 @@ export default function FavoritesScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <Stack.Screen
                 options={{
-                    headerShown: true,
-                    title: 'Favorilerim',
+                    headerShown: Platform.OS === 'ios',
+                    title: t('favorites.title'),
                     headerStyle: { backgroundColor: theme.card },
                     headerTintColor: theme.text,
                     headerTitleStyle: { fontWeight: '700', color: theme.text },
@@ -105,82 +133,95 @@ export default function FavoritesScreen() {
             />
 
             <FlatList
+                testID="favorites-list"
                 data={favorites}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => String(item?.id ?? Math.random())}
                 contentContainerStyle={styles.list}
                 showsVerticalScrollIndicator={false}
                 ListHeaderComponent={
                     <View style={styles.headerInfo}>
                         <Text style={[styles.headerTitle, { color: theme.text }]}>
-                            Favorilerim
+                            {t('favorites.title')}
                         </Text>
                         <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
-                            {favorites.length} film favorilerinizde
+                            {t('favorites.movieCount').replace('{{count}}', favorites.length.toString())}
                         </Text>
+                        {error ? (
+                            <Text style={{ color: 'tomato', marginTop: 8 }}>{error}</Text>
+                        ) : null}
                     </View>
                 }
-                renderItem={({ item, index }) => (
-                    <Animated.View
-                        entering={FadeInUp.delay(index * 80).duration(400)}
-                        exiting={FadeOut.duration(200)}
-                        layout={Layout.springify()}
-                        style={styles.cardWrapper}
-                    >
-                        <AnimatedPressable
-                            style={[
-                                styles.card,
-                                {
-                                    backgroundColor: theme.card,
-                                }
-                            ]}
-                            onPress={() => navigateToDetail(item.id)}
+                renderItem={({ item, index }) => {
+                    const isRemoving = !!removingIds[item.id];
+                    return (
+                        <Animated.View
+                            entering={FadeInUp.delay(index * 80).duration(400)}
+                            exiting={FadeOut.duration(200)}
                             layout={Layout.springify()}
+                            style={styles.cardWrapper}
                         >
-                            <ImageBackground
-                                source={{
-                                    uri: item.poster_path
-                                        ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
-                                        : `https://picsum.photos/seed/movie${item.id}/300/450`
-                                }}
-                                style={styles.poster}
-                                imageStyle={styles.posterImage}
+                            <AnimatedPressable
+                                style={[
+                                    styles.card,
+                                    {
+                                        backgroundColor: theme.card,
+                                    }
+                                ]}
+                                onPress={() => navigateToDetail(item.id)}
+                                layout={Layout.springify()}
+                                disabled={isRemoving}
                             >
-                                <LinearGradient
-                                    colors={['transparent', 'rgba(0,0,0,0.8)']}
-                                    style={styles.posterGradient}
-                                />
-
-                                <View style={styles.cardContent}>
-                                    <Text style={styles.movieTitle} numberOfLines={2}>
-                                        {item.title}
-                                    </Text>
-                                    <View style={styles.ratingContainer}>
-                                        <Ionicons name="star" size={14} color="#FFD700" />
-                                        <Text style={styles.rating}>{item.vote_average?.toFixed(1)}</Text>
-                                    </View>
-                                </View>
-
-                                {/* Silme butonu */}
-                                <Pressable
-                                    style={styles.removeButton}
-                                    onPress={() => handleRemove(item.id)}
-                                    hitSlop={10}
+                                <ImageBackground
+                                    source={{
+                                        uri: item.poster_path
+                                            ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                                            : `https://picsum.photos/seed/movie${item.id}/300/450`
+                                    }}
+                                    style={styles.poster}
+                                    imageStyle={styles.posterImage}
                                 >
-                                    <View style={[
-                                        styles.removeCircle,
-                                        { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)' }
-                                    ]}>
-                                        <Ionicons
-                                            name="close"
-                                            size={18}
-                                            color={theme.primary}
-                                        />
+                                    <LinearGradient
+                                        colors={['transparent', 'rgba(0,0,0,0.8)']}
+                                        style={styles.posterGradient}
+                                    />
+
+                                    <View style={styles.cardContent}>
+                                        <Text style={styles.movieTitle} numberOfLines={2}>
+                                            {item.title}
+                                        </Text>
+                                        <View style={styles.ratingContainer}>
+                                            <Ionicons name="star" size={14} color="#FFD700" />
+                                            <Text style={styles.rating}>{item.vote_average?.toFixed(1)}</Text>
+                                        </View>
                                     </View>
-                                </Pressable>
-                            </ImageBackground>
-                        </AnimatedPressable>
-                    </Animated.View>
-                )}
+
+                                    {/* Silme butonu */}
+                                    <Pressable
+                                        style={styles.removeButton}
+                                        onPress={() => handleRemove(item.id)}
+                                        hitSlop={10}
+                                        disabled={isRemoving}
+                                    >
+                                        <View style={[
+                                            styles.removeCircle,
+                                            { backgroundColor: isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.9)' }
+                                        ]}>
+                                            {isRemoving ? (
+                                                <ActivityIndicator size="small" color={theme.primary} />
+                                            ) : (
+                                                <Ionicons
+                                                    name="close"
+                                                    size={18}
+                                                    color={theme.primary}
+                                                />
+                                            )}
+                                        </View>
+                                    </Pressable>
+                                </ImageBackground>
+                            </AnimatedPressable>
+                        </Animated.View>
+                    );
+                }}
             />
         </SafeAreaView>
     );

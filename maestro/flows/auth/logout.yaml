@@ -1,0 +1,14 @@
+appId: host.exp.Exponent
+name: Logout Flow
+---
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element:
+      id: "logout-button"
+    direction: DOWN
+- tapOn:
+    id: "logout-button"
+- tapOn: "Logout"
+- waitForAnimationToEnd:
+    timeout: 15000
+- assertVisible: "Login"

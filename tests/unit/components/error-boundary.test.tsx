@@ -4,6 +4,21 @@ import * as Updates from 'expo-updates';
 import React from 'react';
 import { Text, View } from 'react-native';
 
+// Mock @/otel/instrumentation/errors
+jest.mock('@/otel/instrumentation/errors', () => ({
+  handleErrorBoundaryError: jest.fn(),
+}));
+
+// Mock @/sentry
+jest.mock('@/sentry', () => ({
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  setUser: jest.fn(),
+  setTag: jest.fn(),
+  setContext: jest.fn(),
+}));
+
 // Mock component that throws error
 const ThrowError = ({ shouldThrow }: { shouldThrow: boolean }) => {
   if (shouldThrow) {
@@ -20,7 +35,7 @@ describe('ErrorBoundary', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Suppress console.error for expected errors
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => { });
   });
 
   afterEach(() => {
